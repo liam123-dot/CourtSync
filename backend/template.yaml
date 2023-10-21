@@ -1,0 +1,56 @@
+Resources:
+
+  # ECS Resources
+  ECSCluster:
+    Type: "AWS::ECS::Cluster"
+
+  TaskDefinition:
+    Type: "AWS::ECS::TaskDefinition"
+    Properties:
+      ContainerDefinitions:
+        - Name: authentication-container
+          Image: tennisdockerimages/authentication-container:latest
+          Memory: 512
+          Cpu: 256
+          Essential: true
+          PortMappings:
+            - ContainerPort: 80 # Adjust to the port your app runs on
+
+  # Load Balancer Resources
+  LoadBalancer:
+    Type: "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    Properties:
+      Type: application
+      Scheme: internet-facing
+      Subnets:
+        - "subnet-xxx"
+        - "subnet-yyy"
+
+  Listener:
+    Type: "AWS::ElasticLoadBalancingV2::Listener"
+    Properties:
+      LoadBalancerArn: !Ref LoadBalancer
+      Protocol: HTTP
+      Port: 80
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroup
+
+  TargetGroup:
+    Type: "AWS::ElasticLoadBalancingV2::TargetGroup"
+    Properties:
+      Port: 80
+      Protocol: HTTP
+      VpcId: "vpc-xxx"
+
+  ECSAuthenticationService:
+    Type: "AWS::ECS::Service"
+    Properties:
+      Cluster: !Ref ECSCluster
+      TaskDefinition: !Ref TaskDefinition
+      DesiredCount: 1
+      LaunchType: EC2
+      LoadBalancers:
+        - ContainerName: authentication-container
+          ContainerPort: 80
+          TargetGroupArn: !Ref TargetGroup
