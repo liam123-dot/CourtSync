@@ -9,6 +9,9 @@ import axios from "axios";
 import Timetable from "../Calendar/Timetable";
 import WorkingHoursModal from '../Calendar/WorkingHoursModal'
 import CoachAddEventModal from "../Calendar/CoachAddEventModal";
+import SidePanel from "../../SidePanel/SidePanel"
+import { refreshTokens } from "../../Authentication/RefreshTokens";
+import Searchbar from "./Searchbar";
 
 const TitleSection = styled.div`
   display: flex;
@@ -45,136 +48,269 @@ const DateLabel = styled.span`
 export default function HomeScreen() {
 
     const [authorised, setAuthorised] = useState(false);
-
-    const [workingHours, setWorkingHours] = useState({
-        "0": { start_time: null, end_time: null },
-        "1": { start_time: null, end_time: null },
-        "2": { start_time: null, end_time: null },
-        "3": { start_time: null, end_time: null },
-        "4": { start_time: null, end_time: null },
-        "5": { start_time: null, end_time: null },
-        "6": { start_time: null, end_time: null }
-    });
-
-    useEffect(() => {
-
-        const fetchTimetableData = async () => {
-
-            try {
-
-                const url = window.location.href;
-                const splitUrl = url.split('/');
-                const slug = splitUrl.slice(-1);
-
-                handleSetView('week')
-
-                fromDate.setHours(startTime, 0, 0);
-                toDate.setHours(endTime, 0, 0);
-
-                const epochFromDate = Math.floor(fromDate.getTime() / 1000);
-                const epochToDate = Math.floor(toDate.getTime() / 1000);
-
-                const headers = {
-                    'Authorization': localStorage.getItem('AccessToken')
-                }
-
-                console.log(headers)
-
-                const response = await axios.get(
-                    `${process.env.REACT_APP_URL}/timetable/${slug}?from_time=${epochFromDate}&to_time=${epochToDate}`,
-                    {headers: headers}
-                    );
-
-                const data = response.data;
-
-                console.log(data)
-                setWorkingHours(data.working_hours);
-                setAuthorised(data.authorised);
-
-            } catch (error) {
-
-                console.log(error)
-                const errorResponse = error.response;
-                console.log(errorResponse)
-                const statusCode = errorResponse.statusCode;
-                if (statusCode === 404) {
-
-                    // Show invalid url error
-                    console.log('not found')
-
-                }
-
-            }
-
-        }
-
-        fetchTimetableData()
-
-    }, []);
-
+    const [profilePictureUrl, setProfilePictureUrl] = useState(null);
     const { coachSlug } = useParams();
-    const [view, setView] = useState("day");
+    
+    const [isStartingUp, setIsStartingUp] = useState(true);
+
+    const [view, setView] = useState('day');
+
+    const [fromDate, setFromDate] = useState(null);
+    const [toDate, setToDate] = useState(null);
+
+    // Need a view, which is either day or week. Need start and end time which is 0-24 and represent start and end hours that are shown
+    // Need the from and to date to be calculated. Default should show the current date and the week around it.
 
     const [isWorkingHoursModalOpen, setIsWorkingHoursModalOpen] = useState(false);
     const [isAddEventModalOpen, setIsAddEventModalOpen] = useState(false);
 
-    const [startTime, setStartTime] = useState(10);
-    const [endTime, setEndTime] = useState(22);
+    const [workingHours, setWorkingHours] = useState(null);
+    const [defaultWorkingHours, setDefaultWorkingHours] = useState({});
 
-    const [fromDate, setFromDate] = useState(new Date());
-    const toDate = new Date(new Date(fromDate).setDate(fromDate.getDate() + (view === "day" ? 0 : 6)));
+    const [bookings, setBookings] = useState(null);
 
-    const formattedDateRange = view === "day"
-        ? `${fromDate.getDate()}th ${fromDate.toLocaleString('default', { month: 'short' })}`
-        : `${fromDate.getDate()}th-${toDate.getDate()}th ${fromDate.toLocaleString('default', { month: 'short' })}`;
+    const [loadedDates, setLoadedDates] = useState([]);
 
-    const getPreviousMonday = (date) => {
-        const day = date.getDay();
-        const difference = day === 0 ? 6 : day - 1;
-        const newDate = new Date(date);
-        newDate.setDate(date.getDate() - difference);
-        return newDate;
-    };
+    const [formattedDateRange, setFormattedDateRange] = useState("");
 
-    const handleSetView = (newView) => {
-        if (newView === "week") {
-            setFromDate(prevDate => getPreviousMonday(prevDate));
+    const redo = () => {
+
+        setLoadedDates([]);
+        fetchTimetableData(fromDate, toDate);
+
+    }
+
+    const checkRefreshRequired = (fromDate, toDate) => {
+        let currentDate = new Date(fromDate);
+
+        while (currentDate <= toDate) {
+            const formattedDate = `${currentDate.getDate().toString().padStart(2, '0')}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${currentDate.getFullYear()}`;
+            
+            if (!loadedDates.includes(formattedDate)) {
+                return true; // Refresh required
+            }
+
+            // Move to the next day
+            currentDate.setDate(currentDate.getDate() + 1);
         }
-        setView(newView);
-    };
 
-    const handlePrevious = () => {
-        setFromDate(prevDate => {
-            const newDate = new Date(prevDate);
-            if (view === "day") {
-                newDate.setDate(newDate.getDate() - 1);
-            } else {
-                newDate.setDate(newDate.getDate() - 7);
-            }
-            return newDate;
-        });
-    };
+        return false; // No refresh required
+    }
 
-    const handleNext = () => {
-        setFromDate(prevDate => {
-            const newDate = new Date(prevDate);
-            if (view === "day") {
-                newDate.setDate(newDate.getDate() + 1);
-            } else {
-                newDate.setDate(newDate.getDate() + 7);
+
+    const refresh = async (fromDate, toDate) => {
+        const refreshRequired = checkRefreshRequired(fromDate, toDate);
+        if (refreshRequired){
+            await fetchTimetableData(fromDate, toDate);
+        }
+    }
+
+    const fetchTimetableData = async (fromDate, toDate) => {
+
+        // Create new Date objects based on the passed dates to avoid direct mutation
+        const fromDateCopy = new Date(fromDate);
+        const toDateCopy = new Date(toDate);
+    
+        fromDateCopy.setHours(0, 0, 0);
+        toDateCopy.setHours(23, 59, 59);
+    
+        const epochFromDate = Math.floor(fromDateCopy.getTime() / 1000);
+        const epochToDate = Math.floor(toDateCopy.getTime() / 1000);
+    
+        const headers = {
+            'Authorization': localStorage.getItem('AccessToken')
+        }
+            
+        try {
+            const response = await axios.get(
+                `${process.env.REACT_APP_URL}/timetable/${coachSlug}?from_time=${epochFromDate}&to_time=${epochToDate}`,
+                {headers: headers}
+            );
+    
+            console.log(response);
+    
+            const data = response.data;
+    
+            setWorkingHours(prevWorkingHours => ({
+                ...prevWorkingHours,
+                ...data.working_hours
+            }));
+            setAuthorised(data.authorised);
+            setDefaultWorkingHours(data.default_working_hours);
+            setBookings(prevBookings => ({
+                ...prevBookings,
+                ...data.bookings
+            }))
+            const newDates = Object.keys(data.working_hours);
+            setLoadedDates(prevDates => [...prevDates, ...newDates]);
+
+            setIsStartingUp(false);
+    
+        } catch (error) {
+    
+            console.log(error);
+            const errorResponse = error.response;
+            console.log(errorResponse);
+            const statusCode = errorResponse && errorResponse.statusCode;
+            if (statusCode === 404) {
+                console.log('not found');
             }
-            return newDate;
-        });
-    };
+    
+        }
+    }
+
+    const handleSetView = async view => {
+        const currentDate = new Date();
+        
+        if (view === 'week') {
+            const startAndEnd = getStartEndOfWeek(fromDate);
+            await fetchTimetableData(new Date(startAndEnd.fromDate).setHours(0, 0), new Date(startAndEnd.toDate).setHours(0, 0))
+            setFromDate(startAndEnd.fromDate);
+            setToDate(startAndEnd.toDate);
+        } else {
+            if (currentDate >= fromDate && currentDate <= toDate) {
+                setFromDate(currentDate);
+                setToDate(currentDate);
+            } else {
+                setToDate(fromDate);
+            }
+        }
+        setView(view);
+    }
+    
+
+    const getStartEndOfWeek = currentDate => {
+        const currentDayOfWeek = currentDate.getDay();  // 0 (Sunday) - 6 (Saturday)
+
+        const mondayOffset = currentDayOfWeek === 0 ? -6 : 1 - currentDayOfWeek;
+        const sundayOffset = currentDayOfWeek === 0 ? 0 : 7 - currentDayOfWeek;
+
+        const monday = new Date(currentDate);
+        monday.setDate(monday.getDate() + mondayOffset);
+
+        const sunday = new Date(currentDate);
+        sunday.setDate(sunday.getDate() + sundayOffset);
+
+        return {fromDate: monday, toDate: sunday};
+
+    }
+
+    const handleNext = async () => {
+        const newFromDate = new Date(fromDate);
+        const newToDate = new Date(toDate);
+        if (view === 'week') {
+            newFromDate.setDate(fromDate.getDate() + 7);
+    
+            newToDate.setDate(toDate.getDate() + 7);
+
+            await refresh(newFromDate, newToDate);
+
+        } else if (view === 'day') {
+            newFromDate.setDate(fromDate.getDate() + 1);
+    
+            newToDate.setDate(toDate.getDate() + 1);
+            
+            await refresh(newFromDate, newToDate);
+
+        }
+            
+        setFromDate(newFromDate);
+        setToDate(newToDate);
+    }
+    
+    const handlePrevious = async () => {
+        const newFromDate = new Date(fromDate);
+        const newToDate = new Date(toDate);
+        if (view === 'week') {
+            newFromDate.setDate(fromDate.getDate() - 7);
+    
+            newToDate.setDate(toDate.getDate() - 7);
+    
+            await refresh(newFromDate, newToDate);
+        } else {
+            newFromDate.setDate(fromDate.getDate() - 1);
+    
+            newToDate.setDate(toDate.getDate() - 1);
+    
+            await refresh(newFromDate, newToDate);
+        }
+        setFromDate(newFromDate);
+        setToDate(newToDate);
+    }
+    
+
+    useEffect(() => {
+
+        const calculateStartingDates = () => {
+
+            const currentDate = new Date();                
+
+            setFromDate(currentDate);
+            setToDate(currentDate);
+
+            return currentDate;
+
+        }
+
+        const fetchCoachProfile = async () => {
+
+            if (localStorage.getItem('RefreshLoading') === 'true'){
+                await refreshTokens();
+            }
+
+            try {
+                const response = await axios.get(`${process.env.REACT_APP_URL}/auth/coach/${coachSlug}/profile-picture`)
+
+                const url = response.data.url
+
+                setProfilePictureUrl(url);
+
+            } catch (error){
+                console.log(error);
+            }
+
+        }
+        
+        setIsStartingUp(true);
+        fetchCoachProfile();
+        const startDate = calculateStartingDates();
+        fetchTimetableData(startDate, startDate);
+
+    }, []);
+
+    const updateFormattedDateRange = () => {
+        if (!fromDate || !toDate) return;
+
+        const formatSingleDate = (date) => {
+            return `${date.getDate()} ${date.toLocaleString('default', { month: 'long' })}`;
+        }
+
+        let formattedRange;
+        if (fromDate.toDateString() === toDate.toDateString()) {
+            formattedRange = formatSingleDate(fromDate);
+        } else if (fromDate.getMonth() === toDate.getMonth()) {
+            formattedRange = `${fromDate.getDate()} - ${formatSingleDate(toDate)}`;
+        } else {
+            formattedRange = `${formatSingleDate(fromDate)} - ${formatSingleDate(toDate)}`;
+        }
+
+        setFormattedDateRange(formattedRange);
+    }
+
+    useEffect(() => {
+        updateFormattedDateRange();
+    }, [fromDate, toDate]);
+
 
     return (
         <div style={{ 
-            height: '100%', 
+            height: '100vh', 
             width: '100%', 
             display: 'flex', 
             flexDirection: 'column',
-            padding: 10
+            paddingBottom: 25
         }}>
+            {!isStartingUp ? <>
             <Global
                 styles={css`
                 body {
@@ -189,12 +325,13 @@ export default function HomeScreen() {
                     <Button onClick={() => setIsAddEventModalOpen(true)}>+</Button>
                 </ArrowButtonGroup>
                 
-
                 <WorkingHoursModal 
                     isOpen={isWorkingHoursModalOpen} 
                     onClose={() => setIsWorkingHoursModalOpen(false)} 
-                    workingHours={workingHours} 
-                    setWorkingHours={setWorkingHours}
+                    workingHours={defaultWorkingHours} 
+                    setWorkingHours={setDefaultWorkingHours}
+                    redo={redo}
+                    bookings={bookings}
                 />
                 <CoachAddEventModal
                     isOpen={isAddEventModalOpen}
@@ -212,15 +349,23 @@ export default function HomeScreen() {
                     <Button selected={view === "day"} onClick={() => handleSetView("day")}>Day</Button>
                     <Button selected={view === "week"} onClick={() => handleSetView("week")}>Week</Button>
                 </div>
+                <div>
+                    <Searchbar bookings={bookings}/>
+                </div>
+                <SidePanel
+                    imageUrl={profilePictureUrl}
+                />
             </TitleSection>
             <Timetable  
-                startTime={startTime} 
-                endTime={endTime} 
-                fromDate={fromDate.toISOString().split('T')[0]} 
-                toDate={toDate.toISOString().split('T')[0]} 
+                fromDate={fromDate} 
+                toDate={toDate} 
                 view={view} 
                 workingHours={workingHours}
+                bookings={bookings}
+                authorised={true}
             />
+    </>: (<></>)
+            }
 
         </div>
     );

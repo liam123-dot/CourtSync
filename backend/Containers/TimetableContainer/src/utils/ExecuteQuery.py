@@ -12,9 +12,10 @@ def execute_query(query, args=None):
         "args": args
     })
 
+    logging.debug(f"Query: {query}")
     logging.debug(f"Query Response: {response}, data: {response.text}")
 
     if response.ok:
-        return response.json()['response'], True
+        return response.json()['response']
     else:
-        return response.json()['message'], False
+        raise Exception(response.json()['message'])

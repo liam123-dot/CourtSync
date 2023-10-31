@@ -1,14 +1,14 @@
 import React, {useEffect, useState} from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 /** @jsxImportSource @emotion/react */
 import styled from '@emotion/styled';
 import {css, Global} from "@emotion/react";
-import { FaRegClock } from 'react-icons/fa';
 import axios from "axios";
 
 import Timetable from "../Calendar/Timetable";
 import BookLessonModal from "./BookLessonModal";
 import GetDaysBetweenDates from "../GetDaysBetweenDates";
+import ProfileButton from "../../SidePanel/ProfilePicture";
 
 const TitleSection = styled.div`
   display: flex;
@@ -42,184 +42,357 @@ const DateLabel = styled.span`
   font-size: 1.2em;
 `;
 
+const CoachNotSetUp = styled.div`
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    font-size: 1.5em;
+    color: red;
+`;
+
 export default function PlayerHomeScreen() {
 
     const [authorised, setAuthorised] = useState(false);
-
-    const [workingHours, setWorkingHours] = useState({
-        "0": { start_time: null, end_time: null },
-        "1": { start_time: null, end_time: null },
-        "2": { start_time: null, end_time: null },
-        "3": { start_time: null, end_time: null },
-        "4": { start_time: null, end_time: null },
-        "5": { start_time: null, end_time: null },
-        "6": { start_time: null, end_time: null }
-    });
-    const [lessonTypes, setLessonTypes] = useState(null);
-    const [bookings, setBookings] = useState(null)
-
-    useEffect(() => {
-
-        const fetchTimetableData = async () => {
-
-            try {
-
-                const url = window.location.href;
-                const splitUrl = url.split('/');
-                const slug = splitUrl.slice(-1);
-
-                handleSetView('week')
-
-                fromDate.setHours(startTime, 0, 0);
-                toDate.setHours(endTime, 0, 0);
-
-                const epochFromDate = Math.floor(fromDate.getTime() / 1000);
-                const epochToDate = Math.floor(toDate.getTime() / 1000);
-
-                const headers = {
-                    'Authorization': localStorage.getItem('AccessToken')
-                }
-
-                console.log(headers)
-
-                const response = await axios.get(
-                    `${process.env.REACT_APP_URL}/timetable/${slug}?from_time=${epochFromDate}&to_time=${epochToDate}`,
-                    {headers: headers}
-                    );
-
-                const data = response.data;
-
-                console.log(data)
-                setWorkingHours(data.working_hours);
-                setAuthorised(data.authorised);
-
-            } catch (error) {
-
-                console.log(error)
-                const errorResponse = error.response;
-                console.log(errorResponse)
-                const statusCode = errorResponse.statusCode;
-                if (statusCode === 404) {
-
-                    // Show invalid url error
-                    console.log('not found')
-
-                }
-
-            }
-
-        }
-
-        fetchTimetableData()
-
-    }, []);
-
     const { coachSlug } = useParams();
-    const [view, setView] = useState("day");
+
+    const [view, setView] = useState("week");
 
     const [isBookLessonModalOpen, setIsBookLessonModalOpen] = useState(false);
 
-    const [startTime, setStartTime] = useState(10);
-    const [endTime, setEndTime] = useState(22);
+    const [fromDate, setFromDate] = useState(null);
+    const [toDate, setToDate] = useState(null);
 
-    const [fromDate, setFromDate] = useState(new Date());
-    const toDate = new Date(new Date(fromDate).setDate(fromDate.getDate() + (view === "day" ? 0 : 6)));
+    const [loadedDates, setLoadedDates] = useState([]);
 
-    const formattedDateRange = view === "day"
-        ? `${fromDate.getDate()}th ${fromDate.toLocaleString('default', { month: 'short' })}`
-        : `${fromDate.getDate()}th-${toDate.getDate()}th ${fromDate.toLocaleString('default', { month: 'short' })}`;
+    const [workingHours, setWorkingHours] = useState(null);
+    const [durations, setDurations] = useState(null);
+    const [pricingRules, setPricingRules] = useState(null);
+    const [bookings, setBookings] = useState(null);
+    const [profilePictureUrl, setProfilePictureUrl] = useState('');
 
-    const getPreviousMonday = (date) => {
-        const day = date.getDay();
-        const difference = day === 0 ? 6 : day - 1;
-        const newDate = new Date(date);
-        newDate.setDate(date.getDate() - difference);
-        return newDate;
-    };
+    const [formattedDateRange, setFormattedDateRange] = useState("");
 
-    const handleSetView = (newView) => {
-        if (newView === "week") {
-            setFromDate(prevDate => getPreviousMonday(prevDate));
+    const navigate = useNavigate();
+
+    const checkRefreshRequired = (fromDate, toDate) => {
+        let currentDate = new Date(fromDate);
+
+        while (currentDate <= toDate) {
+            const formattedDate = `${currentDate.getDate().toString().padStart(2, '0')}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${currentDate.getFullYear()}`;
+            
+            if (!loadedDates.includes(formattedDate)) {
+                return true; // Refresh required
+            }
+
+            // Move to the next day
+            currentDate.setDate(currentDate.getDate() + 1);
         }
-        setView(newView);
-    };
 
-    const handlePrevious = () => {
-        setFromDate(prevDate => {
-            const newDate = new Date(prevDate);
-            if (view === "day") {
-                newDate.setDate(newDate.getDate() - 1);
-            } else {
-                newDate.setDate(newDate.getDate() - 7);
-            }
-            return newDate;
-        });
-    };
+        return false; // No refresh required
+    }
 
-    const handleNext = () => {
-        setFromDate(prevDate => {
-            const newDate = new Date(prevDate);
-            if (view === "day") {
-                newDate.setDate(newDate.getDate() + 1);
-            } else {
-                newDate.setDate(newDate.getDate() + 7);
+    const redo = () => {
+
+        setLoadedDates([]);
+        fetchTimetableData(fromDate, toDate);
+
+    }
+
+    const refresh = async (fromDate, toDate) => {
+        const refreshRequired = checkRefreshRequired(fromDate, toDate);
+        if (refreshRequired){
+            await fetchTimetableData(fromDate, toDate);
+        }
+    }
+
+    const fetchTimetableData = async (fromDate, toDate) => {
+
+        // Create new Date objects based on the passed dates to avoid direct mutation
+        const fromDateCopy = new Date(fromDate);
+        const toDateCopy = new Date(toDate);
+    
+        fromDateCopy.setHours(0, 0, 0);
+        toDateCopy.setHours(23, 59, 59);
+    
+        const epochFromDate = Math.floor(fromDateCopy.getTime() / 1000);
+        const epochToDate = Math.floor(toDateCopy.getTime() / 1000);
+    
+        const headers = {
+            'Authorization': localStorage.getItem('AccessToken')
+        }
+            
+        try {
+            const response = await axios.get(
+                `${process.env.REACT_APP_URL}/timetable/${coachSlug}?from_time=${epochFromDate}&to_time=${epochToDate}`,
+                {headers: headers}
+            );
+    
+            console.log(response);
+    
+            const data = response.data;
+    
+            setWorkingHours(prevWorkingHours => ({
+                ...prevWorkingHours,
+                ...data.working_hours
+            }));
+            setAuthorised(data.authorised);
+            setBookings(prevBookings => ({
+                ...prevBookings,
+                ...data.bookings
+            }))
+            setPricingRules(data.pricing_rules);
+            setDurations(data.durations);
+
+            const newDates = Object.keys(data.working_hours);
+            setLoadedDates(prevDates => [...prevDates, ...newDates]);
+
+            return {
+                workingHours: data.working_hours,
+                bookings: data.bookings,
+                pricingRules: data.pricing_rules,
+                durations: data.durations
             }
-            return newDate;
-        });
-    };
+    
+        } catch (error) {
+    
+            console.log(error);
+            const errorResponse = error.response;
+            console.log(errorResponse);
+            const statusCode = errorResponse && errorResponse.statusCode;
+            if (statusCode === 404) {
+                console.log('not found');
+            }
+    
+        }
+    }
+
+    const handleSetView = view => {
+        const currentDate = new Date();
+    
+        if (view === 'week') {
+            const startAndEnd = getStartEndOfWeek(fromDate);
+            setFromDate(startAndEnd.fromDate);
+            setToDate(startAndEnd.toDate);
+        } else {
+            if (currentDate >= fromDate && currentDate <= toDate) {
+                setFromDate(currentDate);
+                setToDate(currentDate);
+            } else {
+                setToDate(fromDate);
+            }
+        }
+        setView(view);
+    }
+    
+
+    const getStartEndOfWeek = currentDate => {
+        const currentDayOfWeek = currentDate.getDay();  // 0 (Sunday) - 6 (Saturday)
+
+        const mondayOffset = currentDayOfWeek === 0 ? -6 : 1 - currentDayOfWeek;
+        const sundayOffset = currentDayOfWeek === 0 ? 0 : 7 - currentDayOfWeek;
+
+        const monday = new Date(currentDate);
+        monday.setDate(monday.getDate() + mondayOffset);
+
+        const sunday = new Date(currentDate);
+        sunday.setDate(sunday.getDate() + sundayOffset);
+
+        return {fromDate: monday, toDate: sunday};
+
+    }
+
+    const handleNext = async () => {
+        const newFromDate = new Date(fromDate);
+        const newToDate = new Date(toDate);
+        if (view === 'week') {
+            newFromDate.setDate(fromDate.getDate() + 7);
+    
+            newToDate.setDate(toDate.getDate() + 7);
+
+            await refresh(newFromDate, newToDate);
+
+        } else if (view === 'day') {
+            newFromDate.setDate(fromDate.getDate() + 1);
+    
+            newToDate.setDate(toDate.getDate() + 1);
+            
+            await refresh(newFromDate, newToDate);
+
+        }
+            
+        setFromDate(newFromDate);
+        setToDate(newToDate);
+    }
+    
+    const handlePrevious = async () => {
+        const newFromDate = new Date(fromDate);
+        const newToDate = new Date(toDate);
+        if (view === 'week') {
+            newFromDate.setDate(fromDate.getDate() - 7);
+    
+            newToDate.setDate(toDate.getDate() - 7);
+    
+            await refresh(newFromDate, newToDate);
+        } else {
+            newFromDate.setDate(fromDate.getDate() - 1);
+    
+            newToDate.setDate(toDate.getDate() - 1);
+    
+            await refresh(newFromDate, newToDate);
+        }
+        setFromDate(newFromDate);
+        setToDate(newToDate);
+    }
+
+    useEffect(() => {
+
+        const calculateStartingDates = () => {
+
+            const currentDate = new Date();
+            
+            const startAndEnd = getStartEndOfWeek(currentDate);
+
+            setFromDate(startAndEnd.fromDate);
+            setToDate(startAndEnd.toDate);
+
+            return startAndEnd;
+
+        }
+
+        const fetchCoachProfile = async () => {
+
+            try {
+                const response = await axios.get(`${process.env.REACT_APP_URL}/auth/coach/${coachSlug}/profile-picture`)
+
+                const url = response.data.url
+
+                setProfilePictureUrl(url);
+
+            } catch (error){
+                console.log(error);
+            }
+
+        }
+        
+
+        fetchCoachProfile();
+        const dates = calculateStartingDates();
+        fetchTimetableData(dates.fromDate, dates.toDate);
+
+    }, []);
+
+    const updateFormattedDateRange = () => {
+        if (!fromDate || !toDate) return;
+
+        const formatSingleDate = (date) => {
+            return `${date.getDate()} ${date.toLocaleString('default', { month: 'long' })}`;
+        }
+
+        let formattedRange;
+        if (fromDate.toDateString() === toDate.toDateString()) {
+            formattedRange = formatSingleDate(fromDate);
+        } else if (fromDate.getMonth() === toDate.getMonth()) {
+            formattedRange = `${fromDate.getDate()} - ${formatSingleDate(toDate)}`;
+        } else {
+            formattedRange = `${formatSingleDate(fromDate)} - ${formatSingleDate(toDate)}`;
+        }
+
+        setFormattedDateRange(formattedRange);
+    }
+
+    useEffect(() => {
+        updateFormattedDateRange();
+    }, [fromDate, toDate]);
+
+    const checkDataLoaded = () => {
+        return durations && workingHours && pricingRules;
+    }
+
+    const checkDataInitialised = () => {
+        
+        return durations.length > 0 && 
+        Object.keys(workingHours).length > 0 && 
+        Object.keys(pricingRules).length > 0;
+    }
 
     return (
-        <div style={{ 
-            height: '100%', 
-            width: '100%', 
-            display: 'flex', 
-            flexDirection: 'column',
-            padding: 10
-        }}>
-            <Global
-                styles={css`
-                body {
-                    overflow: hidden;
-                }
-            `}
-            />
+        <>
+            {!checkDataLoaded() ? (
+                <CoachNotSetUp>
+                    No coach account exists with the provided url
+                </CoachNotSetUp>
+            ) : (
+                !checkDataInitialised() ? (
+                    <CoachNotSetUp>
+                    The coach has not set up their account. Lessons cannot be booked at this time.
+                    </CoachNotSetUp>
+                ): (
 
-            <TitleSection>
-                <ArrowButtonGroup>
-                    <Button onClick={() => setIsBookLessonModalOpen(true)}>Book Lesson</Button>
-                </ArrowButtonGroup>
+                    <div style={{ 
+                        height: '100vh', 
+                        width: '100%', 
+                        display: 'flex', 
+                        flexDirection: 'column',
+                        paddingBottom: 25
+                    }}>
+                        <Global
+                            styles={css`
+                            body {
+                                overflow: hidden;
+                            }
+                        `}
+                        />
 
-                <BookLessonModal 
-                    isOpen={isBookLessonModalOpen}
-                    onClose={() => setIsBookLessonModalOpen(false)}
-                    days={GetDaysBetweenDates(fromDate.toISOString().split('T')[0], toDate.toISOString().split('T')[0])}
-                    lessonTypes={lessonTypes}
-                    bookings={bookings}
-                    workingHours={workingHours}
-                />
-                
+                        <TitleSection>
+                            <ArrowButtonGroup>
+                                <Button onClick={() => setIsBookLessonModalOpen(true)}>Book Lesson</Button>
+                            </ArrowButtonGroup>
 
-                <div style={{display: 'flex', alignItems: 'center'}}>
-                    <ArrowButtonGroup>
-                        <Button onClick={handlePrevious}>←</Button>
-                        <Button onClick={handleNext}>→</Button>
-                    </ArrowButtonGroup>
-                    <DateLabel>{formattedDateRange}</DateLabel>
-                </div>
-                <div>
-                    <Button selected={view === "day"} onClick={() => handleSetView("day")}>Day</Button>
-                    <Button selected={view === "week"} onClick={() => handleSetView("week")}>Week</Button>
-                </div>
-            </TitleSection>
-            <Timetable  
-                startTime={startTime} 
-                endTime={endTime} 
-                fromDate={fromDate.toISOString().split('T')[0]} 
-                toDate={toDate.toISOString().split('T')[0]} 
-                view={view} 
-                workingHours={workingHours}
-            />
+                            <BookLessonModal 
+                                isOpen={isBookLessonModalOpen}
+                                onClose={() => setIsBookLessonModalOpen(false)}
+                                days={GetDaysBetweenDates(fromDate.toISOString().split('T')[0], toDate.toISOString().split('T')[0])}
+                                fromDate={fromDate}
+                                bookings={bookings}
+                                durations={durations}
+                                pricingRules={pricingRules}
+                                workingHours={workingHours}
+                                coachSlug={coachSlug}
+                                loadedDates={loadedDates}
+                                fetchData={fetchTimetableData}
+                                redo={redo}
+                            />
 
-        </div>
+                            <div style={{display: 'flex', alignItems: 'center'}}>
+                                <ArrowButtonGroup>
+                                    <Button onClick={handlePrevious}>←</Button>
+                                    <Button onClick={handleNext}>→</Button>
+                                </ArrowButtonGroup>
+                                <DateLabel>{formattedDateRange}</DateLabel>
+                            </div>
+                            <div>
+                                <Button selected={view === "day"} onClick={() => handleSetView("day")}>Day</Button>
+                                <Button selected={view === "week"} onClick={() => handleSetView("week")}>Week</Button>
+                            </div>
+                            <Button onClick={() => {navigate('/coach/signin')}}>
+                                Login
+                            </Button>
+                            <ProfileButton imageUrl={profilePictureUrl}/>                        
+                        </TitleSection>
+                        <Timetable  
+                            fromDate={fromDate} 
+                            toDate={toDate} 
+                            view={view} 
+                            workingHours={workingHours}
+                            bookings={bookings}
+                            authorised={false}
+                        />
+
+                    </div>
+                )
+            )}
+            
+        </>
     );
 }

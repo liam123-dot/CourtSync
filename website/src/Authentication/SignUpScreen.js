@@ -47,11 +47,11 @@ export default function SignUpScreen() {
         if (validate()) {
             setSignUpLoading(true);
             try {
-                const response = await axios.post(`${process.env.REACT_APP_URL}/coach`, formData);
+                const response = await axios.post(`${process.env.REACT_APP_URL}/auth/coach`, formData);
                 console.log(response.data);
                 setSignUpErrorMessage(null); // Clear any previous error messages
                 navigate(
-                    '/verify',
+                    '/coach/verify',
                     {state: { email: formData.email }}
                 );
             } catch (error) {

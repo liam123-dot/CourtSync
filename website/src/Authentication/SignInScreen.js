@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 /** @jsxImportSource @emotion/react */
 import { Container, Form, Input, Button, titleStyle, Spinner } from './styles';
 
@@ -8,6 +9,8 @@ export default function SignInScreen() {
     const [password, setPassword] = useState('');
     const [errorMessage, setErrorMessage] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
+
+    const navigate = useNavigate();
 
     const isEmailValid = (email) => {
         // Basic regex for email validation
@@ -48,23 +51,33 @@ export default function SignInScreen() {
             const RefreshToken = authenticationResult.RefreshToken;
             const IdentityToken = authenticationResult.IdToken;
 
+            const coachSlug = data.CoachSlug;
+
             localStorage.setItem('email', username);
             localStorage.setItem('AccessToken', AccessToken);
             localStorage.setItem('RefreshToken', RefreshToken);
             localStorage.setItem('IdentityToken', IdentityToken);
 
-
+            navigate(
+                `/${coachSlug}`
+            );
 
             // Handle successful sign-in (e.g., redirect, store tokens, etc.)
         } catch (error) {
-            if (error.response) {
+            console.log(error.response)
+            const response = error.response;
+            const consequence = response.data.consequence;
+            if (consequence === 'ShowMessage') {
                 setErrorMessage(error.response.data.message || "An error occurred.");
+            } else if (consequence === 'UserNotConfirmed') {
+                navigate('/coach/verify',
+                    {state: { email: username }}
+                )
             } else {
-                setErrorMessage("An error occurred while making the request.");
+                setErrorMessage("Whoops, somethings gone wrong. Please try again later.");
             }
-        } finally {
-            setIsLoading(false);
-        }
+        } 
+        setIsLoading(false);
     };
 
     return (
@@ -86,6 +99,14 @@ export default function SignInScreen() {
                 />
                 <Button type="submit">
                     {isLoading ? <Spinner /> : "Sign In"}
+                </Button>
+                <Button 
+                style={{
+                    marginTop: 1
+                }}
+                onClick={() => {navigate('/coach/signup')}}
+                >
+                    No Account? Sign up here!
                 </Button>
             </Form>
         </Container>

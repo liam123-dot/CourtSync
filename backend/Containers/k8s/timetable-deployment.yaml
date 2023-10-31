@@ -14,12 +14,19 @@ spec:
     spec:
       containers:
       - name: timetable-container
-        image: tennisdockerimages/timetable-container:v1.0.26
+        image: tennisdockerimages/timetable-container:v1.0.71
         ports:
         - containerPort: 8000
         envFrom:
         - configMapRef:
             name: aws-cognito-secrets
+        resources:
+          requests:
+            memory: "150Mi"
+            cpu: "250m"
+          limits:
+            memory: "200Mi"
+            cpu: "250m"
 ---
 apiVersion: v1
 kind: Service

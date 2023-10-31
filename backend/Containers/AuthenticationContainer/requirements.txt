@@ -3,3 +3,4 @@ Flask-CORS
 flask
 gunicorn
 boto3
+python-jose

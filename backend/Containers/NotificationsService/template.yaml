@@ -1,0 +1,25 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Notification Service for CourtSync
+
+Resources:
+  MyQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: EmailNotificationsQueue-test
+
+  EmailFunction:
+    Type: AWS::Serverless::Function 
+    Properties:
+      CodeUri: src/Emails
+      Handler: Emails.lambda_handler
+      Runtime: python3.9
+      Policies:
+        - AmazonSESFullAccess
+      Events:
+        MySQSTrigger:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt MyQueue.Arn
+            BatchSize: 10

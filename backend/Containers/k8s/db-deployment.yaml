@@ -14,9 +14,16 @@ spec:
     spec:
       containers:
       - name: db-container
-        image: tennisdockerimages/database-container:v1.0.5
+        image: tennisdockerimages/database-container:v1.0.9
         ports:
         - containerPort: 8000
+        resources:
+          requests:
+            memory: "100Mi"
+            cpu: "250m"
+          limits:
+            memory: "200Mi"
+            cpu: "250m"
 ---
 apiVersion: v1
 kind: Service

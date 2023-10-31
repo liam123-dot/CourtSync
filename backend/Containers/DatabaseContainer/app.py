@@ -49,27 +49,34 @@ def get_db_connection():
         autocommit=True
     )
 
+def convert_bit_to_bool(row, cursor):
+    """Converts bit fields in a row to boolean."""
+    new_row = list(row)
+    for idx, desc in enumerate(cursor.description):
+        if desc[1] == pymysql.constants.FIELD_TYPE.BIT:
+            new_row[idx] = row[idx] == b'\x01'
+    return tuple(new_row)
 
 connection = get_db_connection()
 
-
 def execute_query(query, args=None, retry=False):
-
+    global connection
     logging.debug(f"Received query: {query}, with args: {args}")
 
-    # returns a tuple, first value indicates whether it was successful. If it wasn't
-    # the error is returned
     try:
         with connection.cursor() as cursor:
             cursor.execute(query, args)
-            response = cursor.fetchall()
+            # Convert the bits to boolean in the response
+            response = [convert_bit_to_bool(row, cursor) for row in cursor.fetchall()]
             logging.debug(f"Response: {response}")
             return True, response
     except MySQLError as e:
         if not retry:
+            connection = get_db_connection()
             return execute_query(query, args, True)
         logging.debug(f"Error: {e}")
         return False, str(e)
+
 
 
 @app.route('/query', methods=['POST'])

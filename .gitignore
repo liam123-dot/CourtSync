@@ -238,6 +238,6 @@ $RECYCLE.BIN/
 *.lnk
 
 old-backend
-backend/Containers/DatabaseContainer/env_production.json
-backend/Containers/DatabaseContainer/env_staging.json
-backend/Containers/DatabaseContainer/env_testing.json
+backend/env_staging.json
+backend/env_testing.json
+backend/env_production.json

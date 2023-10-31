@@ -4,6 +4,7 @@ import styled from '@emotion/styled';
 import {css} from "@emotion/react";
 import {ModalOverlay, ModalContent} from "./ModalStyles"
 import axios from "axios";
+import { Spinner } from "../../Spinner";
 
 const TimeLabel = styled.label`
   margin-right: 15px; // Increased margin
@@ -26,34 +27,90 @@ const SaveButton = styled.button`
   }
 `;
 
-export default function WorkingHoursModal({ isOpen, onClose, workingHours, setWorkingHours }) {
-    const [localWorkingHours, setLocalWorkingHours] = useState(workingHours);
+function convertUnixToMinutes(unixTime) {
+    const date = new Date(unixTime * 1000);
+    return date.getUTCHours() * 60 + date.getUTCMinutes();
+}
+  
+function getWeekdayFromDate(dateStr) {
+    const [day, month, year] = dateStr.split('-').map(Number);
+    const date = new Date(Date.UTC(year, month - 1, day));
+    let dayOfWeek = date.getUTCDay() - 1; // Convert so that 0 is Monday
+    if (dayOfWeek < 0) { // Adjust Sunday from -1 to 6
+      dayOfWeek = 6;
+    }
+    return dayOfWeek; // Now returns 0 for Monday through 6 for Sunday
+}  
+
+function checkAvailability(workingHours, bookings) {
+    for (const [date, dailyBookings] of Object.entries(bookings)) {
+        const bookingDay = getWeekdayFromDate(date);
+        const workHours = workingHours[bookingDay] || {};
+        const workStart = workHours.start_time || 0;
+        const workEnd = workHours.end_time || 1440; // Default end time to latest possible (1440 minutes)
+    
+        // Check for any booking that is not within the working hours
+        const hasOverlap = dailyBookings.some((booking) => {
+            const startMinutes = convertUnixToMinutes(booking.start_time);
+            const duration = booking.duration;
+            // If a booking starts before work hours or ends after work hours, return true
+            return startMinutes < workStart || startMinutes + duration > workEnd;
+        });
+
+        // If any overlap is found, return false for the entire function
+        if (hasOverlap) {
+            return false;
+        }
+    }
+  
+    // If no overlaps are found after checking all bookings, return true
+    return true;
+}
+  
+
+export default function WorkingHoursModal({ isOpen, onClose, workingHours, redo, bookings }) {
+    const [localWorkingHours, setLocalWorkingHours] = useState({
+        0: {'start_time': null, 'end_time': null},
+        1: {'start_time': null, 'end_time': null},
+        2: {'start_time': null, 'end_time': null},
+        3: {'start_time': null, 'end_time': null},
+        4: {'start_time': null, 'end_time': null},
+        5: {'start_time': null, 'end_time': null},
+        6: {'start_time': null, 'end_time': null}
+    });
+    const [warningRequired, setWarningRequired] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
     const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
     useEffect(() => {
         if (isOpen) {
-            setLocalWorkingHours(workingHours);
+            if (Object.keys(workingHours).length > 0){
+                setLocalWorkingHours(workingHours);
+            }
         }
     }, [isOpen, workingHours]);
     
     if (!isOpen) return null;
 
-    const saveWorkingHours = () => {
+    const saveWorkingHours = () => {        
 
         const updateWorkingHoursRequest = async () => {
+
+            setIsLoading(true);
 
             const url = `${process.env.REACT_APP_URL}/timetable/working-hours`
 
             const headers = {
-                'Authorization': await localStorage.getItem('AccessToken'),
+                'Authorization': localStorage.getItem('AccessToken'),
             }
 
             try{
+                console.log(localWorkingHours)
 
-            const response = await axios.post(url, {working_hours: workingHours}, { headers: headers });
+                const response = await axios.post(url, {working_hours: localWorkingHours}, { headers: headers });
 
-            console.log(response)
+                redo();
 
             } catch (error) {
 
@@ -69,10 +126,17 @@ export default function WorkingHoursModal({ isOpen, onClose, workingHours, setWo
                 }
             }
 
+            setIsLoading(false);
+
         }
 
-        setWorkingHours(localWorkingHours);
-        updateWorkingHoursRequest();
+        const free = checkAvailability(workingHours, bookings);
+        if (free) {
+            setWarningRequired(false);
+            updateWorkingHoursRequest();
+        } else {
+            setWarningRequired(true);
+        }
     }
 
     const handleTimeChange = (dayIndex, timeType, value) => {
@@ -89,7 +153,6 @@ export default function WorkingHoursModal({ isOpen, onClose, workingHours, setWo
         setLocalWorkingHours(updatedHours);
     };
     
-
     const minutesToHHMM = (minutes) => {
         if (minutes === null || minutes === undefined) {
             return "";  // Or any other default value
@@ -123,7 +186,9 @@ export default function WorkingHoursModal({ isOpen, onClose, workingHours, setWo
                     </tr>
                     </thead>
                     <tbody>
-                    {daysOfWeek.map((day, index) => (
+                    {daysOfWeek.map((day, index) => {
+                        return (
+                            localWorkingHours && (
                         <tr key={day}>
                             <td css={css`padding: 10px 0;`}>{day}</td>
                             <td css={css`padding: 10px 0;`}>
@@ -147,10 +212,17 @@ export default function WorkingHoursModal({ isOpen, onClose, workingHours, setWo
                                 </TimeLabel>
                             </td>
                         </tr>
-                    ))}
+                            )
+                        )
+                        })}
                     </tbody>
                 </table>
-                <SaveButton onClick={saveWorkingHours}>Save</SaveButton>
+                {warningRequired && (
+                    <p>The new working hours cannot overlap with any upcoming lessons</p>
+                )}
+                <SaveButton onClick={saveWorkingHours}>
+                    {isLoading ? <Spinner /> : "Save"}
+                </SaveButton>
             </ModalContent>
         </ModalOverlay>
     );

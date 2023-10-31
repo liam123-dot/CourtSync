@@ -69,18 +69,25 @@ export default function HomeScreen() {
                 }
             `}
             />
-            {
-                loading ? <></>
-                :
-                (authorised ? 
-                <>
-                    <CoachHomeScreen/>
-                </>:
-                <>
-                    <PlayerHomeScreen/>
-                </>
-                )
-            }
+            {/* the flex of the navigation bar is 1 */}
+            <div
+                style={{
+                    flex: 4
+                }}
+            >
+                {
+                    loading ? <></>
+                    :
+                    (authorised ? 
+                    
+                        <CoachHomeScreen/>
+                    :
+                    
+                        <PlayerHomeScreen/>
+                    
+                    )
+                }
+            </div>
 
         </div>
     );

@@ -26,56 +26,52 @@ each column will then have a key for each object type (2 right now).
 one for background objects, and one for events. These keys will lead to lists of events that should
 have most of the specifics pre-calculated server-side
 
- */
+*/
 
 import React, { useRef, useState, useEffect } from 'react';
-import GetDaysBetweenDates from '../GetDaysBetweenDates';
+import Booking from './Booking';
+import { calculateTopAndHeight } from './CalculateTopAndHeight';
 
-
-function ColumnTitles({ titles }) {
-
+function ColumnTitles({ titles, dayView }) {
     const titleStyle = {
         border: '1px solid rgba(0,0,0,1)',
         padding: '4px',
         textAlign: 'center',
         minWidth: '120px',
-        flex: 1,
-    }
+        flex: dayView ? 7: 1,
+    };
 
     return (
         <div style={{
             display: 'flex',
             flexDirection: 'row',
-
         }}>
-            <div style={titleStyle}></div>
+            <div style={{
+                border: '1px solid rgba(0,0,0,1)',
+                padding: '4px',
+                textAlign: 'center',
+                minWidth: '120px',
+                flex: 1
+            }}></div>
             {
-                titles.map((title, index) => {
-                    
-                    return (
-                        <div style={titleStyle} key={index}>
-                            <p>
-                                {title}
-                            </p>
-
-                        </div>
-                    )
-
-                })
+                Object.values(titles).map((title, index) => (
+                    <div style={titleStyle} key={index}>
+                        <p>{title}</p>
+                    </div>
+                ))
             }
         </div>
-    )
-
+    );
 }
 
-function RowTitles ({ titles, columnN }) {
+function RowTitles({ titles, columnN }) {
     const titleStyle = {
         padding: '5px',
         minWidth: '120px',
         textAlign: 'center',
         flex: 1,
         border: '0.5px solid rgba(0,0,0,1)',
-    }
+    };
 
     return (
         <div style={{
@@ -83,162 +79,260 @@ function RowTitles ({ titles, columnN }) {
             flexDirection: 'column',
             width: `${100.0 / columnN}%`,
             minWidth: '120px',
-            flex: 1  // This will make it take up the remaining space
+            flex: 1
         }}>
             {
-                titles.map((title, index) => {
-                    
-                    return (
-                        <div style={titleStyle} key={index}>
-
-                            <p>{title}</p>
-
-                        </div>
-                    )
-
-                })
+                titles.map((title, index) => (
+                    <div style={titleStyle} key={index}>
+                        <p>{title}</p>
+                    </div>
+                ))
             }
         </div>
-    )
-}
-
-function WorkingHour({startTime, columnStartTime, endTime, columnEndTime, myRef}) {
-
-    const [columnHeight, setColumnHeight] = useState(0);
-
-    useEffect(() => {
-  const handleResize = () => {
-    if (myRef.current) {
-      setColumnHeight(myRef.current.offsetHeight);
-    }
-  };
-
-  window.addEventListener('resize', handleResize);
-  handleResize(); // Call it immediately to set the initial value
-
-  return () => {
-    // Cleanup the event listener on component unmount
-    window.removeEventListener('resize', handleResize);
-  };
-}, []);
-
-    columnStartTime = columnStartTime * 60;
-    columnEndTime = columnEndTime * 60;
-
-    let top;
-    
-    if (columnStartTime > startTime){
-
-        top = 0;
-
-    } else {
-
-        top = ((startTime - columnStartTime) / (columnEndTime - columnStartTime)) * 100
-
-    }
-    
-    const bottom = ((columnEndTime - endTime) / (columnEndTime - columnStartTime)) * 100
-
-    const height = 100-top-bottom;
-
-    top = (top / 100) * columnHeight;
-
-    const style = {
-        marginTop: `${top}px`,
-        height: `${height}%`,
-        backgroundColor: 'white',
-    }
-    
-    return (
-        <div style={style}></div>
-    )
-
-}
-
-
-// Working hours have start_time and end_time which are represented in minutes
-function Column({ workingHours, startTime, endTime}) {
-    const columnRef = useRef(null);
-
-    return (
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        border: '1px solid rgba(0,0,0,1)',
-        flex: 1,
-        minWidth: '120px',
-        backgroundColor: 'lightgrey'
-      }}
-      ref={columnRef}
-      >
-
-        <WorkingHour
-            columnStartTime={startTime}
-            columnEndTime={endTime}
-            startTime={workingHours['start_time']}
-            endTime={workingHours['end_time']}
-            myRef={columnRef}
-        ></WorkingHour>
-
-      </div>
     );
+}
+
+// should all be input as mintues
+
+
+function WorkingHours({columnStartTime, columnEndTime, workingHour}){
+
+  const [top, setTop] = useState(0);
+  const [height, setHeight] = useState(0);
+
+  // the working hours details in minutes
+
+  const calculatePercents = () => {
+
+    if (workingHour){
+
+      const wHStartMinutes = workingHour.start_time;
+      const wHEndMinutes = workingHour.end_time;
+
+      const columnStartTimeMinutes = columnStartTime * 60;
+      const columnEndTimeMinutes = columnEndTime * 60;
+
+      const percents = calculateTopAndHeight(columnStartTimeMinutes, columnEndTimeMinutes, wHStartMinutes, wHEndMinutes);
+      setTop(percents.top);
+      setHeight(percents.height)
+
+    }
+
   }
 
-  function Timetable({ startTime, endTime, workingHours, fromDate, toDate }) {
-    const columnTitles = GetDaysBetweenDates(fromDate, toDate);
-    
+  useEffect(() => {
+    calculatePercents();
 
-      // Calculate global start and end times based on provided working hours
-    let globalStartTime = 24 * 60; // set to max possible value initially (23:59 in minutes)
-    let globalEndTime = 0; // set to min possible value initially (00:00 in minutes)
-    
-    Object.values(workingHours).forEach(wh => {
-        console.log(wh)
-        if (wh.start_time < globalStartTime) {
-            globalStartTime = wh.start_time;
-        }
-        if (wh.end_time > globalEndTime) {
-            globalEndTime = wh.end_time;
-        }
+  }, [workingHour])
+
+  return (
+    <div style={{
+      position: 'absolute',
+      width: '100%',
+      backgroundColor: 'white',
+      top: `${top}%`,
+      height: `${height}%`,
+      zIndex: 1,
+    }}/>
+  )
+
+}
+
+// Utility function to convert minutes to HH:MM format
+
+
+function Column({ workingHours, startTime, endTime, bookings, authorised, dayView }) {
+    const columnRef = useRef(null);
+
+    let wHStartTime;
+    let wHEndTime;
+    if (workingHours && 'start_time' in workingHours && 'end_time' in workingHours) {
+        wHStartTime = workingHours['start_time']
+        wHEndTime = workingHours['end_time']
+    } else {
+        wHStartTime = null;
+        wHEndTime = null;
+    }
+
+    bookings = bookings.map(booking => {
+        let bookingDate = new Date(booking.start_time * 1000);
+        let minutesIntoTheDay = bookingDate.getHours() * 60 + bookingDate.getMinutes();
+
+        return {
+            ...booking,
+            start_time: minutesIntoTheDay
+        };
     });
-    console.log(globalStartTime, globalEndTime)
-
-    globalStartTime /= 60;
-    globalEndTime /= 60;
-    console.log(globalStartTime, globalEndTime)
-
-    // const globalStartTime = startTime;
-    // const globalEndTime = endTime
-
-    // Create row titles based on global start and end times
-    const rowTitles = Array.from({ length: (globalEndTime - globalStartTime) }, (_, i) => i + globalStartTime);
-  
 
     return (
-      <div style={{
-        boxSizing: 'border-box',
-        overflowX: 'auto',
-        overflowY: 'auto',
-        border: '1px solid rgba(0,0,0,1)',
-        height: '100vh',
-        display: 'flex',
-        flexDirection: 'column'
-      }}>
-        <ColumnTitles titles={columnTitles} />  {/* Adding an empty header for row titles */}
-        <div style={{ display: 'flex', flexDirection: 'row', flexGrow: 1 }}>
-          <RowTitles titles={rowTitles} columnN={columnTitles.length} />
-          {columnTitles.map((title, colIndex) => (
-            <Column 
-                title={title} 
-                key={colIndex} 
-                rowTitles={rowTitles} 
-                workingHours={workingHours[colIndex.toString()]}
-                startTime={globalStartTime}
-                endTime={globalEndTime}
-            />
-          ))}
+        <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            border: '1px solid rgba(0,0,0,1)',
+            flex: dayView ? 7: 1,
+            minWidth: '120px',
+            backgroundColor: 'lightgrey',
+            position: 'relative'
+        }}
+            ref={columnRef}
+        >
+          <WorkingHours
+            columnStartTime={startTime}
+            columnEndTime={endTime}
+            workingHour={workingHours}
+          />
+          {
+            bookings.map((booking, index) => {
+              return (
+                <Booking
+                  key={index}
+                  columnStartTime={startTime}
+                  columnEndTime={endTime}
+                  booking={booking}
+                  authorised={authorised}
+                />
+              )
+            })
+          }
         </div>
-      </div>
+    );
+}
+
+const generateDateToDayMap = (fromDate, toDate) => {
+    const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const map = {};
+
+    let currentDate = new Date(fromDate);
+    while (currentDate <= toDate) {
+        const key = `${String(currentDate.getDate()).padStart(2, '0')}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${currentDate.getFullYear()}`;
+        const value = dayNames[currentDate.getDay()];
+        map[key] = value;
+
+        currentDate.setDate(currentDate.getDate() + 1);
+    }
+    return map;
+}
+
+const generateDateArray = (fromDate, toDate) => {
+    const dates = [];
+
+    let currentDate = new Date(fromDate);
+    while (currentDate <= toDate) {
+        const key = `${String(currentDate.getDate()).padStart(2, '0')}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${currentDate.getFullYear()}`;
+        dates.push(key);
+
+        currentDate.setDate(currentDate.getDate() + 1);
+    }
+    return dates;
+}
+
+
+function Timetable({ workingHours, bookings, fromDate, toDate, authorised }) {
+
+    const [columnTitles, setColumnTitles] = useState([]);
+    const [dates, setDates] = useState([]);
+
+    const [rowTitles, setRowTitles] = useState([]);
+
+    const [globalStartTime, setGlobalStartTime] = useState(null);
+    const [globalEndTime, setGlobalEndTime] = useState(null);    
+
+    const [loaded, setLoaded] = useState(false);
+
+    const calculateGlobalTimes = () => {
+    let minStartTime = 24 * 60;  // set to max possible value initially (23:59 in minutes)
+    let maxEndTime = 0;         // set to min possible value initially (00:00 in minutes)
+
+    let currentDate = new Date(fromDate);
+    while (currentDate <= toDate) {
+          // Convert currentDate to dd-mm-yyyy format
+          let formattedDate = `${String(currentDate.getDate()).padStart(2, '0')}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${currentDate.getFullYear()}`;
+
+          // Check if data for the key exists in workingHours
+          if (workingHours && workingHours[formattedDate]) {
+              let start = workingHours[formattedDate].start_time;
+              let end = workingHours[formattedDate].end_time;
+
+              if (start && end){
+
+                if (start < minStartTime) minStartTime = start;
+                if (end > maxEndTime) maxEndTime = end;
+
+              }
+          }
+          
+
+        // Move to the next day
+        currentDate.setDate(currentDate.getDate() + 1);
+    }
+    // Convert minStartTime and maxEndTime from minutes to hours
+
+    const start = Math.floor(minStartTime / 60)
+    const end = Math.ceil(maxEndTime / 60)
+
+    setGlobalStartTime(start);
+    setGlobalEndTime(end);
+
+    return {start: start, end: end}
+
+    }
+
+    useEffect(() => {
+      setLoaded(false);
+    }, [])
+
+    useEffect(() => {
+      if (fromDate && toDate) {
+          // Reset the loaded state at the start of the effect
+          setLoaded(false);
+  
+          setColumnTitles(generateDateToDayMap(fromDate, toDate));
+          setDates(generateDateArray(fromDate, toDate));
+          const temp = calculateGlobalTimes();
+          const rowTitles = Array.from({ length: (temp.end - temp.start) }, (_, i) => i + temp.start);
+          setRowTitles(rowTitles);
+          
+          // Set loaded to true at the end of the effect
+          setLoaded(true);
+      }
+  }, [fromDate, toDate, workingHours]);
+
+  const dayView = toDate.getDay() - fromDate.getDay() == 0;
+  
+    return (
+      loaded ? (
+        <div style={{
+            boxSizing: 'border-box',
+            overflowX: 'auto',
+            overflowY: 'auto',
+            border: '1px solid rgba(0,0,0,1)',
+            height: '100vh',
+            display: 'flex',
+            flexDirection: 'column'
+        }}>
+            <ColumnTitles titles={columnTitles} dayView={dayView}/>
+            {rowTitles && (
+                <div style={{ display: 'flex', flexDirection: 'row', flexGrow: 1 }}>
+                    <RowTitles titles={rowTitles} columnN={columnTitles.length} />
+                    {loaded && workingHours && columnTitles && dates.map((date, dateIndex) => (
+                        <Column
+                            title={columnTitles[date]}
+                            key={date}
+                            rowTitles={rowTitles}
+                            workingHours={workingHours[date]}
+                            startTime={globalStartTime}
+                            endTime={globalEndTime}
+                            bookings={bookings && date in bookings ? bookings[date]: []}
+                            date={date}
+                            authorised={authorised}
+                            dayView={dayView}
+                        />
+                    ))}
+                </div>
+              )
+            }
+        </div>
+      ) : (<>Loading</>)
     );
   }
 

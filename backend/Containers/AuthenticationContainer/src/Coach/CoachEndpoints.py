@@ -1,16 +1,21 @@
 import os
 
 import boto3
+import time
 from flask import Blueprint, request, jsonify
+import logging
+logging.basicConfig(level=logging.DEBUG)
 
 from src.utils.GetSecretHash import get_secret_hash
 from src.Coach.AttributeVerification import is_password_valid, is_phone_number_valid, is_email_valid
 from src.Coach.CreateSlug import insert_into_table
 from src.utils.ExecuteQuery import execute_query
+from src.utils.CheckAuthorization import get_access_token_username
 
 coach = Blueprint('main', __name__)
 
 client = boto3.client('cognito-idp')
+s3_client = boto3.client('s3')
 
 CLIENT_ID = os.getenv('CLIENT_ID')
 CLIENT_SECRET = os.getenv('CLIENT_SECRET')
@@ -79,6 +84,33 @@ def coach_sign_up():
         return jsonify(message='Internal Server Error', error=str(e)), 500
     
 
+def resend_confirmation_code(email):
+    secret_hash = get_secret_hash(username=email, client_id=CLIENT_ID, client_secret=CLIENT_SECRET)
+    
+    response = client.resend_confirmation_code(
+        ClientId=CLIENT_ID,
+        SecretHash=secret_hash,
+        Username=email
+    )
+    return response
+
+
+
+@coach.route('/auth/coach/confirm/resend', methods=['POST'])
+def resend_coach_confirmation_code():
+    
+    data = request.json
+
+    try:
+        email = data['email']
+    except KeyError as e:
+        return jsonify(message=f"Invalid/Missing Key: {e}")
+    
+    response = resend_confirmation_code(email)
+
+    return jsonify(response), 200
+
+
 @coach.route('/auth/coach/confirm', methods=['POST'])
 def confirm_coach_sign_up():
 
@@ -104,8 +136,25 @@ def confirm_coach_sign_up():
         return jsonify(message='Incorrect Confirmation Code'), 400
     except client.exceptions.UserNotFoundException:
         return jsonify(message='User not found'), 400
+    except client.exceptions.ExpiredCodeException:
+        return jsonify(message='The verification code has expired, please check your inbox for a new one'), 400
     except Exception as e:
         return jsonify(message=f"Error: {str(e)}"), 500
+    
+
+def get_coach_slug_helper(access_token):
+
+    valid, username = get_access_token_username(access_token)
+
+    if not valid:
+        return None
+    
+    sql = "SELECT slug FROM Coaches WHERE coach_id=%s"
+    response = execute_query(sql, (username, ))
+    try:
+        return response[0][0]
+    except IndexError:
+        return None
 
 
 @coach.route('/auth/coach/sign-in', methods=['POST'])
@@ -131,17 +180,19 @@ def coach_sign_in():
             },
             ClientId=CLIENT_ID
         )
+
+        response['CoachSlug'] = get_coach_slug_helper(response['AuthenticationResult']['AccessToken'])
         return jsonify(response), 200
     except client.exceptions.NotAuthorizedException:
-        return jsonify(message='Incorrect Password'), 400
+        return jsonify(message='Incorrect Password', consequence='ShowMessage'), 400
     except client.exceptions.UserNotFoundException:
-        return jsonify(message='User Not Found'), 400
+        return jsonify(message='User Not Found', consequence='ShowMessage'), 400
+    except client.exceptions.UserNotConfirmedException:
+        return jsonify(message='User not yet confirmed', consequence='UserNotConfirmed'), 400
 
     except Exception as e:
-        return jsonify(message=f"Error: {e}"), 500
-
-import logging
-logging.basicConfig(level=logging.DEBUG)
+        return jsonify(message=f"Error: {e}", consequence='ShowServerError'), 500
+    
 
 @coach.route('/auth/coach/refresh', methods=['POST'])
 def refresh_coach_tokens():
@@ -186,5 +237,161 @@ def get_coach_id(coach_email):
         return coach_id
     except Exception as e:
         return None
-                 
+    
 
+@coach.route('/auth/coach/slug', methods=['GET'])
+def get_coach_slug():
+    
+    token = request.headers.get('Authorization', None)
+
+    if token:
+        valid, username = get_access_token_username(token)
+
+    if valid:
+
+        sql = "SELECT slug FROM Coaches WHERE coach_id=%s"
+        results = execute_query(sql, (username, ))
+
+        return jsonify(slug=results[0][0]), 200
+
+
+    else:
+        return jsonify(message='Unauthorized'), 400
+
+
+def get_coach_profile_url(coach_id=None, slug=None):
+
+    if not coach_id and not slug:
+        return None
+    
+    if coach_id:
+
+        sql = "SELECT slug, profile_picture_url, profile_picture_url_expiry, public_profile_picture FROM Coaches WHERE coach_id=%s"
+        response = execute_query(sql, (coach_id, ))[0]
+
+    else:
+        sql = "SELECT slug, profile_picture_url, profile_picture_url_expiry, public_profile_picture FROM Coaches WHERE slug=%s"
+        response = execute_query(sql, (slug, ))[0]
+
+    slug = response[0]
+    profile_picture_url = response[1]
+    profile_picture_url_expiry = response[2]
+    public_profile_picture = response[3]
+
+    if public_profile_picture:
+
+        if not profile_picture_url or time.time() > profile_picture_url_expiry:
+            response = s3_client.generate_presigned_url('get_object',
+                                                        Params={'Bucket': 'coach-profile-pictures',
+                                                                'Key': slug},
+                                                        ExpiresIn=3600)
+            
+            sql = 'UPDATE Coaches SET profile_picture_url=%s, profile_picture_url_expiry=%s WHERE coach_id=%s'
+            execute_query(sql, (response, time.time() + 3600, coach_id))
+            return response
+
+        else:
+            return profile_picture_url
+    else:
+        return None
+
+
+@coach.route('/auth/coach/me', methods=['GET'])
+def get_coach_details():
+    token = request.headers.get('Authorization', None)
+
+    if token:
+
+        try:
+
+            response = client.get_user(
+                AccessToken=token
+            )
+
+            coach_id = response['Username']
+
+            profile_picture_url = get_coach_profile_url(coach_id=coach_id)
+
+            attributes = {
+                'profile_picture_url': profile_picture_url
+            }
+
+            for user_attribute in response['UserAttributes']:
+                attributes[user_attribute['Name']] = user_attribute['Value']
+            
+            return jsonify(attributes), 200
+
+        except client.exceptions.NotAuthorizedException as e:
+            return jsonify(message='Invalid Access Token'), 400
+        except Exception as e:
+            return jsonify(message='Internal Server Error', error=str(e)), 500
+
+    else:
+        return jsonify(message='Unauthorized, no access token provided'), 400
+
+
+@coach.route('/auth/coach/profile-picture-upload-url', methods=['GET'])
+def get_profile_picture_upload_url():
+
+    token = request.headers.get('Authorization', None)
+
+    if token:
+        valid, username = get_access_token_username(token)
+    else:
+        return jsonify(message='No token provided'), 400
+    
+    if valid:
+        
+        sql = 'SELECT slug FROM Coaches where coach_id=%s'
+        results = execute_query(sql, (username, ))
+
+        slug = results[0][0]
+
+        try:
+            response = s3_client.generate_presigned_url(
+                'put_object',
+                Params={
+                    'Bucket': 'coach-profile-pictures',
+                    'Key': slug
+                },
+                ExpiresIn=1800
+            )
+            return jsonify(url=response)
+        except Exception as e:
+            return jsonify(message='Error', error=str(e)), 500
+
+    else:
+        return jsonify(message='Unauthorised'), 400
+    
+
+@coach.route('/auth/coach/<slug>/profile-picture', methods=['GET'])
+def get_profile_picture(slug):
+
+    profile_url = get_coach_profile_url(slug=slug)
+
+    if profile_url:
+        return jsonify(url=profile_url), 200
+    else:
+        return jsonify(message='Coach does not have a public profile'), 400
+    
+
+@coach.route('/auth/coach/check', methods=['GET'])
+def check_is_coach():
+
+    token = request.headers.get('Authorization', None)
+
+    if token:
+        valid, username = get_access_token_username(token)
+    else:
+        return jsonify(message='No coach found', coach=False), 200
+    
+    if valid:
+        
+        sql = 'SELECT slug FROM Coaches where coach_id=%s'
+        results = execute_query(sql, (username, ))
+
+        slug = results[0][0]
+
+        return jsonify(slug=slug, coach=True), 200
+    
+    return jsonify(message='No coach found', coach=False), 200

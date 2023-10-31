@@ -2,6 +2,7 @@ import axios from "axios";
 
 export async function refreshTokens() {
 
+    localStorage.setItem('RefreshLoading', 'true');
     const refreshToken = localStorage.getItem('RefreshToken');
     const email = localStorage.getItem('email');
 
@@ -29,5 +30,7 @@ export async function refreshTokens() {
         }
 
     }
+
+    localStorage.setItem('RefreshLoading', 'false')
 
 }
