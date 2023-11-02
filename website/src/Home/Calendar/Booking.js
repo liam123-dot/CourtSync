@@ -27,9 +27,16 @@ function Booking({ columnStartTime, columnEndTime, booking, authorised }) {
     const [formattedStartTime, setFormattedStartTime] = useState('');
     const [formattedEndTime, setFormattedEndTime] = useState('');
 
+    const [isCancelled, setIsCancelled] = useState(false);
     const [backgroundColor, setBackgroundColor] = useState('lightblue')
   
     useEffect(() => {
+
+      if (booking.status === 'cancelled') {
+        // Use a linear gradient to create diagonal stripes
+        setIsCancelled(true);
+      }
+
       const calculatePercents = () => {
         const columnStartTimeMinutes = columnStartTime * 60;
         const columnEndTimeMinutes = columnEndTime * 60;
@@ -83,14 +90,15 @@ function Booking({ columnStartTime, columnEndTime, booking, authorised }) {
     );
 
     const authroisedStyles = authorised && ((booking.filtersApplied && booking.filtered) || !booking.filtersApplied);
-  
-    const style = {
+      const style = {
       position: 'absolute',
       top: `${top}%`,
+      left: `${booking.position}%`,
       height: `${height}%`,
       zIndex: 2,
-      width: '100%',
-      backgroundColor: authroisedStyles ? backgroundColor : 'lightgrey',
+      width: `${booking.width}%`,
+      backgroundImage: isCancelled ? 'repeating-linear-gradient(45deg, #ffcccc, #ffcccc 2px, #ffffff 2px, #ffffff 6px)' : 'none', // Changed from backgroundColor to backgroundImage
+      backgroundColor: authroisedStyles ? 'lightblue': 'lightgrey',
       borderRadius: authroisedStyles ? 10 : 0,
       boxSizing: 'border-box',
       border: authroisedStyles ? '1px solid #0099ff' : 'none',

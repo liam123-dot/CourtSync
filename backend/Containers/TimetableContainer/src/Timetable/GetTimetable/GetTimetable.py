@@ -1,9 +1,13 @@
 from flask import Blueprint, request, jsonify
+from datetime import datetime, timedelta
+import logging
 from src.utils.CheckAuthorization import get_access_token_username
 from src.utils.ExecuteQuery import execute_query
 from src.Timetable.GetTimetable.GetTimetableHelpers import get_day_of_week, epoch_to_date, get_day_index_from_epoch, calculate_indexes_to_dates
-GetTimetable = Blueprint('GetTimetable', __name__)
 
+logging.basicConfig(level=logging.DEBUG)
+
+GetTimetable = Blueprint('GetTimetable', __name__)
 
 def get_bookings(coach_id, from_time, to_time, authorised):
 
@@ -55,6 +59,62 @@ def get_bookings(coach_id, from_time, to_time, authorised):
             }
 
         bookings[date].append(new_booking)
+
+    if authorised:
+        bookings = calculate_overlaps(bookings)
+
+    return bookings
+
+
+def epoch_to_datetime(epoch_time):
+    return datetime.fromtimestamp(epoch_time)
+
+def calculate_overlaps(bookings):
+    # This dictionary will store the overlap count and positions for each booking
+    overlap_info = {}
+
+    # First, identify all overlaps and track which bookings overlap with each other
+    for date, bookings_list in bookings.items():
+        bookings_list.sort(key=lambda x: x['start_time'])
+        for i in range(len(bookings_list)):
+            start_time_i = epoch_to_datetime(bookings_list[i]['start_time'])
+            end_time_i = start_time_i + timedelta(minutes=bookings_list[i]['duration'])
+            for j in range(i + 1, len(bookings_list)):
+                start_time_j = epoch_to_datetime(bookings_list[j]['start_time'])
+                end_time_j = start_time_j + timedelta(minutes=bookings_list[j]['duration'])
+                # If there is an overlap
+                if start_time_i <= start_time_j < end_time_i or start_time_i < end_time_j <= end_time_i:
+                    overlap_info.setdefault(bookings_list[i]['booking_id'], {'overlaps_with': set(), 'position': 0})
+                    overlap_info.setdefault(bookings_list[j]['booking_id'], {'overlaps_with': set(), 'position': 0})
+                    overlap_info[bookings_list[i]['booking_id']]['overlaps_with'].add(bookings_list[j]['booking_id'])
+                    overlap_info[bookings_list[j]['booking_id']]['overlaps_with'].add(bookings_list[i]['booking_id'])
+
+    # Now calculate the width percentage and position for each booking
+    for booking_id, info in overlap_info.items():
+        overlap_count = len(info['overlaps_with'])
+        info['width'] = 100 / (overlap_count + 1)  # +1 because the booking overlaps with itself
+
+    # Assign positions to each booking
+    for date, bookings_list in bookings.items():
+        positions_taken = []  # This will track positions that have been taken at the current time
+        for booking in bookings_list:
+            booking_id = booking['booking_id']
+            # If this booking overlaps with others
+            if booking_id in overlap_info:
+                width = overlap_info[booking_id]['width']
+                # Find the next available position
+                position = 0
+                while position in positions_taken:
+                    position += 1
+                overlap_info[booking_id]['position'] = position * width
+                positions_taken.append(position)
+            else:
+                booking['width'] = 100  # No overlaps, so width is 100%
+                booking['position'] = 0  # No overlaps, so position is 0%
+
+            # Update the bookings with the calculated width and position
+            booking['width'] = overlap_info.get(booking_id, {}).get('width', 100)
+            booking['position'] = overlap_info.get(booking_id, {}).get('position', 0)
 
     return bookings
 
@@ -144,9 +204,7 @@ def get_pricing_rules(coach_id):
                 'hourly_rate': hourly_rate,
                 'is_default': is_default,
                 'start_time': start_time,
-                'end_time': end_time,
-                'day': day
-                }
+                'end_time': end_time                }
             )
 
     return pricing_rules

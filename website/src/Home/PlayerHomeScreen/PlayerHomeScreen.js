@@ -69,6 +69,8 @@ export default function PlayerHomeScreen() {
 
         if (data.exists) {
 
+            console.log(data);
+
             setWorkingHours(prevWorkingHours => ({
                 ...prevWorkingHours,
                 ...data.workingHours
@@ -121,7 +123,6 @@ export default function PlayerHomeScreen() {
 
         }
         
-
         fetchCoachProfile();
         const dates = calculateStartingDates();
         fetchTimetableData(dates.fromDate, dates.toDate);

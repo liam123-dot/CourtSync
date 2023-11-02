@@ -8,6 +8,7 @@ import re
 from src.utils.CheckAuthorization import get_access_token_username
 from src.utils.ExecuteQuery import execute_query
 from src.shared.SendEmail import send_email
+import logging
 
 logging.basicConfig(level=logging.DEBUG)
 
