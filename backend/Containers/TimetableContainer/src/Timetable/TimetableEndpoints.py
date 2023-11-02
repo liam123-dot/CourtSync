@@ -51,8 +51,11 @@ def add_booking(slug):
         return jsonify(message="Invalid email"), 400
 
     # Validate phone number format (example format: +12345678900)
-    if not re.match(r"^\+\d{11,15}$", contact_phone_number):
+    if not re.match(r"^(\+44\d{10}|0\d{10})$", contact_phone_number):
         return jsonify(message="Invalid phone number"), 400
+    
+    if contact_phone_number.startswith('+44'):
+        contact_phone_number = '0' + contact_phone_number[3:]
 
     # Validate cost as a positive number
     try:

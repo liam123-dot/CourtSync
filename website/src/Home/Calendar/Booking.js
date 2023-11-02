@@ -28,7 +28,6 @@ function Booking({ columnStartTime, columnEndTime, booking, authorised }) {
     const [formattedEndTime, setFormattedEndTime] = useState('');
 
     const [isCancelled, setIsCancelled] = useState(false);
-    const [backgroundColor, setBackgroundColor] = useState('lightblue')
   
     useEffect(() => {
 
@@ -96,7 +95,7 @@ function Booking({ columnStartTime, columnEndTime, booking, authorised }) {
       left: `${booking.position}%`,
       height: `${height}%`,
       zIndex: 2,
-      width: `${booking.width}%`,
+      width: authroisedStyles ? `${booking.width}%`: '100%',
       backgroundImage: isCancelled ? 'repeating-linear-gradient(45deg, #ffcccc, #ffcccc 2px, #ffffff 2px, #ffffff 6px)' : 'none', // Changed from backgroundColor to backgroundImage
       backgroundColor: authroisedStyles ? 'lightblue': 'lightgrey',
       borderRadius: authroisedStyles ? 10 : 0,

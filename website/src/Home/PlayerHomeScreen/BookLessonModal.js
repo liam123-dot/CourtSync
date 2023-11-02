@@ -184,9 +184,13 @@ export default function BookLessonModal({ isOpen, onClose, workingHours, booking
         if (!/^\S+@\S+\.\S+$/.test(contactEmail)) {
             setErrorMessage('Please enter a valid email address.');
         } else 
-        if (!/^\+\d{11,15}$/.test(contactPhoneNumber)) {
+        if (!/^(\+44\d{10}|0\d{10})$/.test(contactPhoneNumber)) {
             setErrorMessage('Please enter a valid phone number.');
         } else {
+
+            if (contactPhoneNumber.startsWith('+44')){
+                contactPhoneNumber.replace('+44', '0')
+            }
 
             const payload = {
                 startTime: getEpochTime(selectedDate, selectedStartTime),

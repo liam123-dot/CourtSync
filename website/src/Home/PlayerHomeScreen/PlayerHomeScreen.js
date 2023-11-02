@@ -93,6 +93,8 @@ export default function PlayerHomeScreen() {
 
     }
 
+    console.log(bookings);
+
     useEffect(() => {
 
         const calculateStartingDates = () => {
@@ -163,6 +165,31 @@ export default function PlayerHomeScreen() {
         Object.keys(pricingRules).length > 0;
     }
 
+    // Helper components or functions to keep the JSX clean
+    const GlobalStyles = () => (
+        <Global
+            styles={css`
+                body {
+                    overflow: hidden;
+                }
+            `}
+        />
+    );
+
+    const ArrowNavigation = ({ handlePrevious, handleNext, fromDate, toDate, setFromDate, setToDate, refresh, view }) => (
+        <ArrowButtonGroup>
+            <Button onClick={() => handlePrevious(fromDate, toDate, setFromDate, setToDate, refresh, view)}>←</Button>
+            <Button onClick={() => handleNext(fromDate, toDate, setFromDate, setToDate, refresh, view)}>→</Button>
+        </ArrowButtonGroup>
+    );
+
+    const ViewButtons = ({ view, setView, handleSetView, fromDate, toDate, setFromDate, setToDate, refresh }) => (
+        <div>
+            <Button selected={view === "day"} onClick={() => handleSetView("day", setView, fromDate, toDate, setFromDate, setToDate, refresh)}>Day</Button>
+            <Button selected={view === "week"} onClick={() => handleSetView("week", setView, fromDate, toDate, setFromDate, setToDate, refresh)}>Week</Button>
+        </div>
+    );
+
     return (
         <>
             {!coachExists ? (
@@ -210,17 +237,29 @@ export default function PlayerHomeScreen() {
                                 redo={redo}
                             />
 
-                            <div style={{display: 'flex', alignItems: 'center'}}>
-                                <ArrowButtonGroup>
-                                    <Button onClick={() => handlePrevious(fromDate, toDate, setFromDate, setToDate, refresh, view)}>←</Button>
-                                    <Button onClick={() => handlePrevious(fromDate, toDate, setFromDate, setToDate, refresh, view)}>→</Button>
-                                </ArrowButtonGroup>
+                            <div style={{ display: 'flex', alignItems: 'center' }}>
+                                <ArrowNavigation
+                                    handlePrevious={handlePrevious}
+                                    handleNext={handleNext}
+                                    fromDate={fromDate}
+                                    toDate={toDate}
+                                    setFromDate={setFromDate}
+                                    setToDate={setToDate}
+                                    refresh={refresh}
+                                    view={view}
+                                />
                                 <DateLabel>{formattedDateRange}</DateLabel>
                             </div>
-                            <div>
-                                <Button selected={view === "day"} onClick={() => handleSetView("day", setView, fromDate, toDate, setFromDate, setToDate, refresh)}>Day</Button>
-                                <Button selected={view === "week"} onClick={() => handleSetView("week", setView, fromDate, toDate, setFromDate, setToDate, refresh)}>Week</Button>
-                            </div>
+                            <ViewButtons
+                                    view={view}
+                                    setView={setView}
+                                    handleSetView={handleSetView}
+                                    fromDate={fromDate}
+                                    toDate={toDate}
+                                    setFromDate={setFromDate}
+                                    setToDate={setToDate}
+                                    refresh={refresh}
+                                />
                             <ProfileButton imageUrl={profilePictureUrl}/>                        
                         </TitleSection>
                         <Timetable  
