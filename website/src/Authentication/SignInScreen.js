@@ -49,17 +49,15 @@ export default function SignInScreen() {
             const authenticationResult = data.AuthenticationResult;
             const AccessToken = authenticationResult.AccessToken;
             const RefreshToken = authenticationResult.RefreshToken;
-            const IdentityToken = authenticationResult.IdToken;
 
             const coachSlug = data.CoachSlug;
 
             localStorage.setItem('email', username);
             localStorage.setItem('AccessToken', AccessToken);
             localStorage.setItem('RefreshToken', RefreshToken);
-            localStorage.setItem('IdentityToken', IdentityToken);
 
             navigate(
-                `/${coachSlug}`
+                `/dashboard/${coachSlug}`
             );
 
             // Handle successful sign-in (e.g., redirect, store tokens, etc.)

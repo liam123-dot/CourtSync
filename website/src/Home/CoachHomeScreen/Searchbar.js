@@ -1,27 +1,94 @@
-import React, { useState } from "react";
+/*
 
-export default function Searchbar({ bookings, setBookings }) {
+What we can do is have initial search done by locally ran code, whilst have an asyncronous function
+calling an endpoint that will do the search beyond the locally loaded data. Therefore something is 
+shown instantly then can be updated in the next .5s to have all results. Will reduce the lag unless
+the search items do not exist at all in locally stored data.
+
+*/
+
+
+import React, { useCallback, useState } from "react";
+
+export default function Searchbar({ bookings, setBookings, selected, setSelected }) {
   // State for the search query input
   const [searchQuery, setSearchQuery] = useState('');
   // State for the filtered search results
-  const [filteredResults, setFilteredResults] = useState([]);
+  const [filteredResults, setFilteredResults] = useState({});
+
+  const handleBookingSelectionChange = (contactEmail, filteredValue) => {
+    setBookings((currentBookings) => {
+      // Create a new object to hold the updated bookings
+      const updatedBookings = {};
+  
+      // Iterate over each key in the currentBookings object
+      Object.keys(currentBookings).forEach((key) => {
+        // Check if the current key has a list of bookings
+        if (Array.isArray(currentBookings[key])) {
+          // If so, map over that list to update the 'filtered' property
+          updatedBookings[key] = currentBookings[key].map((booking) => {
+            if (booking.contact_email === contactEmail) {
+                if (filteredValue){
+                    setSelected([...selected, contactEmail]);
+                } else {
+                    setSelected(prevSelected => {
+                        // Check if the contactEmail is already in the selected array
+                        const isAlreadySelected = prevSelected.includes(contactEmail);
+                        console.log(isAlreadySelected);
+                      
+                        if (isAlreadySelected) {
+                          // If it's already selected, filter it out
+                          return prevSelected.filter(email => email !== contactEmail);
+                        }
+                      });
+                      
+                }
+                return { ...booking, filtered: filteredValue };
+            } else {
+                return {...booking, filtered: false};
+            }
+            return booking;
+          });
+        }
+      });
+  
+      // Return the updated bookings object
+      return updatedBookings;
+    });
+  };
+
 
   // Handler for search input changes
   const handleSearch = (event) => {
-    let filtered = [];
+    let filtered = {};
     const query = event.target.value.toLowerCase();
     setSearchQuery(query);
-    
+
     Object.keys(bookings).forEach((key) => {
-        bookings[key].forEach((booking) => {
-            if (booking.player_name.toLowerCase().startsWith(query)){                
-                filtered.push(booking.player_name);
-            }
-        });
+      bookings[key].forEach((booking) => {
+        if (booking.player_name.toLowerCase().startsWith(query)) {
+          // Initialize the nested dictionary if it doesn't exist
+          if (!filtered[booking.contact_email]) {
+            filtered[booking.contact_email] = {};
+          }
+          // Add the booking to the nested dictionary, using the booking id as a key
+          filtered[booking.contact_email][booking.id] = booking;
+        }
+      });
     });
 
     setFilteredResults(filtered);
   };
+
+  // Pass `handleBookingSelection` down to `Searchbar` instead of `setBookings`
+
+  // In Searchbar
+  const selectName = useCallback((contactEmail) => {
+    // Call the passed-in function from the parent component
+    handleBookingSelectionChange(contactEmail, true);
+    setFilteredResults({})
+    // setSearchQuery('');
+  }, [])
 
   return (
     <div style={{ position: 'relative' }}>
@@ -50,17 +117,35 @@ export default function Searchbar({ bookings, setBookings }) {
             overflowY: 'auto', // Adds a scrollbar if the content overflows
             boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.1)' // Optional: adds shadow for depth
         }}>
-          {filteredResults.map((playerName, index) => (
-            <li key={index} style={{
-                padding: '10px', // Add padding for each item
-                borderBottom: '1px solid #ddd', // Add separator between items
-                cursor: 'pointer' // Changes the cursor on hover
-            }}>
-              {playerName}
-            </li>
-          ))}
+          {
+            Object.entries(filteredResults).map(([contactEmail, bookingsDict], index) => (
+              <div key={index} onClick={() => {
+                selectName(contactEmail);
+              }}>
+                <h3>{contactEmail}</h3>
+                <ul>
+                  {Object.values(bookingsDict).map((booking) => (
+                    <li key={booking.id}>
+                      {booking.player_name} - {booking.start_time}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))
+          }
         </ul>
       )}
+      {
+          selected && selected.map((contactEmail) => {
+              return (
+                  <button onClick={() => {
+                      handleBookingSelectionChange(contactEmail, false);
+                  }}>
+                      {contactEmail}
+                  </button>
+              )                        
+          })
+      }
     </div>
   );
 }

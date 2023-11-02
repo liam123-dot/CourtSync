@@ -183,8 +183,8 @@ def coach_sign_in():
 
         response['CoachSlug'] = get_coach_slug_helper(response['AuthenticationResult']['AccessToken'])
         return jsonify(response), 200
-    except client.exceptions.NotAuthorizedException:
-        return jsonify(message='Incorrect Password', consequence='ShowMessage'), 400
+    except client.exceptions.NotAuthorizedException as e:
+        return jsonify(message='Incorrect username or password', consequence='ShowMessage', error=str(e)), 400
     except client.exceptions.UserNotFoundException:
         return jsonify(message='User Not Found', consequence='ShowMessage'), 400
     except client.exceptions.UserNotConfirmedException:

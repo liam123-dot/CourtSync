@@ -1,9 +1,13 @@
 from flask import Blueprint, request, jsonify
-from src.utils.CheckAuthorization import get_access_token_username
-from src.utils.ExecuteQuery import execute_query
+from datetime import datetime
+import logging
+import time
 import re
 
-import logging
+
+from src.utils.CheckAuthorization import get_access_token_username
+from src.utils.ExecuteQuery import execute_query
+from src.shared.SendEmail import send_email
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -65,9 +69,11 @@ def add_booking(slug):
     except ValueError:
         return jsonify(message="Duration must be a positive integer"), 400
 
-    sql = "SELECT coach_id FROM Coaches WHERE slug=%s"
+    sql = "SELECT coach_id, username FROM Coaches WHERE slug=%s"
     try:
-        coach_id = execute_query(sql, (slug, ))[0][0]
+        result = execute_query(sql, (slug, ))[0]
+        coach_id = result[0]
+        coach_email = result[1]
     except IndexError:
         return jsonify(message='Coach with passed slug does not exist'), 400
     
@@ -89,10 +95,66 @@ def add_booking(slug):
 
     try:
         execute_query(sql, (player_name, contact_name, contact_email, contact_phone_number, start_time, cost, rule_id, duration, coach_id))
+        
+        # nned to send confirmation emails to both the coach and the contact email.
 
         return jsonify(message='Success'), 200
     except Exception:
         return jsonify(message='Internal Server Error'), 500
+
+
+@timetable.route('/timetable/booking/<booking_id>/cancel', methods=['POST'])
+def coach_cancel_lesson(booking_id):
+    token = request.headers.get('Authorization', None)
+    
+    username = None
+    if token:
+        valid, username = get_access_token_username(token)
+    else:
+        return jsonify(message='No token provided'), 400
+    
+    if not valid:
+        return jsonify(message='Unauthorised'), 400
+    
+    data = request.json
+    try:
+        message = data['message_to_player']
+    except Exception as e:
+        return jsonify(message=f"Missing/Invalid key: {message}"), 400
+
+    sql = "SELECT contact_email, start_time FROM Bookings WHERE booking_id=%s"
+    response = execute_query(sql, (booking_id, ))
+    if len(response) > 0:
+        contact_email, start_time_epoch = response[0]
+        start_time = datetime.fromtimestamp(start_time_epoch)
+    else:
+        return jsonify(message='Invalid booking id'), 400
+
+    sql = "UPDATE Bookings SET status=\"cancelled\", message=%s WHERE booking_id=%s"
+    execute_query(sql, (message, booking_id))
+
+    date_str = start_time.strftime('%A, %B %d, %Y')
+    time_str = start_time.strftime('%I:%M %p')
+
+    email_body = f"""
+    <html>
+        <body>
+            <p>Unfortunately, your lesson on {date_str} at {time_str} has been cancelled.</p>
+            <p>Message from Coach:</p>
+            <p>{message}</p>
+        </body>
+    </html>
+    """
+
+    send_email(
+        'cancellations',
+        [contact_email],
+        "Lesson Cancellation",
+        f"Unfortunately you lesson on {date_str} at {time_str} has been cancelled, message from coach: {message}",
+        email_body
+    )
+
+    return jsonify(message='Booking successfully cancelled'), 200
 
 
 @timetable.route('/timetable/<slug>/check-authorisation', methods=['GET'])
@@ -117,6 +179,55 @@ def check_authorisation(slug):
     return jsonify(authorised=False), 200
 
 
+def get_day_of_week_from_epoch(epoch_time):
+    # Convert the epoch time to a datetime object
+    dt = datetime.utcfromtimestamp(epoch_time)
+    # Calculate the day of the week (with Monday as 0 and Sunday as 6)
+    return dt.weekday()
+
+def minutes_into_day(epoch_time):
+    # Convert the epoch time to a datetime object
+    dt = datetime.utcfromtimestamp(epoch_time)
+    # Calculate the minutes into the day
+    minutes_past_midnight = dt.hour * 60 + dt.minute
+    return minutes_past_midnight
+
+def check_booking_valid(start_time, duration, working_hours):
+    # Extract start and end times from the working hours
+    work_start_time = working_hours['start_time']
+    work_end_time = working_hours['end_time']
+    
+    # Calculate the end time of the booking
+    booking_end_time = start_time + duration
+
+    logging.debug(f"work_start_time: {work_start_time}")
+    logging.debug(f"work_end_time: {work_end_time}")
+    logging.debug(f"booking_start_time: {start_time}")
+    logging.debug(f"booking_end_time: {booking_end_time}")
+    logging.debug('/n')
+    
+    # Check if the booking starts and ends within the working hours
+    if start_time >= work_start_time and booking_end_time <= work_end_time:
+        return True  # The booking is within the working hours
+    else:
+        return False  # The booking is outside the working hours
+            
+def check_working_hours_valid(working_hours, coach_id):
+    current_time = time.time()
+    sql = "SELECT start_time, duration FROM Bookings WHERE coach_id=%s and start_time>%s"
+    results = execute_query(sql, (coach_id, int(current_time)))
+
+    for booking in results:
+        logging.debug(booking)
+        start_time = minutes_into_day(booking[0])
+        duration = booking[1]
+        day_of_week = get_day_of_week_from_epoch(booking[0])
+        logging.debug(f"day_of_week: {day_of_week}")
+        if not check_booking_valid(start_time, duration, working_hours[str(day_of_week)]):
+            return False
+        
+    return True
+
 
 @timetable.route('/timetable/working-hours', methods=['POST'])
 def update_working_hours():
@@ -140,6 +251,11 @@ def update_working_hours():
         return jsonify(message='Unauthorised'), 400
     
     try:
+
+        valid = check_working_hours_valid(working_hours, username)
+
+        if not valid:
+            return jsonify(message='Proposed working hours overlap with future booking'), 400
         
         sql_check = "SELECT start_time, end_time, day_of_week FROM WorkingHours WHERE coach_id=%s"
         sql_update = "UPDATE WorkingHours SET start_time=%s, end_time=%s WHERE day_of_week=%s AND coach_id=%s"
@@ -201,22 +317,57 @@ def update_features():
     try:
         durations = data['durations']
         default_lesson_cost = data['default_lesson_cost']
+        is_update = data['is_update']
     except KeyError as e:
         return jsonify(message=f"Invalid/Missing Key: {e}")
     
-    sql = "INSERT INTO PricingRules(rule_name, hourly_rate, coach_id, is_default) VALUES(%s, %s, %s, %s)"
-    execute_query(sql, ('Default Pricing', default_lesson_cost, username, 1))
+    if is_update:
+        sql = "UPDATE PricingRules SET hourly_rate=%s WHERE coach_id=%s AND is_default=1"
+        execute_query(sql, (default_lesson_cost, username))
+    else:
+        sql = "INSERT INTO PricingRules(rule_name, hourly_rate, coach_id, is_default) VALUES(%s, %s, %s, %s)"
+        execute_query(sql, ('Default Pricing', default_lesson_cost, username, 1))
+
+    delete_sql = "DELETE FROM Durations WHERE coach_id=%s"
+    execute_query(delete_sql, (username, ))
 
     sql = """
-    INSERT INTO Durations (duration, coach_id)
-    SELECT %s, %s
-    WHERE NOT EXISTS (
-        SELECT 1 FROM Durations
-        WHERE duration = %s AND coach_id = %s
-    );
+        INSERT INTO Durations (duration, coach_id) VALUES (%s, %s)
     """
 
     for duration in durations:
-        execute_query(sql, (duration, username, duration, username))
+        execute_query(sql, (duration, username))
 
     return jsonify(message="Features updated successfully"), 200
+
+@timetable.route('/timetable/features', methods=['GET'])
+def get_features():
+    token = request.headers.get('Authorization', None)
+    if not token:
+        return jsonify(message='Unauthorised'), 400
+    
+    try:
+        valid, username = get_access_token_username(token)
+    except Exception as e:
+        return jsonify(message='Unautorised', error=str(e)), 400
+
+    if not valid:
+        return jsonify(message='Unauthorised'), 400
+
+    sql = "SELECT hourly_rate FROM PricingRules WHERE coach_id=%s AND is_default=1"
+    results = execute_query(sql, (username, ))
+    
+    if len(results) > 0:
+        default_pricing = results[0][0]
+    else:
+        default_pricing = None
+
+    sql = "SELECT duration FROM Durations WHERE coach_id=%s"
+    results = execute_query(sql, (username, ))
+
+    durations = sorted([result[0] for result in results])
+    
+    return jsonify(
+        default_pricing=default_pricing,
+        durations=durations
+    ), 200

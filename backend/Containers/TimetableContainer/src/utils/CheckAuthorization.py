@@ -6,19 +6,29 @@ from jose import jwk, jwt
 from jose.utils import base64url_decode
 
 
-USER_POOL_ID = os.environ['USER_POOL_ID']
-COGNITO_REGION = 'eu-west-2'
-CLIENT_ID = os.environ['CLIENT_ID']
+class AppConfig:
+    def __init__(self):
+        self.user_pool_id = os.getenv('USER_POOL_ID')
+        self.cognito_region = 'eu-west-2'
+        self.client_id = os.getenv('CLIENT_ID')
+        self.keys = None
 
-keys_url = f'https://cognito-idp.{COGNITO_REGION}.amazonaws.com/{USER_POOL_ID}/.well-known/jwks.json'
+    def get_jwks_keys(self):
+        if not self.keys:
+            keys_url = f'https://cognito-idp.{self.cognito_region}.amazonaws.com/{self.user_pool_id}/.well-known/jwks.json'
+            self.keys = requests.get(keys_url).json()['keys']
+        return self.keys
 
-keys = requests.get(keys_url).json()['keys']
+
+config = AppConfig()
 
 
 def get_access_token_username(token):
     # get the kid from the headers prior to verification
     headers = jwt.get_unverified_headers(token)
     kid = headers['kid']
+    keys = config.get_jwks_keys()
+
 
     # search for the kid in the downloaded public keys
     key_index = -1

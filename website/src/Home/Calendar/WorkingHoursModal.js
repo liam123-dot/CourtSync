@@ -31,43 +31,22 @@ function convertUnixToMinutes(unixTime) {
     const date = new Date(unixTime * 1000);
     return date.getUTCHours() * 60 + date.getUTCMinutes();
 }
-  
-function getWeekdayFromDate(dateStr) {
+
+function getDateFromString(dateStr) {
     const [day, month, year] = dateStr.split('-').map(Number);
     const date = new Date(Date.UTC(year, month - 1, day));
+    return date;
+}
+  
+function getWeekdayFromDate(dateStr) {
+    const date = getDateFromString(dateStr);
     let dayOfWeek = date.getUTCDay() - 1; // Convert so that 0 is Monday
     if (dayOfWeek < 0) { // Adjust Sunday from -1 to 6
       dayOfWeek = 6;
     }
     return dayOfWeek; // Now returns 0 for Monday through 6 for Sunday
 }  
-
-function checkAvailability(workingHours, bookings) {
-    for (const [date, dailyBookings] of Object.entries(bookings)) {
-        const bookingDay = getWeekdayFromDate(date);
-        const workHours = workingHours[bookingDay] || {};
-        const workStart = workHours.start_time || 0;
-        const workEnd = workHours.end_time || 1440; // Default end time to latest possible (1440 minutes)
-    
-        // Check for any booking that is not within the working hours
-        const hasOverlap = dailyBookings.some((booking) => {
-            const startMinutes = convertUnixToMinutes(booking.start_time);
-            const duration = booking.duration;
-            // If a booking starts before work hours or ends after work hours, return true
-            return startMinutes < workStart || startMinutes + duration > workEnd;
-        });
-
-        // If any overlap is found, return false for the entire function
-        if (hasOverlap) {
-            return false;
-        }
-    }
   
-    // If no overlaps are found after checking all bookings, return true
-    return true;
-}
-  
-
 export default function WorkingHoursModal({ isOpen, onClose, workingHours, redo, bookings }) {
     const [localWorkingHours, setLocalWorkingHours] = useState({
         0: {'start_time': null, 'end_time': null},
@@ -106,13 +85,25 @@ export default function WorkingHoursModal({ isOpen, onClose, workingHours, redo,
             }
 
             try{
-                console.log(localWorkingHours)
+                const uploadingWorkingHours = {}
 
-                const response = await axios.post(url, {working_hours: localWorkingHours}, { headers: headers });
+                Object.keys(localWorkingHours).forEach(key => {
+                    const hours = localWorkingHours[key];
+                    if (hours.start_time === null || hours.end_time === null) { 
+                        uploadingWorkingHours[key] = { ...hours, start_time: null, end_time: null}
+                    } else {
+                        uploadingWorkingHours[key] = { ...hours }
+                    }
+                })
+
+                const response = await axios.post(url, {working_hours: uploadingWorkingHours}, { headers: headers });
 
                 redo();
+                onClose();
 
             } catch (error) {
+
+                setWarningRequired(true);
 
                 console.log(error)
                 const errorResponse = error.response;
@@ -130,7 +121,8 @@ export default function WorkingHoursModal({ isOpen, onClose, workingHours, redo,
 
         }
 
-        const free = checkAvailability(workingHours, bookings);
+        // const free = checkAvailability(workingHours, bookings);
+        const free = true;
         if (free) {
             setWarningRequired(false);
             updateWorkingHoursRequest();
@@ -140,6 +132,7 @@ export default function WorkingHoursModal({ isOpen, onClose, workingHours, redo,
     }
 
     const handleTimeChange = (dayIndex, timeType, value) => {
+        console.log(value);
         const updatedHours = { ...localWorkingHours };
     
         if (!value) {
@@ -152,10 +145,22 @@ export default function WorkingHoursModal({ isOpen, onClose, workingHours, redo,
         
         setLocalWorkingHours(updatedHours);
     };
+
+    const handleNoAvailabilityChange = (dayIndex, checked) => {
+        const updatedHours = { ...localWorkingHours };
+        if (checked){
+            updatedHours[dayIndex]['start_time'] = null;
+            updatedHours[dayIndex]['end_time'] = null;
+            updatedHours[dayIndex]['noAvailability'] = true;
+        } else {
+            updatedHours[dayIndex]['noAvailability'] = false;
+        }
+        setLocalWorkingHours(updatedHours);
+    }
     
     const minutesToHHMM = (minutes) => {
         if (minutes === null || minutes === undefined) {
-            return "";  // Or any other default value
+            return null;  // Or any other default value
         }
     
         const hours = Math.floor(minutes / 60);
@@ -183,38 +188,46 @@ export default function WorkingHoursModal({ isOpen, onClose, workingHours, redo,
                         <th>Day</th>
                         <th>From</th>
                         <th>To</th>
+                        <th>Empty</th> {/* Added column header for no availability */}
                     </tr>
                     </thead>
                     <tbody>
-                    {daysOfWeek.map((day, index) => {
-                        return (
-                            localWorkingHours && (
-                        <tr key={day}>
-                            <td css={css`padding: 10px 0;`}>{day}</td>
-                            <td css={css`padding: 10px 0;`}>
-                                <TimeLabel>
+                    {daysOfWeek.map((day, index) => (
+                        localWorkingHours && (
+                            <tr key={day}>
+                                <td css={css`padding: 10px 0;`}>{day}</td>
+                                <td css={css`padding: 10px 0;`}>
+                                    <TimeLabel>
+                                        <input
+                                            style={{fontSize: '20px'}}
+                                            type="time"
+                                            value={minutesToHHMM(localWorkingHours[index].start_time)}
+                                            onChange={(e) => handleTimeChange(index, 'start_time', e.target.value)}
+                                            disabled={localWorkingHours[index].noAvailability} // Disable if no availability
+                                        />
+                                    </TimeLabel>
+                                </td>
+                                <td css={css`padding: 10px 0;`}>
+                                    <TimeLabel>
+                                        <input
+                                            style={{fontSize: '20px'}}
+                                            type="time"
+                                            value={minutesToHHMM(localWorkingHours[index].end_time)}
+                                            onChange={(e) => handleTimeChange(index, 'end_time', e.target.value)}
+                                            disabled={localWorkingHours[index].noAvailability} // Disable if no availability
+                                        />
+                                    </TimeLabel>
+                                </td>
+                                <td css={css`padding: 10px 0;`}> {/* Checkbox cell */}
                                     <input
-                                        style={{fontSize: '20px'}}
-                                        type="time"
-                                        value={minutesToHHMM(localWorkingHours[index].start_time)}
-                                        onChange={(e) => handleTimeChange(index, 'start_time', e.target.value)}
+                                        type="checkbox"
+                                        checked={localWorkingHours[index].noAvailability}
+                                        onChange={(e) => handleNoAvailabilityChange(index, e.target.checked)}
                                     />
-                                </TimeLabel>
-                            </td>
-                            <td css={css`padding: 10px 0;`}>
-                                <TimeLabel>
-                                    <input
-                                        style={{fontSize: '20px'}}
-                                        type="time"
-                                        value={minutesToHHMM(localWorkingHours[index].end_time)}
-                                        onChange={(e) => handleTimeChange(index, 'end_time', e.target.value)}
-                                    />
-                                </TimeLabel>
-                            </td>
-                        </tr>
-                            )
+                                </td>
+                            </tr>
                         )
-                        })}
+                    ))}
                     </tbody>
                 </table>
                 {warningRequired && (
@@ -226,4 +239,5 @@ export default function WorkingHoursModal({ isOpen, onClose, workingHours, redo,
             </ModalContent>
         </ModalOverlay>
     );
+    
 }

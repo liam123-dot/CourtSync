@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import {Link} from 'react-router-dom';
+import {Link, useNavigate} from 'react-router-dom';
 import styled from '@emotion/styled';
 
 import ProfileButton from './ProfilePicture';
@@ -39,8 +39,19 @@ const StyledLink = styled(Link)`
     }
 `;
 
+const StyledText = styled.p`
+    text-decoration: none; // removes the underline
+    color: white; // makes the text color white
+    font-size: 40px;
+    &:hover {
+        cursor: pointer;
+        color: #ddd; // changes color to a slightly darker white on hover
+    }
+`;
+
 function SidePanel({imageUrl}) {
     const [isOpen, setIsOpen] = useState(false);
+    const navigate = useNavigate();
 
     const [options, setOptions] = useState({
         'Settings': '/settings'
@@ -76,6 +87,16 @@ function SidePanel({imageUrl}) {
         getCoachSlug();
     }, [])
 
+    const handleSignOut = () => {
+
+        localStorage.setItem('AccessToken', "");
+        localStorage.setItem('RefreshToken', "");
+        localStorage.setItem('email', "")
+
+        navigate('/')
+
+    }
+
     return (
         <div>
             <ProfileButton 
@@ -98,6 +119,12 @@ function SidePanel({imageUrl}) {
                             </strong>
                         </li>
                     ))}
+                    <li>
+                        <strong>
+                            <StyledText onClick={handleSignOut}>Sign Out</StyledText>
+                        </strong>
+                    </li>
+                    
                 </ul>
             </SidePanelContainer>
         </div>

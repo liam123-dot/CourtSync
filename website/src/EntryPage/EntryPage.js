@@ -94,7 +94,7 @@ export default function EntryPage ({}) {
             }}>
               {isCoach ? (
                 <Button 
-                  onClick={() => { navigate(`/${coachSlug}`) }} 
+                  onClick={() => { navigate(`/dashboard/${coachSlug}`) }} 
                   style={{
                     backgroundColor: 'white', // Button background color
                     color: '#004d99', // Button text color to match the navbar

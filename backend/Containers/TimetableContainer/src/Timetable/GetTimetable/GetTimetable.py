@@ -108,7 +108,7 @@ def get_pricing_rules(coach_id):
 
     pricing_rules = {}
 
-    sql = "SELECT rule_id, hourly_rate, is_default, start_time, end_time, day FROM PricingRules WHERE coach_id=%s"
+    sql = "SELECT rule_id, hourly_rate, is_default, start_time, end_time FROM PricingRules WHERE coach_id=%s"
 
     results = execute_query(sql, (coach_id, ))
 
@@ -118,7 +118,6 @@ def get_pricing_rules(coach_id):
         is_default = result[2]
         start_time = result[3]
         end_time = result[4]
-        day = result[5]
         
         if start_time:
             date = epoch_to_date(start_time)
@@ -133,8 +132,7 @@ def get_pricing_rules(coach_id):
                 'hourly_rate': hourly_rate,
                 'is_default': is_default,
                 'start_time': start_time,
-                'end_time': end_time,
-                'day': day
+                'end_time': end_time
             }
             
         else:
@@ -155,7 +153,7 @@ def get_durations(coach_id):
     sql = 'SELECT duration FROM Durations WHERE coach_id=%s'
     results = execute_query(sql, (coach_id, ))
 
-    durations = [row[0] for row in results]
+    durations = sorted([row[0] for row in results])
     return durations
 
 

@@ -10,4 +10,4 @@ fi
 sudo docker build -t tennisdockerimages/database-container:$1 .
 
 # Docker push command
-sudo docker push tennisdockerimages/database-container:$1
+docker push tennisdockerimages/database-container:$1

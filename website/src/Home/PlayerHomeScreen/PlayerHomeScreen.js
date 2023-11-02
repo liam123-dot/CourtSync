@@ -9,38 +9,8 @@ import Timetable from "../Calendar/Timetable";
 import BookLessonModal from "./BookLessonModal";
 import GetDaysBetweenDates from "../GetDaysBetweenDates";
 import ProfileButton from "../../SidePanel/ProfilePicture";
-
-const TitleSection = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px;
-  border-bottom: 2px solid #4A90E2;
-`;
-
-const ArrowButtonGroup = styled.div`
-  display: flex;
-`;
-
-const Button = styled.button`
-  margin: 0 5px;
-  padding: 10px 15px;
-  font-size: 1.2em;
-  border: none;
-  cursor: pointer;
-  transition: color 0.3s;
-  border-bottom: ${props => props.selected ? '3px solid #4A90E2' : 'none'};
-
-  &:hover {
-    color: #357ABD;
-  }
-`;
-
-const DateLabel = styled.span`
-  margin: 0 10px;
-  font-weight: bold;
-  font-size: 1.2em;
-`;
+import { TitleSection, ArrowButtonGroup, Button, DateLabel, checkRefreshRequired, handleSetView, getStartEndOfWeek, handleNext, handlePrevious } from "../HomescreenHelpers";
+import {fetchTimetable} from "../FetchTimetable";
 
 const CoachNotSetUp = styled.div`
     display: flex;
@@ -53,15 +23,17 @@ const CoachNotSetUp = styled.div`
 
 export default function PlayerHomeScreen() {
 
-    const [authorised, setAuthorised] = useState(false);
     const { coachSlug } = useParams();
+
+
+    const [authorised, setAuthorised] = useState(false);
+
+    const [fromDate, setFromDate] = useState(null);
+    const [toDate, setToDate] = useState(null);
 
     const [view, setView] = useState("week");
 
     const [isBookLessonModalOpen, setIsBookLessonModalOpen] = useState(false);
-
-    const [fromDate, setFromDate] = useState(null);
-    const [toDate, setToDate] = useState(null);
 
     const [loadedDates, setLoadedDates] = useState([]);
 
@@ -73,24 +45,9 @@ export default function PlayerHomeScreen() {
 
     const [formattedDateRange, setFormattedDateRange] = useState("");
 
+    const [coachExists, setCoachExists] = useState(false);
+
     const navigate = useNavigate();
-
-    const checkRefreshRequired = (fromDate, toDate) => {
-        let currentDate = new Date(fromDate);
-
-        while (currentDate <= toDate) {
-            const formattedDate = `${currentDate.getDate().toString().padStart(2, '0')}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${currentDate.getFullYear()}`;
-            
-            if (!loadedDates.includes(formattedDate)) {
-                return true; // Refresh required
-            }
-
-            // Move to the next day
-            currentDate.setDate(currentDate.getDate() + 1);
-        }
-
-        return false; // No refresh required
-    }
 
     const redo = () => {
 
@@ -100,7 +57,7 @@ export default function PlayerHomeScreen() {
     }
 
     const refresh = async (fromDate, toDate) => {
-        const refreshRequired = checkRefreshRequired(fromDate, toDate);
+        const refreshRequired = checkRefreshRequired(loadedDates, fromDate, toDate);
         if (refreshRequired){
             await fetchTimetableData(fromDate, toDate);
         }
@@ -108,141 +65,30 @@ export default function PlayerHomeScreen() {
 
     const fetchTimetableData = async (fromDate, toDate) => {
 
-        // Create new Date objects based on the passed dates to avoid direct mutation
-        const fromDateCopy = new Date(fromDate);
-        const toDateCopy = new Date(toDate);
-    
-        fromDateCopy.setHours(0, 0, 0);
-        toDateCopy.setHours(23, 59, 59);
-    
-        const epochFromDate = Math.floor(fromDateCopy.getTime() / 1000);
-        const epochToDate = Math.floor(toDateCopy.getTime() / 1000);
-    
-        const headers = {
-            'Authorization': localStorage.getItem('AccessToken')
-        }
-            
-        try {
-            const response = await axios.get(
-                `${process.env.REACT_APP_URL}/timetable/${coachSlug}?from_time=${epochFromDate}&to_time=${epochToDate}`,
-                {headers: headers}
-            );
-    
-            console.log(response);
-    
-            const data = response.data;
-    
+        const data = await fetchTimetable(fromDate, toDate, coachSlug);
+
+        if (data.exists) {
+
             setWorkingHours(prevWorkingHours => ({
                 ...prevWorkingHours,
-                ...data.working_hours
+                ...data.workingHours
             }));
             setAuthorised(data.authorised);
             setBookings(prevBookings => ({
                 ...prevBookings,
                 ...data.bookings
             }))
-            setPricingRules(data.pricing_rules);
+            setPricingRules(data.pricingRules);
             setDurations(data.durations);
 
-            const newDates = Object.keys(data.working_hours);
+            const newDates = Object.keys(data.pricingRules);
             setLoadedDates(prevDates => [...prevDates, ...newDates]);
-
-            return {
-                workingHours: data.working_hours,
-                bookings: data.bookings,
-                pricingRules: data.pricing_rules,
-                durations: data.durations
-            }
-    
-        } catch (error) {
-    
-            console.log(error);
-            const errorResponse = error.response;
-            console.log(errorResponse);
-            const statusCode = errorResponse && errorResponse.statusCode;
-            if (statusCode === 404) {
-                console.log('not found');
-            }
-    
-        }
-    }
-
-    const handleSetView = view => {
-        const currentDate = new Date();
-    
-        if (view === 'week') {
-            const startAndEnd = getStartEndOfWeek(fromDate);
-            setFromDate(startAndEnd.fromDate);
-            setToDate(startAndEnd.toDate);
+            setAuthorised(data.authorised);
+            setCoachExists(true);
         } else {
-            if (currentDate >= fromDate && currentDate <= toDate) {
-                setFromDate(currentDate);
-                setToDate(currentDate);
-            } else {
-                setToDate(fromDate);
-            }
+            setCoachExists(false);
         }
-        setView(view);
-    }
-    
 
-    const getStartEndOfWeek = currentDate => {
-        const currentDayOfWeek = currentDate.getDay();  // 0 (Sunday) - 6 (Saturday)
-
-        const mondayOffset = currentDayOfWeek === 0 ? -6 : 1 - currentDayOfWeek;
-        const sundayOffset = currentDayOfWeek === 0 ? 0 : 7 - currentDayOfWeek;
-
-        const monday = new Date(currentDate);
-        monday.setDate(monday.getDate() + mondayOffset);
-
-        const sunday = new Date(currentDate);
-        sunday.setDate(sunday.getDate() + sundayOffset);
-
-        return {fromDate: monday, toDate: sunday};
-
-    }
-
-    const handleNext = async () => {
-        const newFromDate = new Date(fromDate);
-        const newToDate = new Date(toDate);
-        if (view === 'week') {
-            newFromDate.setDate(fromDate.getDate() + 7);
-    
-            newToDate.setDate(toDate.getDate() + 7);
-
-            await refresh(newFromDate, newToDate);
-
-        } else if (view === 'day') {
-            newFromDate.setDate(fromDate.getDate() + 1);
-    
-            newToDate.setDate(toDate.getDate() + 1);
-            
-            await refresh(newFromDate, newToDate);
-
-        }
-            
-        setFromDate(newFromDate);
-        setToDate(newToDate);
-    }
-    
-    const handlePrevious = async () => {
-        const newFromDate = new Date(fromDate);
-        const newToDate = new Date(toDate);
-        if (view === 'week') {
-            newFromDate.setDate(fromDate.getDate() - 7);
-    
-            newToDate.setDate(toDate.getDate() - 7);
-    
-            await refresh(newFromDate, newToDate);
-        } else {
-            newFromDate.setDate(fromDate.getDate() - 1);
-    
-            newToDate.setDate(toDate.getDate() - 1);
-    
-            await refresh(newFromDate, newToDate);
-        }
-        setFromDate(newFromDate);
-        setToDate(newToDate);
     }
 
     useEffect(() => {
@@ -318,7 +164,7 @@ export default function PlayerHomeScreen() {
 
     return (
         <>
-            {!checkDataLoaded() ? (
+            {!coachExists ? (
                 <CoachNotSetUp>
                     No coach account exists with the provided url
                 </CoachNotSetUp>
@@ -366,18 +212,15 @@ export default function PlayerHomeScreen() {
 
                             <div style={{display: 'flex', alignItems: 'center'}}>
                                 <ArrowButtonGroup>
-                                    <Button onClick={handlePrevious}>←</Button>
-                                    <Button onClick={handleNext}>→</Button>
+                                    <Button onClick={() => handlePrevious(fromDate, toDate, setFromDate, setToDate, refresh, view)}>←</Button>
+                                    <Button onClick={() => handlePrevious(fromDate, toDate, setFromDate, setToDate, refresh, view)}>→</Button>
                                 </ArrowButtonGroup>
                                 <DateLabel>{formattedDateRange}</DateLabel>
                             </div>
                             <div>
-                                <Button selected={view === "day"} onClick={() => handleSetView("day")}>Day</Button>
-                                <Button selected={view === "week"} onClick={() => handleSetView("week")}>Week</Button>
+                                <Button selected={view === "day"} onClick={() => handleSetView("day", setView, fromDate, toDate, setFromDate, setToDate, refresh)}>Day</Button>
+                                <Button selected={view === "week"} onClick={() => handleSetView("week", setView, fromDate, toDate, setFromDate, setToDate, refresh)}>Week</Button>
                             </div>
-                            <Button onClick={() => {navigate('/coach/signin')}}>
-                                Login
-                            </Button>
                             <ProfileButton imageUrl={profilePictureUrl}/>                        
                         </TitleSection>
                         <Timetable  

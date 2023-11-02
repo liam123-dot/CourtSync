@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: auth-container
-        image: tennisdockerimages/authentication-container:v1.0.67
+        image: tennisdockerimages/authentication-container:v1.0.69
         ports:
         - containerPort: 8000
         envFrom:
@@ -23,10 +23,10 @@ spec:
         resources:
           requests:
             memory: "200Mi"
-            cpu: "250"
+            cpu: "250m"
           limits:
             memory: "300Mi"
-            cpu: "250"
+            cpu: "250m"
 ---
 apiVersion: v1
 kind: Service

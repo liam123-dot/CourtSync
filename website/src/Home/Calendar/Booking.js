@@ -7,14 +7,15 @@ const formatTime = (minutes) => {
     const mins = minutes % 60;
     return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
   };
-
   
 function Booking({ columnStartTime, columnEndTime, booking, authorised }) {
 
     const [isLessonDetailsModalOpen, setIsLessonDetailsModalOpen] = useState(false);
 
     const toggleModal = () => {
-      setIsLessonDetailsModalOpen(!isLessonDetailsModalOpen);
+      if (authorised){
+        setIsLessonDetailsModalOpen(!isLessonDetailsModalOpen);
+      }
     };
 
     const startTime = booking.start_time;
@@ -25,6 +26,8 @@ function Booking({ columnStartTime, columnEndTime, booking, authorised }) {
     const [height, setHeight] = useState(0);
     const [formattedStartTime, setFormattedStartTime] = useState('');
     const [formattedEndTime, setFormattedEndTime] = useState('');
+
+    const [backgroundColor, setBackgroundColor] = useState('lightblue')
   
     useEffect(() => {
       const calculatePercents = () => {
@@ -57,15 +60,29 @@ function Booking({ columnStartTime, columnEndTime, booking, authorised }) {
         <div style={{
           padding: '5px',
           display: 'flex',
-          flexDirection: 'column',
+          flexDirection: 'row',
           justifyContent: 'center',
           height: '100%',
         }}>
-          <div>{booking.player_name}</div>
-          <div>{booking.duration} Minutes</div>
+          <div style={{
+            position: 'absolute',
+            textAlign: 'left'
+          }}>
+            <div>{booking.player_name}</div>
+            <div>{booking.duration} Minutes</div>
+          </div>
+          <div style={{
+            position: 'absolute',
+            right: '5px', // Positioned to the right
+            bottom: '5px', // Positioned to the bottom
+            textAlign: 'right',
+          }}>
+          </div>
         </div>
       </>
     );
+
+    const authroisedStyles = authorised && ((booking.filtersApplied && booking.filtered) || !booking.filtersApplied);
   
     const style = {
       position: 'absolute',
@@ -73,27 +90,34 @@ function Booking({ columnStartTime, columnEndTime, booking, authorised }) {
       height: `${height}%`,
       zIndex: 2,
       width: '100%',
-      backgroundColor: authorised ? 'lightblue' : 'red',
-      borderRadius: authorised ? 10 : 0,
+      backgroundColor: authroisedStyles ? backgroundColor : 'lightgrey',
+      borderRadius: authroisedStyles ? 10 : 0,
       boxSizing: 'border-box',
-      border: authorised ? '1px solid #0099ff' : 'none',
-      color: authorised ? '#000' : '#fff',
+      border: authroisedStyles ? '1px solid #0099ff' : 'none',
+      color: authroisedStyles ? '#000' : '#fff',
     };
   
     return (
-        <>
-          <div onClick={toggleModal} style={{
+      <>
+        {/* {((booking.filtersApplied && booking.filtered) || !booking.filtersApplied) ? ( */}
+          <>
+            <div onClick={toggleModal} style={{
               ...style, // existing styles
               cursor: 'pointer', // Add cursor style for hover effect
-          }}> 
-            {authorised ? bookingDetails : null}
-          </div>
-          <LessonDetailsModal
-            isOpen={isLessonDetailsModalOpen}
-            onClose={() => setIsLessonDetailsModalOpen(false)}
-            booking={booking}
-          />
-        </>
-      );}
+            }}>
+              {authroisedStyles ? bookingDetails: null}
+              {/* {authorised ? bookingDetails : null} */}
+            </div>
+            <LessonDetailsModal
+              isOpen={isLessonDetailsModalOpen}
+              onClose={() => setIsLessonDetailsModalOpen(false)}
+              booking={booking}
+            />
+          </>
+        {/* ) : null} */}
+      </>
+    );
+}
+    
       
 export default Booking;

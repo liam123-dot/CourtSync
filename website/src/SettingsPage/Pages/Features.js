@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { SaveButton } from '../../Home/CommonAttributes/SaveButton';
+import { Spinner } from '../../Spinner';
 import axios from "axios";
 
 const ModalStyle = {
@@ -106,6 +107,9 @@ export default function FeaturesPage() {
     const [price, setPrice] = useState(null);
     const [selectedDurations, setSelectedDurations] = useState([]);
     const [errorMessage, setErrorMessage] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [isUpdate, setIsUpdate] = useState(false);
 
     const isSaveDisabled = selectedDurations.length === 0 || !price || price === '0' || price === '0.00';
 
@@ -115,15 +119,16 @@ export default function FeaturesPage() {
         
         } else {
             // TODO: Handle save logic here
-            setErrorMessage(''); // Clear any error messages
-            console.log(price, selectedDurations)
-
+            setErrorMessage(''); // Clear any error messages            
+            
+            setIsSaving(true);
             try {
 
                 const response = await axios.post(
                     `${process.env.REACT_APP_URL}/timetable/features`, {
                         default_lesson_cost: price,
-                        durations: selectedDurations
+                        durations: selectedDurations,
+                        is_update: isUpdate
                     }, {
                         headers: {
                             Authorization: localStorage.getItem('AccessToken')
@@ -137,29 +142,72 @@ export default function FeaturesPage() {
                 console.log(error)
             }
 
+            setIsSaving(false);
+
         }
     };
 
+    useEffect(() => {
+
+        const fetchCurrentFeatures = async () => {
+
+            setIsLoading(true);
+
+            const response = await axios.get(`${process.env.REACT_APP_URL}/timetable/features`, {
+                headers: {
+                    Authorization: localStorage.getItem('AccessToken')
+                }
+            })
+
+            const data = response.data;
+
+            if (data.durations.length === 0 && data.default_pricing === null){
+
+                setIsUpdate(false);
+            } else {
+
+                setIsUpdate(true);
+            }
+
+            setSelectedDurations(data.durations);
+            setPrice(data.default_pricing)
+            setIsLoading(false);
+
+        }
+
+        fetchCurrentFeatures();
+
+    }, [])
+
     return (
-        <div style={{ padding: '20px' }}>
-            <div style={{ marginBottom: '20px' }}>
-                <p>Duration Selection: </p>
-                <DurationSelector selectedDurations={selectedDurations} setSelectedDurations={setSelectedDurations} />
+        isLoading ? (
+            <div>
+                Loading
             </div>
-            <div style={{ marginBottom: '20px' }}>
-                <CostInput
-                    price={price}
-                    setPrice={setPrice}
-                />
+        ) : (
+            <div style={{ padding: '20px' }}>
+                <div style={{ marginBottom: '20px' }}>
+                    <p>Duration Selection: </p>
+                    <DurationSelector 
+                        selectedDurations={selectedDurations} 
+                        setSelectedDurations={setSelectedDurations} 
+                    />
+                </div>
+                <div style={{ marginBottom: '20px' }}>
+                    <CostInput
+                        price={price}
+                        setPrice={setPrice}
+                    />
+                </div>
+                <button 
+                    style={ButtonStyle} 
+                    onClick={handleSave}
+                >
+                    {isSaving ? <Spinner/>: 'Save'}
+                </button>
+                {errorMessage && <p style={{ color: 'red', marginTop: '10px' }}>{errorMessage}</p>}
             </div>
-            <button 
-                style={ButtonStyle} 
-                onClick={handleSave}
-            >
-                Save
-            </button>
-            {errorMessage && <p style={{color: 'red', marginTop: '10px'}}>{errorMessage}</p>}
-        </div>
-    );
+        )
+    );    
 }
 

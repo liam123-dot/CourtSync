@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import ProfileButton from "../../SidePanel/ProfilePicture";
+import {Spinner} from "../../Spinner"
 
 export default function CoachProfileSettings() {
     const [coachDetails, setCoachDetails] = useState(null);
     const [profileImage, setProfileImage] = useState(null); // State to hold selected image
+    const [isLoading, setIsLoading] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
 
     const fetchCoachDetails = async () => {
+        setIsLoading(true);
         try {
             const response = await axios.get(
                 `${process.env.REACT_APP_URL}/auth/coach/me`,
@@ -21,6 +25,7 @@ export default function CoachProfileSettings() {
         } catch (error) {
             console.error("Error fetching coach details", error);
         }
+        setIsLoading(false);
     };
 
     useEffect(() => {
@@ -82,7 +87,7 @@ export default function CoachProfileSettings() {
     }
     
 
-    return (
+    return !isLoading ? (
         <div>
             <div style={dividerStyle}>
                 <p>Your Profile Picture, (click to change/upload):</p>
@@ -124,5 +129,11 @@ export default function CoachProfileSettings() {
                 </>
             )}
         </div>
-    );
+    ): (
+        <>
+            <div>
+                loading
+            </div>
+        </>
+    )
 }

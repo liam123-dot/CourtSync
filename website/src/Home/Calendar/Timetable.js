@@ -35,7 +35,7 @@ import { calculateTopAndHeight } from './CalculateTopAndHeight';
 function ColumnTitles({ titles, dayView }) {
     const titleStyle = {
         border: '1px solid rgba(0,0,0,1)',
-        padding: '4px',
+        padding: '5px',
         textAlign: 'center',
         minWidth: '120px',
         flex: dayView ? 7: 1,
@@ -45,12 +45,14 @@ function ColumnTitles({ titles, dayView }) {
         <div style={{
             display: 'flex',
             flexDirection: 'row',
+            width: `${100 / titles.length}%`,
         }}>
             <div style={{
                 border: '1px solid rgba(0,0,0,1)',
-                padding: '4px',
+                padding: '5px',
                 textAlign: 'center',
                 minWidth: '120px',
+                width: `${100 / titles.length}%`,
                 flex: 1
             }}></div>
             {

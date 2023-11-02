@@ -1,7 +1,6 @@
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useState, useCallback} from "react";
 import { useParams } from "react-router-dom";
 /** @jsxImportSource @emotion/react */
-import styled from '@emotion/styled';
 import {css, Global} from "@emotion/react";
 import { FaRegClock } from 'react-icons/fa';
 import axios from "axios";
@@ -12,52 +11,26 @@ import CoachAddEventModal from "../Calendar/CoachAddEventModal";
 import SidePanel from "../../SidePanel/SidePanel"
 import { refreshTokens } from "../../Authentication/RefreshTokens";
 import Searchbar from "./Searchbar";
-
-const TitleSection = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px;
-  border-bottom: 2px solid #4A90E2;
-`;
-
-const ArrowButtonGroup = styled.div`
-  display: flex;
-`;
-
-const Button = styled.button`
-  margin: 0 5px;
-  padding: 10px 15px;
-  font-size: 1.2em;
-  border: none;
-  cursor: pointer;
-  transition: color 0.3s;
-  border-bottom: ${props => props.selected ? '3px solid #4A90E2' : 'none'};
-
-  &:hover {
-    color: #357ABD;
-  }
-`;
-
-const DateLabel = styled.span`
-  margin: 0 10px;
-  font-weight: bold;
-  font-size: 1.2em;
-`;
+import { TitleSection, ArrowButtonGroup, Button, DateLabel, checkRefreshRequired, handleSetView, handleNext, handlePrevious } from "../HomescreenHelpers";
+import {fetchTimetable} from "../FetchTimetable";
 
 export default function HomeScreen() {
 
-    const [authorised, setAuthorised] = useState(false);
-    const [profilePictureUrl, setProfilePictureUrl] = useState(null);
     const { coachSlug } = useParams();
-    
-    const [isStartingUp, setIsStartingUp] = useState(true);
 
-    const [view, setView] = useState('day');
+    const [authorised, setAuthorised] = useState(false);
 
     const [fromDate, setFromDate] = useState(null);
     const [toDate, setToDate] = useState(null);
 
+    const [view, setView] = useState('day');
+
+    const [selected, setSelected] = useState([]);
+
+    const [loadedDates, setLoadedDates] = useState([]);
+    
+    const [isStartingUp, setIsStartingUp] = useState(true);
+    
     // Need a view, which is either day or week. Need start and end time which is 0-24 and represent start and end hours that are shown
     // Need the from and to date to be calculated. Default should show the current date and the week around it.
 
@@ -69,9 +42,10 @@ export default function HomeScreen() {
 
     const [bookings, setBookings] = useState(null);
 
-    const [loadedDates, setLoadedDates] = useState([]);
-
+    const [profilePictureUrl, setProfilePictureUrl] = useState(null);
     const [formattedDateRange, setFormattedDateRange] = useState("");
+
+    const [coachExists, setCoachExists] = useState(false);
 
     const redo = () => {
 
@@ -80,26 +54,9 @@ export default function HomeScreen() {
 
     }
 
-    const checkRefreshRequired = (fromDate, toDate) => {
-        let currentDate = new Date(fromDate);
-
-        while (currentDate <= toDate) {
-            const formattedDate = `${currentDate.getDate().toString().padStart(2, '0')}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${currentDate.getFullYear()}`;
-            
-            if (!loadedDates.includes(formattedDate)) {
-                return true; // Refresh required
-            }
-
-            // Move to the next day
-            currentDate.setDate(currentDate.getDate() + 1);
-        }
-
-        return false; // No refresh required
-    }
-
 
     const refresh = async (fromDate, toDate) => {
-        const refreshRequired = checkRefreshRequired(fromDate, toDate);
+        const refreshRequired = checkRefreshRequired(loadedDates, fromDate, toDate);
         if (refreshRequired){
             await fetchTimetableData(fromDate, toDate);
         }
@@ -107,135 +64,31 @@ export default function HomeScreen() {
 
     const fetchTimetableData = async (fromDate, toDate) => {
 
-        // Create new Date objects based on the passed dates to avoid direct mutation
-        const fromDateCopy = new Date(fromDate);
-        const toDateCopy = new Date(toDate);
-    
-        fromDateCopy.setHours(0, 0, 0);
-        toDateCopy.setHours(23, 59, 59);
-    
-        const epochFromDate = Math.floor(fromDateCopy.getTime() / 1000);
-        const epochToDate = Math.floor(toDateCopy.getTime() / 1000);
-    
-        const headers = {
-            'Authorization': localStorage.getItem('AccessToken')
-        }
-            
-        try {
-            const response = await axios.get(
-                `${process.env.REACT_APP_URL}/timetable/${coachSlug}?from_time=${epochFromDate}&to_time=${epochToDate}`,
-                {headers: headers}
-            );
-    
-            console.log(response);
-    
-            const data = response.data;
-    
+        const data = await fetchTimetable(fromDate, toDate, coachSlug);
+
+        if (data.exists) {
+
             setWorkingHours(prevWorkingHours => ({
                 ...prevWorkingHours,
-                ...data.working_hours
+                ...data.workingHours
             }));
             setAuthorised(data.authorised);
-            setDefaultWorkingHours(data.default_working_hours);
+            setDefaultWorkingHours(data.defaultWorkingHours);
             setBookings(prevBookings => ({
                 ...prevBookings,
                 ...data.bookings
             }))
-            const newDates = Object.keys(data.working_hours);
+            const newDates = Object.keys(data.workingHours);
             setLoadedDates(prevDates => [...prevDates, ...newDates]);
 
-            setIsStartingUp(false);
-    
-        } catch (error) {
-    
-            console.log(error);
-            const errorResponse = error.response;
-            console.log(errorResponse);
-            const statusCode = errorResponse && errorResponse.statusCode;
-            if (statusCode === 404) {
-                console.log('not found');
-            }
-    
-        }
-    }
+            setCoachExists(true);
 
-    const handleSetView = async view => {
-        const currentDate = new Date();
-        
-        if (view === 'week') {
-            const startAndEnd = getStartEndOfWeek(fromDate);
-            await fetchTimetableData(new Date(startAndEnd.fromDate).setHours(0, 0), new Date(startAndEnd.toDate).setHours(0, 0))
-            setFromDate(startAndEnd.fromDate);
-            setToDate(startAndEnd.toDate);
         } else {
-            if (currentDate >= fromDate && currentDate <= toDate) {
-                setFromDate(currentDate);
-                setToDate(currentDate);
-            } else {
-                setToDate(fromDate);
-            }
+            setCoachExists(false);
         }
-        setView(view);
-    }
-    
 
-    const getStartEndOfWeek = currentDate => {
-        const currentDayOfWeek = currentDate.getDay();  // 0 (Sunday) - 6 (Saturday)
+        setIsStartingUp(false);
 
-        const mondayOffset = currentDayOfWeek === 0 ? -6 : 1 - currentDayOfWeek;
-        const sundayOffset = currentDayOfWeek === 0 ? 0 : 7 - currentDayOfWeek;
-
-        const monday = new Date(currentDate);
-        monday.setDate(monday.getDate() + mondayOffset);
-
-        const sunday = new Date(currentDate);
-        sunday.setDate(sunday.getDate() + sundayOffset);
-
-        return {fromDate: monday, toDate: sunday};
-
-    }
-
-    const handleNext = async () => {
-        const newFromDate = new Date(fromDate);
-        const newToDate = new Date(toDate);
-        if (view === 'week') {
-            newFromDate.setDate(fromDate.getDate() + 7);
-    
-            newToDate.setDate(toDate.getDate() + 7);
-
-            await refresh(newFromDate, newToDate);
-
-        } else if (view === 'day') {
-            newFromDate.setDate(fromDate.getDate() + 1);
-    
-            newToDate.setDate(toDate.getDate() + 1);
-            
-            await refresh(newFromDate, newToDate);
-
-        }
-            
-        setFromDate(newFromDate);
-        setToDate(newToDate);
-    }
-    
-    const handlePrevious = async () => {
-        const newFromDate = new Date(fromDate);
-        const newToDate = new Date(toDate);
-        if (view === 'week') {
-            newFromDate.setDate(fromDate.getDate() - 7);
-    
-            newToDate.setDate(toDate.getDate() - 7);
-    
-            await refresh(newFromDate, newToDate);
-        } else {
-            newFromDate.setDate(fromDate.getDate() - 1);
-    
-            newToDate.setDate(toDate.getDate() - 1);
-    
-            await refresh(newFromDate, newToDate);
-        }
-        setFromDate(newFromDate);
-        setToDate(newToDate);
     }
     
 
@@ -301,72 +154,155 @@ export default function HomeScreen() {
         updateFormattedDateRange();
     }, [fromDate, toDate]);
 
+    
+      useEffect(() => {
 
-    return (
-        <div style={{ 
-            height: '100vh', 
-            width: '100%', 
-            display: 'flex', 
-            flexDirection: 'column',
-            paddingBottom: 25
-        }}>
-            {!isStartingUp ? <>
-            <Global
-                styles={css`
+        const filtersApplied = selected && selected.length > 0;
+        if (bookings) {
+            setBookings((currentBookings) => {
+                // Create a new object to hold the updated bookings
+                const updatedBookings = {};
+            
+                // Iterate over each key in the currentBookings object
+                Object.keys(currentBookings).forEach((key) => {
+                // Check if the current key has a list of bookings
+                if (Array.isArray(currentBookings[key])) {
+                    // If so, map over that list to update the 'filtered' property
+                    updatedBookings[key] = currentBookings[key].map((booking) => {
+                    
+                        return { ...booking, filtersApplied: filtersApplied };                                                   
+                    
+                    });
+                }
+                });
+            
+                // Return the updated bookings object
+                return updatedBookings;
+            });
+        }
+
+      }, [selected])
+
+
+    // Define the styles separately for better readability
+    const containerStyle = {
+        height: '100vh',
+        width: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        paddingBottom: 25,
+    };
+
+    // Helper components or functions to keep the JSX clean
+    const GlobalStyles = () => (
+        <Global
+            styles={css`
                 body {
                     overflow: hidden;
                 }
             `}
-            />
+        />
+    );
 
-            <TitleSection>
-                <ArrowButtonGroup>
-                    <Button onClick={() => setIsWorkingHoursModalOpen(true)}><FaRegClock/></Button>
-                    <Button onClick={() => setIsAddEventModalOpen(true)}>+</Button>
-                </ArrowButtonGroup>
-                
-                <WorkingHoursModal 
-                    isOpen={isWorkingHoursModalOpen} 
-                    onClose={() => setIsWorkingHoursModalOpen(false)} 
-                    workingHours={defaultWorkingHours} 
-                    setWorkingHours={setDefaultWorkingHours}
-                    redo={redo}
-                    bookings={bookings}
-                />
-                <CoachAddEventModal
-                    isOpen={isAddEventModalOpen}
-                    onClose={() => setIsWorkingHoursModalOpen(false)}                
-                />
+    const ArrowNavigation = ({ handlePrevious, handleNext, fromDate, toDate, setFromDate, setToDate, refresh, view }) => (
+        <ArrowButtonGroup>
+            <Button onClick={() => handlePrevious(fromDate, toDate, setFromDate, setToDate, refresh, view)}>←</Button>
+            <Button onClick={() => handleNext(fromDate, toDate, setFromDate, setToDate, refresh, view)}>→</Button>
+        </ArrowButtonGroup>
+    );
 
-                <div style={{display: 'flex', alignItems: 'center'}}>
-                    <ArrowButtonGroup>
-                        <Button onClick={handlePrevious}>←</Button>
-                        <Button onClick={handleNext}>→</Button>
-                    </ArrowButtonGroup>
-                    <DateLabel>{formattedDateRange}</DateLabel>
-                </div>
-                <div>
-                    <Button selected={view === "day"} onClick={() => handleSetView("day")}>Day</Button>
-                    <Button selected={view === "week"} onClick={() => handleSetView("week")}>Week</Button>
-                </div>
-                <div>
-                    <Searchbar bookings={bookings}/>
-                </div>
-                <SidePanel
-                    imageUrl={profilePictureUrl}
-                />
-            </TitleSection>
-            <Timetable  
-                fromDate={fromDate} 
-                toDate={toDate} 
-                view={view} 
-                workingHours={workingHours}
-                bookings={bookings}
-                authorised={true}
-            />
-    </>: (<></>)
-            }
-
+    const ViewButtons = ({ view, setView, handleSetView, fromDate, toDate, setFromDate, setToDate, refresh }) => (
+        <div>
+            <Button selected={view === "day"} onClick={() => handleSetView("day", setView, fromDate, toDate, setFromDate, setToDate, refresh)}>Day</Button>
+            <Button selected={view === "week"} onClick={() => handleSetView("week", setView, fromDate, toDate, setFromDate, setToDate, refresh)}>Week</Button>
         </div>
     );
+
+    // Main component
+    return (
+        <div style={containerStyle}>
+            {!isStartingUp ? (
+                <>
+                    <GlobalStyles />
+                    {coachExists ? (
+                        <>
+                            <TitleSection>
+                                <ArrowButtonGroup>
+                                    <Button onClick={() => setIsWorkingHoursModalOpen(true)}><FaRegClock/></Button>
+                                    <Button onClick={() => setIsAddEventModalOpen(true)}>+</Button>
+                                </ArrowButtonGroup>
+                                
+                                {/* Modals and other components */}
+                                <WorkingHoursModal 
+                                    isOpen={isWorkingHoursModalOpen} 
+                                    onClose={() => setIsWorkingHoursModalOpen(false)} 
+                                    workingHours={defaultWorkingHours} 
+                                    setWorkingHours={setDefaultWorkingHours}
+                                    redo={redo}
+                                    bookings={bookings}
+                                />
+                                <CoachAddEventModal
+                                    isOpen={isAddEventModalOpen}
+                                    onClose={() => setIsWorkingHoursModalOpen(false)}                
+                                />
+                                
+                                <div style={{ display: 'flex', alignItems: 'center' }}>
+                                    <ArrowNavigation
+                                        handlePrevious={handlePrevious}
+                                        handleNext={handleNext}
+                                        fromDate={fromDate}
+                                        toDate={toDate}
+                                        setFromDate={setFromDate}
+                                        setToDate={setToDate}
+                                        refresh={refresh}
+                                        view={view}
+                                    />
+                                    <DateLabel>{formattedDateRange}</DateLabel>
+                                </div>
+
+                                <ViewButtons
+                                    view={view}
+                                    setView={setView}
+                                    handleSetView={handleSetView}
+                                    fromDate={fromDate}
+                                    toDate={toDate}
+                                    setFromDate={setFromDate}
+                                    setToDate={setToDate}
+                                    refresh={refresh}
+                                />
+
+                                {/* Search and SidePanel components */}
+                                <div>
+                                    <Searchbar 
+                                        bookings={bookings}
+                                        setBookings={setBookings}
+                                        selected={selected}
+                                        setSelected={setSelected}
+                                    />
+                                </div>
+                                <SidePanel
+                                imageUrl={profilePictureUrl}
+                                />
+                            </TitleSection>
+                            <Timetable
+                                fromDate={fromDate}
+                                toDate={toDate}
+                                view={view}
+                                workingHours={workingHours}
+                                bookings={bookings}
+                                authorised={true}
+                            />
+                        </>
+                    ) : (
+                        <div>
+                            <h1>invalid url</h1>
+                        </div>
+                    )}
+                </>
+            ) : (
+                <></>
+            )}
+        </div>
+    );
+
 }
