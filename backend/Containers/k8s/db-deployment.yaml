@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: db-container
-        image: tennisdockerimages/database-container:v1.0.11
+        image: tennisdockerimages/database-container:v1.0.12
         ports:
         - containerPort: 8000
         resources:

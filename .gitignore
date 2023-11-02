@@ -237,12 +237,5 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
-old-backend
-backend/env_staging.json
-backend/env_testing.json
-backend/env_production.json
-
-backend/Containers/DatabaseContainer/env_staging.json
 backend/Containers/DatabaseContainer/env_testing.json
-backend/Containers/DatabaseContainer/env_production.json
 backend/Containers/k8s/aws-cognito-secrets.yaml
