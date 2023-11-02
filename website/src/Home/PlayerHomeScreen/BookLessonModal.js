@@ -192,43 +192,50 @@ export default function BookLessonModal({ isOpen, onClose, workingHours, booking
                 contactPhoneNumber.replace('+44', '0')
             }
 
-            const payload = {
-                startTime: getEpochTime(selectedDate, selectedStartTime),
-                duration: selectedDuration,
-                playerName: playerName,
-                contactName: contactName,
-                isSameAsPlayerName: isSameAsPlayerName,
-                email: contactEmail,
-                phoneNumber: contactPhoneNumber,
-                cost: lessonCost,
-                ruleId: selectedRuleId
-            }
+            const startTime = getEpochTime(selectedDate, selectedStartTime);
 
-            const url = `${process.env.REACT_APP_URL}/timetable/${coachSlug}/booking`
+            if (startTime < Date.now() / 1000) {
+                setErrorMessage('Cannot book lessons in the past')
+            } else {
 
-            try {
-                const result = await axios.post(url, payload);
-                console.log(result);
-                onClose();
-                redo();
-                setSelectedDate(null);
-                setSelectedStartTime(null);
-                setPlayerName(null);
-                setContactName(null);
-                setIsSameAsPlayerName(false);
-                setContactEmail(null);
-                setContactPhoneNumber(null);
-                setLessonCost(null);
-                setSelectedRuleId(null);
-            } catch (error) {
-                console.log(error)
-                const errorResponse = error.response
-                console.log(errorResponse)
-                setErrorMessage(errorResponse.data.message)
-                redo();
-                setSelectedDate(null);
-                setSelectedStartTime(null);
-                setSelectedDuration(null);
+                const payload = {
+                    startTime: startTime,
+                    duration: selectedDuration,
+                    playerName: playerName,
+                    contactName: contactName,
+                    isSameAsPlayerName: isSameAsPlayerName,
+                    email: contactEmail,
+                    phoneNumber: contactPhoneNumber,
+                    cost: lessonCost,
+                    ruleId: selectedRuleId
+                }
+
+                const url = `${process.env.REACT_APP_URL}/timetable/${coachSlug}/booking`
+
+                try {
+                    const result = await axios.post(url, payload);
+                    console.log(result);
+                    onClose();
+                    redo();
+                    setSelectedDate(null);
+                    setSelectedStartTime(null);
+                    setPlayerName(null);
+                    setContactName(null);
+                    setIsSameAsPlayerName(false);
+                    setContactEmail(null);
+                    setContactPhoneNumber(null);
+                    setLessonCost(null);
+                    setSelectedRuleId(null);
+                } catch (error) {
+                    console.log(error)
+                    const errorResponse = error.response
+                    console.log(errorResponse)
+                    setErrorMessage(errorResponse.data.message)
+                    redo();
+                    setSelectedDate(null);
+                    setSelectedStartTime(null);
+                    setSelectedDuration(null);
+                }
             }
 
         }

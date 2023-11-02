@@ -42,6 +42,9 @@ def add_booking(slug):
     except KeyError as e:
         return jsonify(message=f"Invalid/Missing parameter: {e}")
     
+    if start_time < time.time():
+        return jsonify(message='Cannot book lessons in the past'), 400
+    
     # Additional validation checks
     if len(player_name) < 2:
         return jsonify(message="Player name must be longer than 2 characters"), 400
