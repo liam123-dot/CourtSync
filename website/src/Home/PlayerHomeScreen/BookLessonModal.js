@@ -5,7 +5,7 @@ import { css } from "@emotion/react";
 import { ModalOverlay, ModalContent } from "../Calendar/ModalStyles";
 import { SaveButton } from "../CommonAttributes/SaveButton";
 import axios from "axios";
-import Timetable from "../Calendar/Timetable";
+import {fetchTimetable} from "../FetchTimetable"
 import { Spinner } from "../../Spinner";
 
 const Label = styled.label`
@@ -99,7 +99,7 @@ const calculateAvailableStartTimes = (date, durations, workingHoursInput, bookin
 };
 
 
-export default function BookLessonModal({ isOpen, onClose, workingHours, bookings, pricingRules, durations, coachSlug, loadedDates, fetchData, redo }) {
+export default function BookLessonModal({ isOpen, onClose, workingHours, bookings, pricingRules, durations, coachSlug, loadedDates, redo }) {
     const [lessonDetails, setLessonDetails] = useState({
         date: "",
         startTime: "",
@@ -305,7 +305,7 @@ export default function BookLessonModal({ isOpen, onClose, workingHours, booking
 
         const formattedDate = formatDate(date);
         if (!loadedDates.includes(formattedDate)){
-            const response = await fetchData(date, date);
+            const response = await fetchTimetable(date, date, coachSlug);
             workingHoursLocal = response.workingHours;
             bookingsLocal = response.bookings;
             durationsLocal = response.durations;

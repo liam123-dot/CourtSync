@@ -15,7 +15,10 @@ export default function LessonDetailsModal({isOpen, onClose, booking}){
     };
 
     return (
-        <ModalOverlay onClick={() => setOnCancelProcess(false)}>
+        <ModalOverlay onClick={() => {
+                setOnCancelProcess(false)
+                onClose();
+            }}>
             <ModalContent onClick={(e) => e.stopPropagation()}>
 
                 {onCancelProcess ? (

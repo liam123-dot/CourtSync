@@ -86,6 +86,7 @@ def add_booking(slug):
         WHERE coach_id=%s
         AND start_time<%s
         AND (start_time + duration * 60) > %s
+        AND status!="cancelled"
     )"""
     results = execute_query(sql, (coach_id, end_time, start_time))
     if results[0][0]:

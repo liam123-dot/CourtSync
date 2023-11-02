@@ -7,7 +7,10 @@ GetTimetable = Blueprint('GetTimetable', __name__)
 
 def get_bookings(coach_id, from_time, to_time, authorised):
 
-    sql = "SELECT booking_id, player_name, contact_name, contact_email, contact_phone_number, start_time, status, duration, cost, paid FROM Bookings WHERE coach_id=%s AND %s < start_time AND start_time < %s"
+    if authorised:
+        sql = "SELECT booking_id, player_name, contact_name, contact_email, contact_phone_number, start_time, status, duration, cost, paid FROM Bookings WHERE coach_id=%s AND %s < start_time AND start_time < %s"
+    else:
+        sql = "SELECT booking_id, player_name, contact_name, contact_email, contact_phone_number, start_time, status, duration, cost, paid FROM Bookings WHERE coach_id=%s AND %s < start_time AND start_time < %s AND status!=\"cancelled\""
 
     results = execute_query(sql, (coach_id, from_time, to_time))
 

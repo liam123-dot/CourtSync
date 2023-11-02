@@ -206,7 +206,6 @@ export default function PlayerHomeScreen() {
                                 workingHours={workingHours}
                                 coachSlug={coachSlug}
                                 loadedDates={loadedDates}
-                                fetchData={fetchTimetableData}
                                 redo={redo}
                             />
 
