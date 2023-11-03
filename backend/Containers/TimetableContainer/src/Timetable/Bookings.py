@@ -307,11 +307,18 @@ def player_cancel_booking_by_hash(bookingHash):
 
     execute_query(sql, ('cancelled', message_to_coach, bookingHash))
 
+    send_coach_cancellation_confirmation(start_time, duration, message_to_coach, player_name, contact_email, contact_phone_number, coach_email)
+    send_player_cancellation_confirmation(start_time, duration, player_name, contact_email)
+
+    return jsonify(message='Lesson Successfully Cancelled'), 200
+
+
+def send_coach_cancellation_confirmation(start_time, duration, message_to_coach, player_name, contact_email, contact_phone_number, coach_email):
+    end_time = datetime.fromtimestamp(start_time + (duration * 60))
     start_time = datetime.fromtimestamp(start_time)
     date_str = start_time.strftime('%A, %B %d, %Y')
     start_time_str = start_time.strftime('%I:%M %p')
 
-    end_time = datetime.fromtimestamp(start_time + duration)
     end_time_str = end_time.strftime('%I:%M %p')
 
     email_body = f"""
@@ -331,8 +338,30 @@ def player_cancel_booking_by_hash(bookingHash):
         localFrom='cancellations',
         recipients=[coach_email],
         subject="Lesson Cancellation",
-        bodyText=f"Unfortunately you lesson on {date_str} at {time_str} with {player_name} has been cancelled, message from Player: {message_to_coach}",
+        bodyText=f"Unfortunately you lesson on {date_str} at {start_time_str} with {player_name} has been cancelled, message from Player: {message_to_coach}",
         bodyHTML=email_body
     )
 
-    return jsonify(message='Lesson Successfully Cancelled'), 200
+def send_player_cancellation_confirmation(start_time, duration, player_name, contact_email):
+    end_time = datetime.fromtimestamp(start_time + (duration * 60))
+    start_time = datetime.fromtimestamp(start_time)
+    date_str = start_time.strftime('%A, %B %d, %Y')
+    start_time_str = start_time.strftime('%I:%M %p')
+
+    end_time_str = end_time.strftime('%I:%M %p')
+
+    send_email(
+        localFrom='cancellations',
+        recipients=[contact_email],
+        subject='Lesson Cancellation Confirmation',
+        bodyText=f"Your lesson on {date_str} at {start_time_str} until {end_time_str} for {player_name} has successfully been cancelled",
+        bodyHTML=f"""
+            <html>
+                <body>
+
+                    <p>Your lesson on {date_str} at {start_time_str} until {end_time_str} for {player_name} has successfully been cancelled</p>
+
+                </body>
+            </html>
+        """
+    )

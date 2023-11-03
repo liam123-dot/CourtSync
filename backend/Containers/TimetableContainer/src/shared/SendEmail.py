@@ -1,5 +1,7 @@
 import boto3
 import json
+import logging
+logging.basicConfig(level=logging.DEBUG)
 
 client = boto3.client('sqs')
 
@@ -24,4 +26,4 @@ def send_email(localFrom, recipients, subject, bodyText, bodyHTML):
         )
 
     except Exception as e:
-        pass
+        logging.debug(f"Error sending email: {e}, response: {response}")
