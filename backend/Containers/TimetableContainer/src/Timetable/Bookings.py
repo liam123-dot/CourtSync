@@ -71,11 +71,13 @@ def add_booking(slug):
     except ValueError:
         return jsonify(message="Duration must be a positive integer"), 400
 
-    sql = "SELECT coach_id, username FROM Coaches WHERE slug=%s"
+    sql = "SELECT coach_id, username, show_email_publicly, show_phone_number_publicly FROM Coaches WHERE slug=%s"
     try:
         result = execute_query(sql, (slug, ))[0]
         coach_id = result[0]
         coach_email = result[1]
+        show_email_publicly = result[2]
+        show_phone_number_publicly = result[3]
     except IndexError:
         return jsonify(message='Coach with passed slug does not exist'), 400
     
@@ -102,7 +104,8 @@ def add_booking(slug):
         
         # need to send confirmation emails to both the coach and the contact email.
         try:
-            send_player_confirmation_email(contact_email, start_time, duration, cost, coach_email, hash)
+            send_player_confirmation_email(contact_email, start_time, duration, cost, hash, coach_email)
+            send_coach_confirmation_email(coach_email, start_time, duration, player_name)
         except Exception as e:
             logging.debug(f"error sending email: {e}")
 
@@ -125,30 +128,60 @@ def hash_booking(contact_email, start_time):
 
 website_url = "http://localhost:3000"
 
-def send_player_confirmation_email(player_email, start_time, duration, cost, coach_email, hash):
+def send_player_confirmation_email(player_email, start_time, duration, cost, hash, coach_email=None, coach_phone_number=None):
     start_time = datetime.fromtimestamp(start_time)
     date_str = start_time.strftime('%A, %B %d, %Y')
     time_str = start_time.strftime('%I:%M %p')
+    
+    # Start constructing the email body with the fixed content
+    bodyHTML = f"""
+    <html>
+        <body>
+            <p>Thank you for booking your lesson on {date_str} at {time_str}.</p>
+            <p>Summary:</p>
+            <p>Duration: {duration} minutes.</p>
+            <p>Cost: £{cost}.</p>
+    """
+    
+    # Add the coach's email to the body if it is provided
+    if coach_email is not None:
+        bodyHTML += f"<p>Coach contact email: {coach_email}.</p>"
+    
+    # Complete the email body with the cancellation link
+    bodyHTML += f"""
+            <p>To cancel your lesson, <a href="{website_url}/bookings/{hash}/cancel">click here.</a></p>
+        </body>
+    </html>
+    """
+    
     send_email(
         localFrom='bookings',
         recipients=[player_email],
         subject='Lesson Successfully Booked!',
         bodyText=f"Thank you for booking your lesson on {date_str} at {time_str} for {duration} minutes.",
+        bodyHTML=bodyHTML
+    )
+
+
+def send_coach_confirmation_email(coach_email, start_time, duration, player_name):
+    start_time = datetime.fromtimestamp(start_time)
+    date_str = start_time.strftime('%A, %B %d, %Y')
+    time_str = start_time.strftime('%I:%M %p')
+    send_email(
+        localFrom='bookings',
+        recipients=[coach_email],
+        subject='New Lesson Booking!',
+        bodyText=f"New booking confirmed at {time_str} on {date_str} for {duration} minutes. Player Name: {player_name}. Check website for more details",
         bodyHTML=f"""
         <html>
             <body>
-                <p>Thank you for booking your lesson on {date_str} at {time_str}.</p>
-                <p>Summary:</p>
-                <p>Duration: {duration} minutes.</p>
-                <p>Cost: £{cost}.</p>
-                <p>Coach contact email: {coach_email}.</p>
-                <p>To cancel your lesson, <a href="{website_url}/bookings/{hash}/cancel">click here.</a></p>
+                <p>New booking confirmed at {time_str} on {date_str} for {duration} minutes</p>
+                <p>Player Name: {player_name}</p>
+                <p><a href={website_url}>Check website for more details</a></p>
             </body>
         </html>
-
         """
     )
-
 
 @bookings.route('/timetable/booking/<booking_id>/cancel', methods=['POST'])
 def coach_cancel_lesson(booking_id):
@@ -244,7 +277,7 @@ def player_cancel_booking_by_hash(bookingHash):
     except KeyError as e:
         return jsonify(f"Invalid/Missing Key: {e}")
 
-    sql = "SELECT coach_id, start_time, player_name, status FROM Bookings WHERE hash=%s"
+    sql = "SELECT coach_id, start_time, player_name, status, duration, contact_email, contact_phone_number FROM Bookings WHERE hash=%s"
 
     results = execute_query(sql, (bookingHash, ))
     if len(results) == 0:
@@ -255,6 +288,9 @@ def player_cancel_booking_by_hash(bookingHash):
     start_time = booking[1]
     player_name = booking[2]
     status = booking[3]
+    duration = booking[4]
+    contact_email = booking[5]
+    contact_phone_number = booking[6]
 
     if status == 'cancelled':
         return jsonify(message='Lesson Already Cancelled'), 400
@@ -273,14 +309,20 @@ def player_cancel_booking_by_hash(bookingHash):
 
     start_time = datetime.fromtimestamp(start_time)
     date_str = start_time.strftime('%A, %B %d, %Y')
-    time_str = start_time.strftime('%I:%M %p')
+    start_time_str = start_time.strftime('%I:%M %p')
+
+    end_time = datetime.fromtimestamp(start_time + duration)
+    end_time_str = end_time.strftime('%I:%M %p')
 
     email_body = f"""
     <html>
         <body>
-            <p>Your lesson on {date_str} at {time_str} with {player_name} has been cancelled</p>
+            <p>Your lesson on {date_str} from {start_time_str} to {end_time_str} with {player_name} has been cancelled</p>
             <p>Message from Player:</p>
             <p>{message_to_coach}</p>
+            <p>Players Contact Details if you would like to get in contact:</p>
+            <p><b>Email:</b> {contact_email}</p>
+            <p><b>Phone Number:</b> {contact_phone_number}</p>
         </body>
     </html>
     """

@@ -2,12 +2,36 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import ProfileButton from "../../SidePanel/ProfilePicture";
 import {Spinner} from "../../Spinner"
+import {SaveButton} from '../../Home/CommonAttributes/SaveButton'
 
 export default function CoachProfileSettings() {
     const [coachDetails, setCoachDetails] = useState(null);
     const [profileImage, setProfileImage] = useState(null); // State to hold selected image
     const [isLoading, setIsLoading] = useState(false);
+
     const [isSaving, setIsSaving] = useState(false);
+
+    const saveDetails = async () => {
+        setIsSaving(true);
+
+        try {
+
+            console.log(coachDetails);
+
+            const response = await axios.post(`${process.env.REACT_APP_URL}/auth/coach/me`, 
+                coachDetails,
+                {headers: {
+                    'Authorization': localStorage.getItem('AccessToken')
+                }}
+            )
+            console.log(response);
+
+        } catch (error) {
+            console.log(error);
+        }
+
+        setIsSaving(false);
+    }
 
     const fetchCoachDetails = async () => {
         setIsLoading(true);
@@ -113,6 +137,18 @@ export default function CoachProfileSettings() {
                             ) : (
                                 <span style={{ color: 'red', marginLeft: '10px' }}>(Not Verified)</span>
                             )}
+                            <br/>
+                            Show Publicly:
+                            <input
+                                type="checkbox"
+                                checked={coachDetails.show_email_publicly}
+                                onChange={() => {
+                                    setCoachDetails(prevDetails => ({
+                                        ...prevDetails,
+                                        show_email_publicly: !prevDetails.show_email_publicly
+                                    }));
+                                }}
+                            />
                         </p>
                     </div>
 
@@ -124,10 +160,25 @@ export default function CoachProfileSettings() {
                             ) : (
                                 <span style={{ color: 'red', marginLeft: '10px' }}>(Not Verified)</span>
                             )}
+                            <br/>
+                            Show Publicly: 
+                            <input 
+                                type="checkbox"
+                                checked={coachDetails.show_phone_number_publicly}
+                                onChange={() => {
+                                    setCoachDetails(prevDetails => ({
+                                        ...prevDetails,
+                                        show_phone_number_publicly: !prevDetails.show_phone_number_publicly
+                                    }));
+                                }}
+                            />
                         </p>
                     </div>
                 </>
             )}
+            <SaveButton onClick={saveDetails}>
+                {isSaving ? <Spinner/>: 'Save'}
+            </SaveButton>
         </div>
     ): (
         <>

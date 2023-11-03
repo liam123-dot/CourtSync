@@ -100,16 +100,6 @@ const calculateAvailableStartTimes = (date, durations, workingHoursInput, bookin
 
 
 export default function BookLessonModal({ isOpen, onClose, workingHours, bookings, pricingRules, durations, coachSlug, loadedDates, redo }) {
-    const [lessonDetails, setLessonDetails] = useState({
-        date: "",
-        startTime: "",
-        duration: "",
-        playerName: "",
-        email: "",
-        phoneNumber: "",
-        ruleId: "",
-        cost: ""
-    });
 
     const [selectedDate, setSelectedDate] = useState();
     const [selectedStartTime, setSelectedStartTime] = useState('');

@@ -318,6 +318,15 @@ def get_coach_details():
 
             for user_attribute in response['UserAttributes']:
                 attributes[user_attribute['Name']] = user_attribute['Value']
+
+            sql = "SELECT show_email_publicly, show_phone_number_publicly FROM Coaches WHERE coach_id=%s"
+            results = execute_query(sql, (coach_id, ))
+            if len(results) == 0:
+                return jsonify(message='Internal Server Error'), 500
+            result = results[0]
+
+            attributes['show_email_publicly'] = result[0]
+            attributes['show_phone_number_publicly'] = result[1]
             
             return jsonify(attributes), 200
 
@@ -328,7 +337,39 @@ def get_coach_details():
 
     else:
         return jsonify(message='Unauthorized, no access token provided'), 400
+    
 
+@coach.route('/auth/coach/me', methods=['POST'])
+def update_coach_details():
+    token = request.headers.get('Authorization', None)
+
+    if token:
+        try:
+            response = client.get_user(
+                    AccessToken=token
+                )
+
+            coach_id = response['Username']
+
+            try:
+                data = request.json
+                show_email_publicly = data['show_email_publicly']
+                show_phone_number_publicly = data['show_phone_number_publicly']
+            
+            except KeyError as e:
+                return jsonify(message=f"Invalid/Missing key: {e}")
+            
+            sql = "UPDATE Coaches SET show_email_publicly=%s, show_phone_number_publicly=%s WHERE coach_id=%s"
+            execute_query(sql, (show_email_publicly, show_phone_number_publicly, coach_id))
+
+            return jsonify('Coach details successfully updated'), 200
+
+        except client.exceptions.NotAuthorizedException as e:
+            return jsonify(message='Invalid Access Token'), 400
+        except Exception as e:
+            return jsonify(message='Internal Server Error', error=str(e)), 500
+    else:
+        return jsonify(message='Missing Authentication Token'), 400
 
 @coach.route('/auth/coach/profile-picture-upload-url', methods=['GET'])
 def get_profile_picture_upload_url():
