@@ -1,13 +1,12 @@
 from flask import Blueprint, request, jsonify
 from datetime import datetime
+import hashlib
 import logging
 import time
 import re
 
-
 from src.utils.CheckAuthorization import get_access_token_username
 from src.utils.ExecuteQuery import execute_query
-from src.shared.SendEmail import send_email
 import logging
 
 logging.basicConfig(level=logging.DEBUG)
@@ -17,153 +16,6 @@ timetable = Blueprint('timetable', __name__)
 @timetable.route('/timetable')
 def get_timetable_no_slug():
     return "Provide a coach slug as a path paratmeter", 400
-
-@timetable.route('/timetable/<slug>/booking', methods=['POST'])
-def add_booking(slug):
-
-    body = request.json
-
-    try:
-        start_time = body['startTime']
-        duration = body['duration']
-        player_name = body['playerName']
-        contact_name = body['contactName']
-        is_same_as_player = body['isSameAsPlayerName']
-        contact_email = body['email']
-        contact_phone_number = body['phoneNumber']
-        cost = body['cost']
-        rule_id = body['ruleId']
-
-        if start_time is None or duration is None or player_name is None or \
-        (contact_name is None and not is_same_as_player) or contact_email is None \
-        or contact_phone_number is None or cost is None or rule_id is None:
-            return jsonify(message='Some invalid data was sent'), 400
-
-    except KeyError as e:
-        return jsonify(message=f"Invalid/Missing parameter: {e}")
-    
-    if start_time < time.time():
-        return jsonify(message='Cannot book lessons in the past'), 400
-    
-    # Additional validation checks
-    if len(player_name) < 2:
-        return jsonify(message="Player name must be longer than 2 characters"), 400
-    
-    # Validate email format
-    if not re.match(r"[^@]+@[^@]+\.[^@]+", contact_email):
-        return jsonify(message="Invalid email"), 400
-
-    # Validate phone number format (example format: +12345678900)
-    if not re.match(r"^(\+44\d{10}|0\d{10})$", contact_phone_number):
-        return jsonify(message="Invalid phone number"), 400
-    
-    if contact_phone_number.startswith('+44'):
-        contact_phone_number = '0' + contact_phone_number[3:]
-
-    # Validate cost as a positive number
-    try:
-        cost = float(cost)
-        if cost <= 0:
-            raise ValueError
-    except ValueError:
-        return jsonify(message="Cost must be a positive number"), 400
-
-    # Validate duration as a positive integer
-    try:
-        duration = int(duration)
-        if duration <= 0:
-            raise ValueError
-    except ValueError:
-        return jsonify(message="Duration must be a positive integer"), 400
-
-    sql = "SELECT coach_id, username FROM Coaches WHERE slug=%s"
-    try:
-        result = execute_query(sql, (slug, ))[0]
-        coach_id = result[0]
-        coach_email = result[1]
-    except IndexError:
-        return jsonify(message='Coach with passed slug does not exist'), 400
-    
-    # check for overlap
-
-    end_time = start_time + duration*60
-    sql = """SELECT EXISTS (
-        SELECT 1
-        FROM Bookings
-        WHERE coach_id=%s
-        AND start_time<%s
-        AND (start_time + duration * 60) > %s
-        AND status!="cancelled"
-    )"""
-    results = execute_query(sql, (coach_id, end_time, start_time))
-    if results[0][0]:
-        return jsonify(message='Cannot book lesson as it overlaps with an existing one'), 400
-
-    sql = "INSERT INTO Bookings(player_name, contact_name, contact_email, contact_phone_number, start_time, cost, rule_id, duration, coach_id) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
-
-    try:
-        execute_query(sql, (player_name, contact_name, contact_email, contact_phone_number, start_time, cost, rule_id, duration, coach_id))
-        
-        # nned to send confirmation emails to both the coach and the contact email.
-
-        return jsonify(message='Success'), 200
-    except Exception:
-        return jsonify(message='Internal Server Error'), 500
-
-
-@timetable.route('/timetable/booking/<booking_id>/cancel', methods=['POST'])
-def coach_cancel_lesson(booking_id):
-    token = request.headers.get('Authorization', None)
-    
-    username = None
-    if token:
-        valid, username = get_access_token_username(token)
-    else:
-        return jsonify(message='No token provided'), 400
-    
-    if not valid:
-        return jsonify(message='Unauthorised'), 400
-    
-    data = request.json
-    try:
-        message = data['message_to_player']
-    except Exception as e:
-        return jsonify(message=f"Missing/Invalid key: {message}"), 400
-
-    sql = "SELECT contact_email, start_time FROM Bookings WHERE booking_id=%s"
-    response = execute_query(sql, (booking_id, ))
-    if len(response) > 0:
-        contact_email, start_time_epoch = response[0]
-        start_time = datetime.fromtimestamp(start_time_epoch)
-    else:
-        return jsonify(message='Invalid booking id'), 400
-
-    sql = "UPDATE Bookings SET status=\"cancelled\", message=%s WHERE booking_id=%s"
-    execute_query(sql, (message, booking_id))
-
-    date_str = start_time.strftime('%A, %B %d, %Y')
-    time_str = start_time.strftime('%I:%M %p')
-
-    email_body = f"""
-    <html>
-        <body>
-            <p>Unfortunately, your lesson on {date_str} at {time_str} has been cancelled.</p>
-            <p>Message from Coach:</p>
-            <p>{message}</p>
-        </body>
-    </html>
-    """
-
-    send_email(
-        'cancellations',
-        [contact_email],
-        "Lesson Cancellation",
-        f"Unfortunately you lesson on {date_str} at {time_str} has been cancelled, message from coach: {message}",
-        email_body
-    )
-
-    return jsonify(message='Booking successfully cancelled'), 200
-
 
 @timetable.route('/timetable/<slug>/check-authorisation', methods=['GET'])
 def check_authorisation(slug):
@@ -208,12 +60,6 @@ def check_booking_valid(start_time, duration, working_hours):
     # Calculate the end time of the booking
     booking_end_time = start_time + duration
 
-    logging.debug(f"work_start_time: {work_start_time}")
-    logging.debug(f"work_end_time: {work_end_time}")
-    logging.debug(f"booking_start_time: {start_time}")
-    logging.debug(f"booking_end_time: {booking_end_time}")
-    logging.debug('/n')
-    
     # Check if the booking starts and ends within the working hours
     if start_time >= work_start_time and booking_end_time <= work_end_time:
         return True  # The booking is within the working hours

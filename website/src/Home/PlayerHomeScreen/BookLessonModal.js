@@ -215,8 +215,6 @@ export default function BookLessonModal({ isOpen, onClose, workingHours, booking
                 try {
                     const result = await axios.post(url, payload);
                     console.log(result);
-                    onClose();
-                    redo();
                     setSelectedDate(null);
                     setSelectedStartTime(null);
                     setPlayerName(null);
@@ -226,15 +224,19 @@ export default function BookLessonModal({ isOpen, onClose, workingHours, booking
                     setContactPhoneNumber(null);
                     setLessonCost(null);
                     setSelectedRuleId(null);
+                    setErrorMessage('');
+                    onClose();
+                    redo();
+
                 } catch (error) {
                     console.log(error)
                     const errorResponse = error.response
                     console.log(errorResponse)
                     setErrorMessage(errorResponse.data.message)
-                    redo();
                     setSelectedDate(null);
                     setSelectedStartTime(null);
                     setSelectedDuration(null);
+                    redo();
                 }
             }
 

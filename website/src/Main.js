@@ -9,6 +9,7 @@ import { refreshTokens } from './Authentication/RefreshTokens';
 import SettingsPage from './SettingsPage/SettingsPage';
 import HistoryPage from './Home/History/HistoryPage';
 import EntryPage from './EntryPage/EntryPage';
+import CancelBookingPage from './PlayerBookings/CancelBookingsPage';
 
 function Main() {
 
@@ -29,6 +30,9 @@ function Main() {
                 <Route path="/:coachSlug" element={<PlayerHomeScreen/>} />
                 <Route path="/:coachSlug/history" element={<HistoryPage/>}/>
                 <Route path="/dashboard/:coachSlug" element={<CoachHomeScreen/>} />
+
+                <Route path="/bookings/:bookingHash/cancel" element={<CancelBookingPage/>} />
+
             </Routes>
         </Router>
     );

@@ -9,7 +9,7 @@ const formatTime = (minutes) => {
   };
   
 function Booking({ columnStartTime, columnEndTime, booking, authorised }) {
-
+ 
     const [isLessonDetailsModalOpen, setIsLessonDetailsModalOpen] = useState(false);
 
     const toggleModal = () => {
@@ -49,7 +49,7 @@ function Booking({ columnStartTime, columnEndTime, booking, authorised }) {
         setFormattedEndTime(formatTime(endTime));
       };
       calculatePercents();
-    }, [columnStartTime, columnEndTime, startTime, endTime, duration]);
+    }, [columnStartTime, columnEndTime, startTime, endTime, duration, booking]);
   
     const bookingDetails = (
       <>

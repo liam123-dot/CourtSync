@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { useBookingCancellation } from "../CoachHomeScreen/BookingContextProvider";
 
 export default function CancelBooking ({booking, close, onCancelProcess, setOnCancelProcess}) {
     
+    const { setBookings } = useBookingCancellation();
+
     const [passedConfirmation, setPassedConfirmation] = useState(false);
     const [cancellationNote, setCancellationNote] = useState('');
 
@@ -22,9 +25,35 @@ export default function CancelBooking ({booking, close, onCancelProcess, setOnCa
             )
 
             setPassedConfirmation(false);
+            if (setBookings) {
+                setBookings(prevBookings => {
+                    // Create a new state object
+                    const newBookings = { ...prevBookings };
+                    
+                    Object.keys(prevBookings).forEach((date) => {
+                        // Map through the array of bookings for each date and create a new array
+                        newBookings[date] = prevBookings[date].map((localBooking) => {
+                            // If the booking id matches, return a new object with the status updated to 'cancelled'
+                            if (booking.booking_id === localBooking.booking_id){
+                                console.log(booking);
+                                return { ...localBooking, status: 'cancelled' };
+                            }
+                            // Otherwise, return the booking as is
+                            return localBooking;
+                        });
+                    });
+                    
+                    // Return the new state
+                    return newBookings;
+                });
+                
+            } else {
+                console.log('undefined')
+                console.log(setBookings)
+            }
             close();
 
-            console.log(response);
+            // console.log(response);
 
         } catch (error){
             console.log(error);

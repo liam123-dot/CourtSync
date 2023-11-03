@@ -13,6 +13,7 @@ import { refreshTokens } from "../../Authentication/RefreshTokens";
 import Searchbar from "./Searchbar";
 import { TitleSection, ArrowButtonGroup, Button, DateLabel, checkRefreshRequired, handleSetView, handleNext, handlePrevious } from "../HomescreenHelpers";
 import {fetchTimetable} from "../FetchTimetable";
+import { BookingCancellationProvider } from "./BookingContextProvider";
 
 export default function HomeScreen() {
 
@@ -284,14 +285,16 @@ export default function HomeScreen() {
                                 imageUrl={profilePictureUrl}
                                 />
                             </TitleSection>
-                            <Timetable
-                                fromDate={fromDate}
-                                toDate={toDate}
-                                view={view}
-                                workingHours={workingHours}
-                                bookings={bookings}
-                                authorised={true}
-                            />
+                            <BookingCancellationProvider setBookings={setBookings}>
+                                <Timetable
+                                    fromDate={fromDate}
+                                    toDate={toDate}
+                                    view={view}
+                                    workingHours={workingHours}
+                                    bookings={bookings}
+                                    authorised={true}
+                                />
+                            </BookingCancellationProvider>
                         </>
                     ) : (
                         <div>
