@@ -10,6 +10,7 @@ import SettingsPage from './SettingsPage/SettingsPage';
 import HistoryPage from './Home/History/HistoryPage';
 import EntryPage from './EntryPage/EntryPage';
 import CancelBookingPage from './PlayerBookings/CancelBookingsPage';
+import OverviewPage from './PlayerPage/OverviewPage';
 
 function Main() {
 
@@ -30,6 +31,7 @@ function Main() {
                 <Route path="/:coachSlug" element={<PlayerHomeScreen/>} />
                 <Route path="/:coachSlug/history" element={<HistoryPage/>}/>
                 <Route path="/dashboard/:coachSlug" element={<CoachHomeScreen/>} />
+                <Route path="/dashboard/overview" element={<OverviewPage />} />
 
                 <Route path="/bookings/:bookingHash/cancel" element={<CancelBookingPage/>} />
 

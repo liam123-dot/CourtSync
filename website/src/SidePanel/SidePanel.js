@@ -54,7 +54,8 @@ function SidePanel({imageUrl}) {
     const navigate = useNavigate();
 
     const [options, setOptions] = useState({
-        'Settings': '/settings'
+        'Settings': '/settings',
+        'Overview': '/dashboard/overview'
     });
 
     const togglePanel = () => {

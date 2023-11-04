@@ -28,6 +28,7 @@ def add_booking(slug):
         contact_phone_number = body['phoneNumber']
         cost = body['cost']
         rule_id = body['ruleId']
+        booking_time = int(time.time())
 
         if start_time is None or duration is None or player_name is None or \
         (contact_name is None and not is_same_as_player) or contact_email is None \
@@ -99,7 +100,7 @@ def add_booking(slug):
     sql = "INSERT INTO Bookings(player_name, contact_name, contact_email, contact_phone_number, start_time, cost, rule_id, duration, coach_id, hash) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
 
     try:
-        hash = hash_booking(contact_email, start_time)
+        hash = hash_booking(contact_email, start_time, booking_time)
         execute_query(sql, (player_name, contact_name, contact_email, contact_phone_number, start_time, cost, rule_id, duration, coach_id, hash))
         
         # need to send confirmation emails to both the coach and the contact email.
@@ -114,12 +115,12 @@ def add_booking(slug):
         return jsonify(message='Internal Server Error', error={e}), 500
     
 
-def hash_booking(contact_email, start_time):
+def hash_booking(contact_email, start_time, booking_time):
     # Create a new sha256 hash object
     hash_object = hashlib.sha256()
 
     # Update the hash object with the bytes of the string
-    hash_object.update(f"{contact_email}-{start_time}".encode())
+    hash_object.update(f"{contact_email}-{start_time}-{booking_time}".encode())
 
     # Get the hexadecimal representation of the digest
     hashed_value = hash_object.hexdigest()

@@ -3,11 +3,13 @@ from flask_cors import CORS
 from src.Timetable.TimetableEndpoints import timetable
 from src.Timetable.GetTimetable.GetTimetable import GetTimetable
 from src.Timetable.Bookings import bookings
+from src.Timetable.Invoices import invoices
 
 app = Flask(__name__)
 app.register_blueprint(timetable)
 app.register_blueprint(GetTimetable)
 app.register_blueprint(bookings)
+app.register_blueprint(invoices)
 CORS(app)
 
 @app.route('/')
