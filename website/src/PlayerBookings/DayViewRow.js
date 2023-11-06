@@ -30,7 +30,7 @@ export default function DayViewRow({ data }) {
         }}>
 
             <div style={columnStyle}>
-                {data.player_name}
+                {data.contact_name}
             </div>
             <div style={columnStyle}>
                 {startDate}

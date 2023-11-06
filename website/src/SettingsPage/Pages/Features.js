@@ -75,16 +75,19 @@ function CostInput({ price = 0, setPrice }) {
 
     const handlePriceChange = (e) => {
         const value = e.target.value;
-        const isValidCurrency = /^\d*(\.\d{0,2})?$/.test(value); // Checks if it's a number and has at most 2 decimal points
+        const isValidCurrency = /^\d*(\.\d{0,2})?$/.test(value);
 
         if (!isValidCurrency) {
             setErrorMessage("Please enter a valid price");
         } else {
             setErrorMessage('');
+            const pennies = Math.round(parseFloat(value) * 100);
+            setPrice(pennies); // Store the price in pennies
         }
-
-        setPrice(value);
     };
+
+    // Convert the price in pennies to a string in pounds when displaying
+    const displayPrice = (price / 100).toFixed(2);
 
     return (
         <div>
@@ -92,7 +95,7 @@ function CostInput({ price = 0, setPrice }) {
             <span>£</span>
             <input
                 type="text"
-                value={price}
+                value={displayPrice}
                 onChange={handlePriceChange}
                 placeholder="0.00"
                 style={{ textAlign: 'right' }}
@@ -101,7 +104,6 @@ function CostInput({ price = 0, setPrice }) {
         </div>
     );
 }
-
 
 export default function FeaturesPage() {
     const [price, setPrice] = useState(null);
@@ -122,6 +124,9 @@ export default function FeaturesPage() {
             setErrorMessage(''); // Clear any error messages            
             
             setIsSaving(true);
+
+
+
             try {
 
                 const response = await axios.post(
@@ -170,7 +175,7 @@ export default function FeaturesPage() {
             }
 
             setSelectedDurations(data.durations);
-            setPrice(data.default_pricing)
+            setPrice(data.default_pricing * 100); // Convert the default price to pennies
             setIsLoading(false);
 
         }
@@ -195,7 +200,7 @@ export default function FeaturesPage() {
                 </div>
                 <div style={{ marginBottom: '20px' }}>
                     <CostInput
-                        price={price}
+                        price={price / 100}
                         setPrice={setPrice}
                     />
                 </div>

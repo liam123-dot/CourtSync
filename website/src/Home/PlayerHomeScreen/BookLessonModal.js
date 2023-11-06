@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 /** @jsxImportSource @emotion/react */
 import styled from '@emotion/styled';
 import { css } from "@emotion/react";
@@ -41,6 +41,13 @@ function formatDate(date) {
   
     return `${day}-${month}-${year}`;
 }
+
+function formatPriceInPounds(pennies) {
+    // Convert pennies to pounds by dividing by 100 and fixing to 2 decimal places
+    const pounds = (pennies / 100).toFixed(2);
+    // Return the formatted string with the GBP symbol
+    return `£${pounds}`;
+  }
 
 const calculateAvailableStartTimes = (date, durations, workingHoursInput, bookingsInput) => {
     const formattedDate = formatDate(date);
@@ -274,7 +281,7 @@ export default function BookLessonModal({ isOpen, onClose, workingHours, booking
         // Return the applicable rule and the calculated cost
         return {
           rule_id: applicableRule.rule_id,
-          cost: cost ? cost.toFixed(2) : "0.00" // Ensure there's a fallback for cost
+          cost: cost ? cost : 0 // Ensure there's a fallback for cost
         };
       }
 
@@ -407,7 +414,7 @@ export default function BookLessonModal({ isOpen, onClose, workingHours, booking
                     </SelectField>
                 </Label>
                 <Label>
-                    Lesson Cost : {lessonCost}
+                    Lesson Cost : {formatPriceInPounds(lessonCost)}
                 </Label>
                 <Label>
                     Player Name

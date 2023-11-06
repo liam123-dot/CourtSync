@@ -1,6 +1,6 @@
 import React from "react";
 
-export default function PlayerView () {
+export default function PlayerPage () {
     return (
         <div>
             

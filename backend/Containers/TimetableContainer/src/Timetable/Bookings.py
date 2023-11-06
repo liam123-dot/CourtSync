@@ -141,7 +141,7 @@ def send_player_confirmation_email(player_email, start_time, duration, cost, has
             <p>Thank you for booking your lesson on {date_str} at {time_str}.</p>
             <p>Summary:</p>
             <p>Duration: {duration} minutes.</p>
-            <p>Cost: £{cost}.</p>
+            <p>Cost: £{cost/100.0:.2f}.</p>
     """
     
     # Add the coach's email to the body if it is provided

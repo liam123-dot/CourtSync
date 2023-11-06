@@ -155,6 +155,7 @@ def get_existing_working_hours(coach_id):
     return working_hours_existing
 
 @timetable.route('/timetable/features', methods=['POST'])
+# TODO Need to verify that the incoming price inputs are in pennies.
 def update_features():
     token = request.headers.get('Authorization', None)
 

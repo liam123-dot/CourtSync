@@ -1,7 +1,7 @@
 import React from "react";
 import { Button } from "./Button";
 
-export default function MonthViewRow ({data}) {
+export default function WeekViewRow ({data}) {
     const columnStyle = {
         flex: 1,
         padding: '0 10px', // Added padding for better spacing
@@ -16,16 +16,13 @@ export default function MonthViewRow ({data}) {
         }}>
 
             <div style={columnStyle}>
-                {data.player_name}
+                {data.contact_name}
             </div>
             <div style={columnStyle}>
-                {data.count}
+                {data.bookings_count}
             </div>
             <div style={columnStyle}>
-                £{data.sum}
-            </div>
-            <div>
-                {data.month}/{data.year}
+                £{data.total_cost}
             </div>
 
             <Button>

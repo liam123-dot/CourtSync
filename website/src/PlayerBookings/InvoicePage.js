@@ -23,7 +23,7 @@ const fetchInvoiceData = async (view) => {
 
 }
 
-export default function InvoiceView () {
+export default function InvoicePage () {
 
     const [view, setView] = useState('daily')
     const [data, setData] = useState([]);
@@ -60,10 +60,26 @@ export default function InvoiceView () {
             <div style={{
                 flex: 1
             }}>
-                
-                <Button selected={view==='daily'} onClick={() => setView('daily')}>Daily</Button>
-                <Button selected={view==='weekly'} onClick={(() => setView('weekly'))}>Weekly</Button>
-                <Button selected={view==='monthly'} onClick={(() => setView('monthly'))}>Monthly</Button>
+
+                <div style={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    justifyContent: 'space-between'
+                }}>
+
+                    <div>
+                    
+                        <Button selected={view==='daily'} onClick={() => setView('daily')}>Daily</Button>
+                        <Button selected={view==='weekly'} onClick={(() => setView('weekly'))}>Weekly</Button>
+                        <Button selected={view==='monthly'} onClick={(() => setView('monthly'))}>Monthly</Button>
+
+                    </div>
+
+                    <div>
+                        <Button>Completed</Button>
+                        <Button>Pending</Button>
+                    </div>
+                </div>
 
                 {
                     view === 'daily' && 

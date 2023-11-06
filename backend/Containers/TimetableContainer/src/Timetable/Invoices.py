@@ -62,78 +62,86 @@ def get_invoices():
                 'extra_costs': extra_costs,
                 'duration': duration
             })
-    elif view == 'weekly':
-        sql = """
-        SELECT
-            player_name,
-            contact_phone_number,
-            COUNT(booking_id) AS bookings_count,
-            SUM(cost) AS total_cost,
-            YEARWEEK(FROM_UNIXTIME(start_time)) AS year_week
-        FROM Bookings
-        WHERE start_time < NOW()
-        AND coach_id=%s
-        GROUP BY player_name, contact_phone_number, YEARWEEK(FROM_UNIXTIME(start_time))
-        ORDER BY year_week, contact_phone_number
-        LIMIT %s OFFSET %s;
-        """
+    elif view in ['weekly', 'monthly']:
+        if view == 'weekly':
+            sql=""" SELECT
+                        contact_phone_number,
+                        COUNT(booking_id) AS bookings_count,
+                        SUM(cost) AS total_cost,
+                        YEARWEEK(FROM_UNIXTIME(start_time)) AS year_week
+                    FROM Bookings
+                    WHERE start_time < NOW()
+                    AND coach_id=%s
+                    GROUP BY contact_phone_number, YEARWEEK(FROM_UNIXTIME(start_time))
+                    ORDER BY year_week, contact_phone_number
+                    LIMIT %s OFFSET %s;"""
+        else:
+            sql = """SELECT
+                        contact_phone_number,
+                        COUNT(booking_id) AS bookings_count,
+                        SUM(cost) AS total_cost,
+                        YEAR(FROM_UNIXTIME(start_time)) AS year,
+                        MONTH(FROM_UNIXTIME(start_time)) AS month
+                    FROM Bookings
+                    WHERE start_time < UNIX_TIMESTAMP(NOW())
+                    AND coach_id=%s
+                    GROUP BY contact_phone_number, YEAR(FROM_UNIXTIME(start_time)), MONTH(FROM_UNIXTIME(start_time))
+                    ORDER BY year, month, contact_phone_number
+                    LIMIT %s OFFSET %s;"""
 
         results = execute_query(sql, (username, limit, offset))
 
-        for invoice in results:
-            player_name = invoice[0]
-            contact_phone_number = invoice[1]
-            count = invoice[2]
-            sum = invoice[3]
-            week_year = invoice[4]
-            invoices.append({
-                'player_name': player_name,
-                'contact_phone_number': contact_phone_number,
-                'count': count,
-                'sum': sum,
-                'week_year': week_year
-            })
+        # Fetch all phone numbers from the results
+        phone_numbers = [result[0] for result in results]
 
-    elif view == 'monthly':
-        sql = """
-        SELECT
-            player_name,
-            contact_phone_number,
-            COUNT(booking_id) AS bookings_count,
-            SUM(cost) AS total_cost,
-            YEAR(FROM_UNIXTIME(start_time)) AS year,
-            MONTH(FROM_UNIXTIME(start_time)) AS month
+        # Construct the contact name query using placeholders for the IN clause
+        placeholders = ', '.join(['%s'] * len(phone_numbers))
+        contact_name_sql = f"""
+        SELECT contact_phone_number, contact_name
         FROM Bookings
-        WHERE start_time < UNIX_TIMESTAMP(NOW())
-        AND coach_id=%s
-        GROUP BY player_name, contact_phone_number, YEAR(FROM_UNIXTIME(start_time)), MONTH(FROM_UNIXTIME(start_time))
-        ORDER BY year, month, contact_phone_number
-        LIMIT %s OFFSET %s;
+        WHERE contact_phone_number IN ({placeholders})
         """
 
-        results = execute_query(sql, (username, limit, offset))
+        # Execute the query to get contact names
+        contact_names_result = execute_query(contact_name_sql, phone_numbers)
+
+        # Map contact phone numbers to contact names for quick lookup
+        contact_info = {row[0]: row[1] for row in contact_names_result}
 
         for invoice in results:
-            player_name = invoice[0]
-            contact_phone_number = invoice[1]
-            count = invoice[2]
-            sum = invoice[3]
-            year = invoice[4]
-            month = invoice[5]
-            invoices.append({
-                'player_name': player_name,
+            contact_phone_number = invoice[0]
+            contact_name = contact_info.get(contact_phone_number)
+            bookings_count = invoice[1]
+            total_cost = invoice[2]
+            year = None
+            month = None
+            year_week = None
+            if view == 'weekly':
+                year_week = invoice[3]
+            else:
+                year = invoice[3]
+                month = invoice[4]
+
+            invoice_data = {
                 'contact_phone_number': contact_phone_number,
-                'count': count,
-                'sum': sum,
-                'year': year,
-                'month': month
-            })
+                'contact_name': contact_name,
+                'bookings_count': bookings_count,
+                'total_cost': total_cost
+            }
+            
+            if view == 'weekly':
+                invoice_data['year_week'] = year_week
+            else:
+                invoice_data['year'] = year
+                invoice_data['month'] = month
+
+            invoices.append(invoice_data)
 
     else:
         return jsonify(message="Invalid view"), 400
     
     return jsonify(data=invoices), 200
-
+    
 @invoices.route('/timetable/send-invoice', methods=['POST'])
 def send_invoice():
     # will be called by coaches to send an invoice via Stripe.
