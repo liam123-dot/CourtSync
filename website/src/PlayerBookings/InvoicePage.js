@@ -10,7 +10,7 @@ const fetchInvoiceData = async (view) => {
 
     try {
 
-        const response = await axios.get(`${process.env.REACT_APP_URL}/timetable/invoices?view=${view}`, {
+        const response = await axios.get(`${process.env.REACT_APP_URL}/invoices?view=${view}`, {
             headers: {
                 Authorization: localStorage.getItem('AccessToken')
             }

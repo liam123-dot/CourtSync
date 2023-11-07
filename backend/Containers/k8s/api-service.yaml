@@ -22,3 +22,10 @@ spec:
             name: ingress-timetable
             port:
               number: 8000
+      - path: /invoices
+        pathType: Prefix
+        backend:
+          service:
+            name: ingress-invoice
+            port:
+              number: 8000

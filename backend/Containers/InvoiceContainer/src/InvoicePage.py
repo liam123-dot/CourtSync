@@ -2,14 +2,14 @@ from flask import Blueprint, request, jsonify
 import logging
 import time
 
-from src.utils.CheckAuthorization import get_access_token_username
-from src.utils.ExecuteQuery import execute_query
+from src.shared.CheckAuthorization import get_access_token_username
+from src.shared.ExecuteQuery import execute_query
 
 logging.basicConfig(level=logging.DEBUG)
 
-invoices = Blueprint('invoices', __name__)
+invoices = Blueprint('get_invoice', __name__)
 
-@invoices.route('/timetable/invoices', methods=['GET'])
+@invoices.route('/invoices', methods=['GET'])
 def get_invoices():
     try:
         view = request.args.get('view', 'daily')  # Set a default view if not provided
@@ -142,12 +142,3 @@ def get_invoices():
     
     return jsonify(data=invoices), 200
     
-@invoices.route('/timetable/send-invoice', methods=['POST'])
-def send_invoice():
-    # will be called by coaches to send an invoice via Stripe.
-    # can only be invoked by coaches who have enabaled Stripe.
-    # should allow day, weekly or monthly view. and should
-    # accumulate all the charges owed and send it to the
-    # corresponding coach 
-
-    pass

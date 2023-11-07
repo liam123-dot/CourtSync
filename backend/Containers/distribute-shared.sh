@@ -10,7 +10,7 @@ CONTAINERS=$(find . -type d -name "*Container" -maxdepth 1)
 # Loop through each found container directory
 for CONTAINER_DIR in $CONTAINERS; do
     CONTAINER=$(basename $CONTAINER_DIR)
-    # echo "Processing $CONTAINER..."
+    echo "Processing $CONTAINER..."
 
     # Create the src/shared directory if it doesn't exist
     mkdir -p $CONTAINER_DIR/src/shared

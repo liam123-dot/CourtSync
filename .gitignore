@@ -239,3 +239,4 @@ $RECYCLE.BIN/
 
 backend/Containers/DatabaseContainer/env_testing.json
 backend/Containers/k8s/aws-cognito-secrets.yaml
+backend/Containers/k8s/stripe-secrets.yaml
