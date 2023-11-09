@@ -17,7 +17,33 @@ jobs:
         with:
             fetch-depth: 0
 
-      # Test each changed container
+    # Install pytest
+      - name: Install pytest
+        run: |
+            python -m pip install --upgrade pip
+            pip install pytest
+
+    # install all the requirements file in each backend/Containers
+      - name: Install requirements
+        run: |
+            # Get the list of changed files
+            CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
+            INSTALLED_CONTAINERS=()
+            
+            # loop through changed files in the ./backend/Containers directory that have Container in their name
+            for FILE in $CHANGED_FILES; do
+            if [[ $FILE == backend/Containers/*Container* ]]; then
+                CONTAINER=$(echo $FILE | cut -d'/' -f3)
+                if [[ ! " ${INSTALLED_CONTAINERS[@]} " =~ " ${CONTAINER} " ]]; then
+                cd backend/Containers/$CONTAINER
+                pip install -r requirements.txt
+                INSTALLED_CONTAINERS+=($CONTAINER)
+                cd ../../..
+                fi
+            fi
+            done
+
+    # Test each changed container
       - name: Test each changed container
         run: |
             # Get the list of changed files
