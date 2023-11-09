@@ -12,7 +12,7 @@ from src.utils.ExecuteQuery import execute_query
 from src.shared.SendEmail import send_email
 
 bookings = Blueprint('bookings', __name__)
-# just for ci/cd test again 9
+# just for ci/cd test again 10
 @bookings.route('/timetable/<slug>/booking', methods=['POST'])
 def add_booking(slug):
 
