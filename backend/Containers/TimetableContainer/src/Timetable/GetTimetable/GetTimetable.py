@@ -66,6 +66,48 @@ def get_bookings(coach_id, from_time, to_time, authorised):
     return bookings
 
 
+def get_coach_events(coach_id, from_time, to_time, authorised):
+    if authorised:
+        sql = "SELECT event_id, start_time, duration, title, description FROM CoachEvents WHERE coach_id=%s AND %s < start_time AND start_time < %s"
+    else:
+        sql = "SELECT start_time, duration FROM CoachEvents WHERE coach_id=%s AND %s < start_time AND start_time < %s "
+
+    results = execute_query(sql, (coach_id, from_time, to_time))
+
+    # Assuming `results` is a list of tuples, like so:
+    # If authorised: [(event_id, start_time, duration, title, description), (...), ...]
+    # If not authorised: [(start_time, duration), (...), ...]
+
+    events = {}
+
+    if authorised:
+        for event_id, start_time, duration, title, description in results:
+            date = epoch_to_date(start_time)
+            if date not in events.keys():
+                events[date] = []
+
+            new_booking = {
+                'event_id': event_id,
+                'start_time': start_time,
+                'duration': duration,
+                'title': title,
+                'description': description
+            }
+            events[date].append(new_booking)
+    else:
+
+        for start_time, duration in results:
+            if date not in events.keys():
+                events[date] = []
+                
+            new_booking = {
+                'start_time': start_time,
+                'duration': duration
+            }
+            events[date].append(new_booking)
+    return events
+
+
 def epoch_to_datetime(epoch_time):
     return datetime.fromtimestamp(epoch_time)
 
@@ -73,10 +115,12 @@ def calculate_overlaps(bookings):
     # This dictionary will store the overlap count and positions for each booking
     overlap_info = {}
 
+    # Give each passed booking/event an id that it can be reference with
+        
     # First, identify all overlaps and track which bookings overlap with each other
     for date, bookings_list in bookings.items():
         bookings_list.sort(key=lambda x: x['start_time'])
-        for i in range(len(bookings_list)):
+        for i in range(0, len(bookings_list)):
             start_time_i = epoch_to_datetime(bookings_list[i]['start_time'])
             end_time_i = start_time_i + timedelta(minutes=bookings_list[i]['duration'])
             for j in range(i + 1, len(bookings_list)):

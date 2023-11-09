@@ -7,7 +7,7 @@ import axios from "axios";
 
 import Timetable from "../Calendar/Timetable";
 import WorkingHoursModal from '../Calendar/WorkingHoursModal'
-import CoachAddEventModal from "../Calendar/CoachAddEventModal";
+import CoachAddEventModal from "./CoachAddEventModal";
 import SidePanel from "../../SidePanel/SidePanel"
 import { refreshTokens } from "../../Authentication/RefreshTokens";
 import Searchbar from "./Searchbar";
@@ -40,6 +40,7 @@ export default function HomeScreen() {
 
     const [workingHours, setWorkingHours] = useState(null);
     const [defaultWorkingHours, setDefaultWorkingHours] = useState({});
+    const [durations, setDurations] = useState([]);
 
     const [bookings, setBookings] = useState(null);
 
@@ -75,6 +76,9 @@ export default function HomeScreen() {
             }));
             setAuthorised(data.authorised);
             setDefaultWorkingHours(data.defaultWorkingHours);
+
+            setDurations(data.durations);
+
             setBookings(prevBookings => ({
                 ...prevBookings,
                 ...data.bookings
@@ -244,7 +248,10 @@ export default function HomeScreen() {
                                 />
                                 <CoachAddEventModal
                                     isOpen={isAddEventModalOpen}
-                                    onClose={() => setIsWorkingHoursModalOpen(false)}                
+                                    onClose={() => setIsWorkingHoursModalOpen(false)}       
+                                    settings={{
+                                        durations: durations
+                                    }}                                             
                                 />
                                 
                                 <div style={{ display: 'flex', alignItems: 'center' }}>

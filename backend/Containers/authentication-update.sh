@@ -1,9 +1,9 @@
 #!/bin/sh
 
-K8S_FILE="auth-deployment.yaml"
+K8S_FILE="Authentication-deployment.yaml"
 CONTAINER_DIR="AuthenticationContainer"
 DEPLOYMENT_FILE="k8s/$K8S_FILE"
-DOCKER_HUB_REPO="tennisdockerimages/authentication-container"
+DOCKER_HUB_REPO="tennisdockerimages/Authentication"
 
 # Function to increment version
 increment_version() {

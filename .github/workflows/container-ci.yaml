@@ -1,0 +1,63 @@
+name: Container CI/CD
+
+on:
+  push:
+    paths:
+      - 'backend/Containers/**'
+  pull_request:
+    paths:
+      - 'backend/Containers/**'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      # Test each changed container
+      - name: Test each changed container
+        run: |
+            # Get the list of changed files
+            CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
+            TESTED_CONTAINERS=()
+
+            # Loop through the changed files and test each corresponding container
+            for FILE in $CHANGED_FILES; do
+            if [[ $FILE == backend/Containers/* ]]; then
+                CONTAINER=$(echo $FILE | cut -d'/' -f3)
+                if [[ ! " ${TESTED_CONTAINERS[@]} " =~ " ${CONTAINER} " ]]; then
+                cd backend/Containers/$CONTAINER
+                pytest
+                TESTED_CONTAINERS+=($CONTAINER)
+                fi
+            fi
+            done
+
+      - name: Login to docker hub
+        run: |
+            echo ${{secrets.DOCKERHUB_PASSWORD}} | docker login --username ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+
+      - name: Build and push changed containers for AWS ARM architecture and apply to cluster
+        run: |
+            # Get the list of changed files
+            CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
+            PUSHED_CONTAINERS=()
+            
+            # Loop through the changed files and build/push Docker image for the corresponding container
+            for FILE in $CHANGED_FILES; do
+                if [[ $FILE == backend/Containers/* ]]; then
+                    CONTAINER=$(echo $FILE | cut -d'/' -f3)
+                    if [[ ! " ${PUSHED_CONTAINERS[@]} " =~ " ${CONTAINER} " ]]; then
+                        cd backend/Containers/$CONTAINER
+
+                        container_name=$(echo $CONTAINER | sed 's/Container//g')
+
+                        LATEST_TAG = docker images tennisdockerimages/$container_name --format "{{.Tag}}" | grep '^v[0-9]\+\.[0-9]\+\.[0-9]\+$' | sort -V | tail -n1 
+                        NEW_TAG = echo $LATEST_TAG | awk -F. -v OFS=. '{$NF = $NF + 1; print}'
+
+                        docker buildx build --platform linux/arm64 -t tennisdockerimages/$container_name:$NEW_TAG --push .
+                    fi
+                fi
+            done
+            

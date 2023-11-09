@@ -373,7 +373,7 @@ export default function BookLessonModal({ isOpen, onClose, workingHours, booking
             <ModalContent onClick={(e) => e.stopPropagation()}>
                 <h1 css={css`font-size: 24px; margin-bottom: 20px;`}>Book a Lesson</h1>
                 
-                {/* Date input */}
+                Date input
                 <Label>
                     Date
                     <InputField 
@@ -384,7 +384,6 @@ export default function BookLessonModal({ isOpen, onClose, workingHours, booking
                     {!isDateValid && <p css={css`color: red;`}>Please select a valid date (today or in the future).</p>}
                 </Label>
                 
-                {/* Start Time dropdown */}
                 <Label>
                     Start Time
                     <SelectField 
@@ -399,7 +398,6 @@ export default function BookLessonModal({ isOpen, onClose, workingHours, booking
                     </SelectField>
                 </Label>
                 
-                {/* Duration dropdown */}
                 <Label>
                     Duration
                     <SelectField 
