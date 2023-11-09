@@ -19,20 +19,22 @@ jobs:
       - name: Test each changed container
         run: |
             # Get the list of changed files
-            CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
+            CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
             TESTED_CONTAINERS=()
-
-            # Loop through the changed files and test each corresponding container
+            
+            # loop through changed files in the ./backend/Containers directory that have Container in their name
             for FILE in $CHANGED_FILES; do
-            if [[ $FILE == backend/Containers/* ]]; then
+            if [[ $FILE == backend/Containers/*Container* ]]; then
                 CONTAINER=$(echo $FILE | cut -d'/' -f3)
                 if [[ ! " ${TESTED_CONTAINERS[@]} " =~ " ${CONTAINER} " ]]; then
                 cd backend/Containers/$CONTAINER
                 pytest
                 TESTED_CONTAINERS+=($CONTAINER)
+                cd ../../..
                 fi
             fi
             done
+            
 
       - name: Login to docker hub
         run: |
@@ -41,12 +43,12 @@ jobs:
       - name: Build and push changed containers for AWS ARM architecture and apply to cluster
         run: |
             # Get the list of changed files
-            CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
+            CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
             PUSHED_CONTAINERS=()
             
             # Loop through the changed files and build/push Docker image for the corresponding container
             for FILE in $CHANGED_FILES; do
-                if [[ $FILE == backend/Containers/* ]]; then
+            if [[ $FILE == backend/Containers/*Container* ]]; then
                     CONTAINER=$(echo $FILE | cut -d'/' -f3)
                     if [[ ! " ${PUSHED_CONTAINERS[@]} " =~ " ${CONTAINER} " ]]; then
                         cd backend/Containers/$CONTAINER
