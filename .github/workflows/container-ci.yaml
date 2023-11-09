@@ -95,7 +95,7 @@ jobs:
                         
                         echo "latest tag is $LATEST_TAG"
 
-                        NEW_TAG=echo $LATEST_TAG | awk -F. -v OFS=. '{$NF = $NF + 1; print}'
+                        NEW_TAG=$(echo $LATEST_TAG | awk -F. -v OFS=. '{$NF = $NF + 1; print}')
                         
                         echo "new tag is $NEW_TAG"
 
