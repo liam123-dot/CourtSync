@@ -17,6 +17,10 @@ jobs:
         with:
             fetch-depth: 0
 
+      # Set up QEMU
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+
     # Install pytest
       - name: Install pytest
         run: |
