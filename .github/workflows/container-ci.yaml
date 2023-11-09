@@ -104,6 +104,8 @@ jobs:
                         echo "new tag is $NEW_TAG"
 
                         docker buildx build --platform linux/arm64 -t tennisdockerimages/$container_name:$NEW_TAG --push .
+                        PUSHED_CONTAINERS+=($CONTAINER)
+                        cd ../../..
                     fi
                 fi
             done

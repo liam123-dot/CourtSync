@@ -253,7 +253,11 @@ def get_timetable(slug):
     temp_dict = {}
     bookings_dates = list(bookings.keys())
     coach_events_dates = list(coach_events.keys())
-    dates = bookings_dates.extend(coach_events_dates)
+    dates = []
+    dates.extend(bookings_dates)
+    dates.extend(coach_events_dates)
+    dates = list(set(dates))
+    
     for date in dates:
         temp_dict[date] = []
         if date in bookings.keys():

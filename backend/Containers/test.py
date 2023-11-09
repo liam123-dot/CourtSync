@@ -1,9 +1,5 @@
-import requests
+x = [1,2,3]
+y = [4,5,6]
 
-response = requests.post('http://127.0.0.1:5000/query', json={
-    "query": "blah",
-    "args": (1, 2)
-})
-
-print(response)
-print(response.text)
+x.extend(y)
+print(x)
