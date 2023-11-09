@@ -56,7 +56,8 @@ def get_bookings(coach_id, from_time, to_time, authorised):
             new_booking = {
                 'start_time': start_time,
                 'status': status,
-                'duration': duration
+                'duration': duration,
+                'booking_id': True
             }
 
         bookings[date].append(new_booking)
