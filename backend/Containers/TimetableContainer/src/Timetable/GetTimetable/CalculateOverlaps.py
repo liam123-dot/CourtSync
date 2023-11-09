@@ -80,4 +80,16 @@ def calculate_overlaps(slots):
     return slots
 
 
+def reconstructe_bookings_and_events(temp_dict):
+    bookings = {}
+    events = {}
+    for date, slot_list in temp_dict.items():
+        bookings[date] = []
+        events[date] = []
+        for slot in slot_list:
+            if 'booking_id' in slot:
+                bookings[date].append(slot)
+            else:
+                events[date].append(slot)
+    return bookings, events
 

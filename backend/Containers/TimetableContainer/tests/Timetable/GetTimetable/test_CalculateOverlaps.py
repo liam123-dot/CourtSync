@@ -1,7 +1,10 @@
 import unittest
-from src.Timetable.GetTimetable.CalculateOverlaps import calculate_overlaps
+from src.Timetable.GetTimetable.CalculateOverlaps import calculate_overlaps, reconstructe_bookings_and_events
 
 class TestCalculateOverlaps(unittest.TestCase):
+    
+    
+    
     def test_no_overlap(self):
         slots = {
             '2022-01-01': [
@@ -90,6 +93,23 @@ class TestCalculateOverlaps(unittest.TestCase):
         self.assertEqual(result['2022-01-01'][2]['position'], 50)
         self.assertEqual(result['2022-01-01'][3]['width'], 25)
         self.assertEqual(result['2022-01-01'][3]['position'], 75)
+
+
+    def test_reconstruct(self):
+        slots = {
+            '2022-01-01': [
+                {'start_time': 1641052800, 'duration': 240, 'booking_id': 1},  # 01 Jan 2022 00:00:00 GMT
+                {'start_time': 1641056400, 'duration': 120},  # 01 Jan 2022 01:00:00 GMT
+                {'start_time': 1641058200, 'duration': 120, 'booking_id': 2},  # 01 Jan 2022 01:30:00 GMT
+                {'start_time': 1641060000, 'duration': 60},  # 01 Jan 2022 02:00:00 GMT
+            ]
+        }
+        
+        bookings, events = reconstructe_bookings_and_events(slots)
+        
+        self.assertEqual(bookings, {'2022-01-01': [{'start_time': 1641052800, 'duration': 240, 'booking_id': 1}, {'start_time': 1641058200, 'duration': 120, 'booking_id': 2}]})
+        self.assertEqual(events, {'2022-01-01': [{'start_time': 1641056400, 'duration': 120}, {'start_time': 1641060000, 'duration': 60}]})
+
 
 if __name__ == '__main__':
     unittest.main()
