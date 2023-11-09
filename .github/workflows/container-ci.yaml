@@ -84,8 +84,8 @@ jobs:
 
                         container_name=$(echo $CONTAINER | sed 's/Container//g')
 
-                        LATEST_TAG = docker images tennisdockerimages/$container_name --format "{{.Tag}}" | grep '^v[0-9]\+\.[0-9]\+\.[0-9]\+$' | sort -V | tail -n1 
-                        NEW_TAG = echo $LATEST_TAG | awk -F. -v OFS=. '{$NF = $NF + 1; print}'
+                        LATEST_TAG=docker images tennisdockerimages/$container_name --format "{{.Tag}}" | grep '^v[0-9]\+\.[0-9]\+\.[0-9]\+$' | sort -V | tail -n1 
+                        NEW_TAG=echo $LATEST_TAG | awk -F. -v OFS=. '{$NF = $NF + 1; print}'
 
                         docker buildx build --platform linux/arm64 -t tennisdockerimages/$container_name:$NEW_TAG --push .
                     fi
