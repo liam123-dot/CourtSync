@@ -23,6 +23,12 @@ jobs:
             python -m pip install --upgrade pip
             pip install pytest
 
+      - name: Install jq
+        uses: appleboy/setup-apt@v2
+        with:
+            update: true
+            packages: jq
+
     # install all the requirements file in each backend/Containers
       - name: Install requirements
         run: |
@@ -84,7 +90,7 @@ jobs:
 
                         container_name=$(echo $CONTAINER | sed 's/Container//g')
 
-                        LATEST_TAG=docker images tennisdockerimages/$container_name --format "{{.Tag}}" | grep '^v[0-9]\+\.[0-9]\+\.[0-9]\+$' | sort -V | tail -n1 
+                        LATEST_TAG=$(curl -s https://registry.hub.docker.com/v2/repositories/tennisdockerimages/$container_name/tags | jq -r '.results[].name' | grep -oE '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n1)
                         NEW_TAG=echo $LATEST_TAG | awk -F. -v OFS=. '{$NF = $NF + 1; print}'
 
                         docker buildx build --platform linux/arm64 -t tennisdockerimages/$container_name:$NEW_TAG --push .
