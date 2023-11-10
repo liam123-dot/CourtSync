@@ -25,7 +25,6 @@ def send_email(localFrom, toAddresses, subject, bodyText, bodyHTMl):
     )
     return response
 
-
 def lambda_handler(event, context):
     print(event)
     for record in event['Records']:
@@ -37,5 +36,11 @@ def lambda_handler(event, context):
         bodyText = body['bodyText']
         bodyHTML = body['bodyHTML']
 
-        response = send_email(localFrom, toAddress, subject, bodyText, bodyHTML)
-        print(response)
+        try:
+            response = send_email(localFrom, toAddress, subject, bodyText, bodyHTML)
+        except client.exceptions.ClientError as e:
+            print(e.response['Error']['Message'])
+        except client.exceptions.InvalidParameterValue as e:
+            print(e.response['Error']['Message'])
+        except Exception as e:
+            print(e)

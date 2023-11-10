@@ -4,7 +4,7 @@ import logging
 from src.utils.CheckAuthorization import get_access_token_username
 from src.Timetable.GetTimetable.CalculateOverlaps import calculate_overlaps, reconstructe_bookings_and_events
 from src.utils.ExecuteQuery import execute_query
-from src.Timetable.GetTimetable.GetTimetableHelpers import get_day_of_week, epoch_to_date, get_day_index_from_epoch, calculate_indexes_to_dates
+from src.Timetable.GetTimetable.GetTimetableHelpers import epoch_to_date, calculate_indexes_to_dates
 
 logging.basicConfig(level=logging.DEBUG)
 

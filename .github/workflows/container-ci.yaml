@@ -70,6 +70,14 @@ jobs:
                 fi
             fi
             done
+
+      - name: Test shared directory
+        run: |
+            cd backend/shared
+            export PYTHONPATH=$PWD
+            pip3 install -r requirements.txt
+            pytest
+            cd ../..
             
 
       - name: Login to docker hub
@@ -87,6 +95,14 @@ jobs:
             if [[ $FILE == backend/Containers/*Container* ]]; then
                     CONTAINER=$(echo $FILE | cut -d'/' -f3)
                     if [[ ! " ${PUSHED_CONTAINERS[@]} " =~ " ${CONTAINER} " ]]; then
+                        
+                        mkdir -p backend/Containers/$Container/src/shared
+
+                        cp backend/shared/* backend/Containers/$CONTAINER/src/shared
+
+                        # append the shared requirements file to the container requirements file
+                        cat backend/shared/requirements.txt >> backend/Containers/$CONTAINER/src/requirements.txt
+                    
                         cd backend/Containers/$CONTAINER
 
                         container_name=$(echo $CONTAINER | sed 's/Container//g' | tr '[:upper:]' '[:lower:]')
