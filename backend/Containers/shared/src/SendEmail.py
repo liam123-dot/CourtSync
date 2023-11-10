@@ -55,14 +55,14 @@ def send_email(localFrom, recipients, subject, bodyText, bodyHTML):
     if type(subject) != str:
         return
     
-    
+    print('validating')
     # parameters will be validated before being sent to the queue
     valid, error_message = validate_parameters(localFrom, recipients, subject, bodyText, bodyHTML)
     if not valid:
         raise Exception(f"Invalid parameter: {error_message}")
     
+    
     try:
-        print('sending email')
         # Send the message to the SQS queue
         response = client.send_message(
             QueueUrl='https://sqs.eu-west-2.amazonaws.com/925465361057/EmailNotificationsQueue-test',
@@ -74,7 +74,6 @@ def send_email(localFrom, recipients, subject, bodyText, bodyHTML):
                 'bodyHTML': bodyHTML            
             })
         )
-        print('email sent')
         print(response)
     except Exception as e:
         # Log any errors

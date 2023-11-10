@@ -62,7 +62,7 @@ jobs:
             if [[ $FILE == backend/Containers/*Container* ]]; then
                 CONTAINER=$(echo $FILE | cut -d'/' -f3)
                 if [[ ! " ${TESTED_CONTAINERS[@]} " =~ " ${CONTAINER} " ]]; then
-                cd backend/Containers/$CONTAINER
+                cd backend/Containers/$CONTAINER 
                 export PYTHONPATH=$PWD
                 pytest
                 TESTED_CONTAINERS+=($CONTAINER)
