@@ -89,6 +89,14 @@ jobs:
             # Get the list of changed files
             CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
             PUSHED_CONTAINERS=()
+
+            # Check if the shared directory has changed
+            if echo "$CHANGED_FILES" | grep -q "backend/shared"; then
+                CONTAINERS=$(ls -d backend/Containers/*Container)
+            else
+                # Get the list of changed containers
+                CONTAINERS=$(echo "$CHANGED_FILES" | grep "backend/Containers/*Container" | cut -d'/' -f3)
+            fi
             
             # Loop through the changed files and build/push Docker image for the corresponding container
             for FILE in $CHANGED_FILES; do

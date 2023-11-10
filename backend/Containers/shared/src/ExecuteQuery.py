@@ -3,6 +3,8 @@ import logging
 
 logging.basicConfig(level=logging.DEBUG)
 
+# now tested
+
 def execute_query(query, args=None):
 
     print(f"Executing Query: {query}")
