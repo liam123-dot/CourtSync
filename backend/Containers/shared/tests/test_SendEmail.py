@@ -1,7 +1,11 @@
 import unittest
-from src.SendEmail import validate_parameters
+from unittest.mock import patch
+
+with patch('src.SendEmail.boto3') as mock_boto3:
+    from src.SendEmail import send_email, validate_parameters
 
 class TestValidateParameters(unittest.TestCase):
+    
     def test_validate_parameters_valid(self):
         # Arrange
         localFrom = 'test_from'

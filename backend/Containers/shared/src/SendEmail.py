@@ -15,7 +15,6 @@ def validate_email_address(email):
     return email_regex.match(email) is not None # returns true if the email matches the regex
         
 
-
 def validate_parameters(localFrom, recipients, subject, bodyText, bodyHTML):
     
     # make sure local from is a string and non empty
