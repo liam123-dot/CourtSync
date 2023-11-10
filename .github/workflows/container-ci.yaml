@@ -71,13 +71,13 @@ jobs:
             fi
             done
 
-      - name: Test shared directory
+      - name: Test containers shared directory
         run: |
-            cd backend/shared
+            cd backend/Containers/shared
             export PYTHONPATH=$PWD
             pip3 install -r requirements.txt
             pytest
-            cd ../..
+            cd ../../..
             
 
       - name: Login to docker hub

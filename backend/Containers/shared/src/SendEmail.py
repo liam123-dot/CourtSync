@@ -57,6 +57,7 @@ def send_email(localFrom, recipients, subject, bodyText, bodyHTML):
         return
     
     
+    # parameters will be validated before being sent to the queue
     valid, error_message = validate_parameters(localFrom, recipients, subject, bodyText, bodyHTML)
     if not valid:
         raise Exception(f"Invalid parameter: {error_message}")
