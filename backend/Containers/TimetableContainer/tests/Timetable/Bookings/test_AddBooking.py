@@ -5,7 +5,8 @@ from flask import Flask
 #
 app = Flask(__name__)
 
-from src.Timetable.Bookings.AddBooking import add_booking, validate_inputs
+with patch('boto3.client') as mock_boto3:
+    from src.Timetable.Bookings.AddBooking import add_booking, validate_inputs
 
 class TestAddBooking(unittest.TestCase):
     
