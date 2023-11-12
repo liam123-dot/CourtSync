@@ -107,7 +107,7 @@ jobs:
                         
                         mkdir -p backend/Containers/$Container/src/shared
 
-                        cp backend/Containers/shared/* backend/Containers/$CONTAINER/src/shared
+                        cp -r backend/Containers/shared/* backend/Containers/$CONTAINER/src/shared
 
                         # append the shared requirements file to the container requirements file
                         cat backend/Containers/shared/requirements.txt >> backend/Containers/$CONTAINER/src/requirements.txt
