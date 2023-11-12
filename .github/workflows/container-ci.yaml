@@ -9,179 +9,80 @@ on:
       - 'backend/Containers/**'
 
 jobs:
-  test-build-push:
+  build-and-deploy:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        container: ${{ steps.changed-containers.outputs.list }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-
-      - name: Set up Python
-        uses: actions/setup-python@v2
         with:
-          python-version: 3.8
+            fetch-depth: 0
 
-      - name: Install dependencies
+      # Set up QEMU
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+
+      # Install pytest
+      - name: Install pytest
         run: |
-          python -m pip install --upgrade pip
-          pip install flake8 pytest
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+            python -m pip install --upgrade pip
+            pip install pytest
 
-      - name: Get list of changed containers
-        id: changed-containers
+      - name: Install jq
+        uses: dcarbone/install-jq-action@v2.1.0
+        
+      # Install requirements for each container
+      - name: Install requirements
         run: |
-          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
-          CONTAINERS=()
-          for FILE in $CHANGED_FILES; do
-            if [[ $FILE == backend/Containers/*Container* ]]; then
-              CONTAINER=$(echo $FILE | cut -d'/' -f3)
-              CONTAINERS+=($CONTAINER)
-            fi
-          done
-          echo "::set-output name=list::${CONTAINERS[@]}"
+            # Get the list of containers
+            CONTAINERS=$(ls backend/Containers)
 
-      - name: Test container
+            # Loop through each container and install requirements
+            for CONTAINER in $CONTAINERS; do
+                cd backend/Containers/$CONTAINER
+                pip install -r requirements.txt
+                cd ../../..
+            done
+
+      - name: Test containers shared directory
         run: |
-          cd backend/Containers/${{ matrix.container }}
-          export PYTHONPATH=$PWD
-          pytest
-          cd ../../..
-
+            cd backend/Containers/shared
+            export PYTHONPATH=$PWD
+            pip3 install -r requirements.txt
+            pytest
+            cd ../../..
+    
       - name: Login to docker hub
         run: |
-          echo ${{secrets.DOCKERHUB_PASSWORD}} | docker login --username ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+            echo ${{secrets.DOCKERHUB_PASSWORD}} | docker login --username ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
 
-      - name: Build and push container
+      # Test and build each container
+      - name: Test and build each container
         run: |
-          cd backend/Containers/${{ matrix.container }}
-          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/${{ matrix.container }} .
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ matrix.container }}
-          cd ../../..  
-  # build-and-deploy:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout code
-  #       uses: actions/checkout@v2
-  #       with:
-  #           fetch-depth: 0
+            # Get the list of containers
+            CONTAINERS=$(ls backend/Containers)
 
-  #     # Set up QEMU
-  #     - name: Set up QEMU
-  #       uses: docker/setup-qemu-action@v1
+            # Loop through each container, test, and build
+            for CONTAINER in $CONTAINERS; do
+                cd backend/Containers/$CONTAINER 
+                export PYTHONPATH=$PWD
+                pytest
 
-  #   # Install pytest
-  #     - name: Install pytest
-  #       run: |
-  #           python -m pip install --upgrade pip
-  #           pip install pytest
+                container_name=$(echo $CONTAINER | sed 's/Container//g' | tr '[:upper:]' '[:lower:]')
 
-  #     - name: Install jq
-  #       uses: dcarbone/install-jq-action@v2.1.0
-        
-  #   # install all the requirements file in each backend/Containers
-  #     - name: Install requirements
-  #       run: |
-  #           # Get the list of changed files
-  #           CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
-  #           INSTALLED_CONTAINERS=()
-            
-  #           # loop through changed files in the ./backend/Containers directory that have Container in their name
-  #           for FILE in $CHANGED_FILES; do
-  #           if [[ $FILE == backend/Containers/*Container* ]]; then
-  #               CONTAINER=$(echo $FILE | cut -d'/' -f3)
-  #               if [[ ! " ${INSTALLED_CONTAINERS[@]} " =~ " ${CONTAINER} " ]]; then
-  #               cd backend/Containers/$CONTAINER
-  #               pip install -r requirements.txt
-  #               INSTALLED_CONTAINERS+=($CONTAINER)
-  #               cd ../../..
-  #               fi
-  #           fi
-  #           done
+                echo $container_name
 
-  #   # Test each changed container
-  #     - name: Test each changed container
-  #       run: |
-  #           # Get the list of changed files
-  #           CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
-  #           TESTED_CONTAINERS=()
-            
-  #           # loop through changed files in the ./backend/Containers directory that have Container in their name
-  #           for FILE in $CHANGED_FILES; do
-  #           if [[ $FILE == backend/Containers/*Container* ]]; then
-  #               CONTAINER=$(echo $FILE | cut -d'/' -f3)
-            
-  #               if [[ ! " ${TESTED_CONTAINERS[@]} " =~ " ${CONTAINER} " ]]; then
-  #               cd backend/Containers/$CONTAINER 
-  #               export PYTHONPATH=$PWD
-  #               pytest
-  #               TESTED_CONTAINERS+=($CONTAINER)
-  #               cd ../../..
-  #               fi
-  #           fi
-  #           done
+                echo "getting latest tag"
 
-  #     - name: Test containers shared directory
-  #       run: |
-  #           cd backend/Containers/shared
-  #           export PYTHONPATH=$PWD
-  #           pip3 install -r requirements.txt
-  #           pytest
-  #           cd ../../..
-            
+                LATEST_TAG=$(curl -s https://registry.hub.docker.com/v2/repositories/tennisdockerimages/$container_name/tags | jq -r '.results[].name' | grep -oE '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n1)
+                
+                echo "latest tag is $LATEST_TAG"
 
-  #     - name: Login to docker hub
-  #       run: |
-  #           echo ${{secrets.DOCKERHUB_PASSWORD}} | docker login --username ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+                NEW_TAG=$(echo $LATEST_TAG | awk -F. -v OFS=. '{$NF = $NF + 1; print}')
+                
+                echo "new tag is $NEW_TAG"
 
-  #     - name: Build and push changed containers for AWS ARM architecture and apply to cluster
-  #       run: |
-  #           # Get the list of changed files
-  #           CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
-  #           PUSHED_CONTAINERS=()
+                docker buildx build --platform linux/arm64 -t tennisdockerimages/$container_name:$NEW_TAG --push .
+                cd ../../..
+            done
 
-  #           # Check if the shared directory has changed
-  #           if echo "$CHANGED_FILES" | grep -q "backend/Containers/shared"; then
-  #               CONTAINERS=$(ls -d backend/Containers/*Container)
-  #           else
-  #               # Get the list of changed containers
-  #               CONTAINERS=$(echo "$CHANGED_FILES" | grep "backend/Containers/*Container" | cut -d'/' -f3)
-  #           fi
-            
-  #           # Loop through the changed files and build/push Docker image for the corresponding container
-  #           for FILE in $CHANGED_FILES; do
-  #           if [[ $FILE == backend/Containers/*Container* ]]; then
-  #                   CONTAINER=$(echo $FILE | cut -d'/' -f3)
-  #                   if [[ ! " ${PUSHED_CONTAINERS[@]} " =~ " ${CONTAINER} " ]]; then
-                        
-  #                       mkdir -p backend/Containers/$Container/src/shared
-
-  #                       cp -r backend/Containers/shared/* backend/Containers/$CONTAINER/src/shared
-
-  #                       # append the shared requirements file to the container requirements file
-  #                       cat backend/Containers/shared/requirements.txt >> backend/Containers/$CONTAINER/src/requirements.txt
-                    
-  #                       cd backend/Containers/$CONTAINER
-
-  #                       container_name=$(echo $CONTAINER | sed 's/Container//g' | tr '[:upper:]' '[:lower:]')
-
-  #                       echo $container_name
-
-  #                       echo "getting latest tag"
-
-  #                       LATEST_TAG=$(curl -s https://registry.hub.docker.com/v2/repositories/tennisdockerimages/$container_name/tags | jq -r '.results[].name' | grep -oE '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n1)
-                        
-  #                       echo "latest tag is $LATEST_TAG"
-
-  #                       NEW_TAG=$(echo $LATEST_TAG | awk -F. -v OFS=. '{$NF = $NF + 1; print}')
-                        
-  #                       echo "new tag is $NEW_TAG"
-
-  #                       docker buildx build --platform linux/arm64 -t tennisdockerimages/$container_name:$NEW_TAG --push .
-  #                       PUSHED_CONTAINERS+=($CONTAINER)
-  #                       cd ../../..
-  #                   fi
-  #               fi
-  #           done
-            
+    
