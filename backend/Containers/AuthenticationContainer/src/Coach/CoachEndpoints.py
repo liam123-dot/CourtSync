@@ -20,69 +20,67 @@ s3_client = boto3.client('s3')
 CLIENT_ID = os.getenv('CLIENT_ID')
 CLIENT_SECRET = os.getenv('CLIENT_SECRET')
 
+# -------------- COACH SIGN UP -----------------------
+
 @coach.route('/auth/coach', methods=['POST'])
 def coach_sign_up():
-    
     data = request.json
-    
     try:
-        first_name = data['first_name']
-        last_name = data['last_name']
-        email = data['email']
-        phone_number = data['phone_number']
-        password = data['password']
-        confirm_password = data['confirm_password']
-    except KeyError as e:
-        return jsonify(message=f"Invalid/Missing Key: {e}"), 400
-
-    # -------------- attribute verification -----------------------
-    if len(first_name) < 2 or len(last_name) < 2:
-        return jsonify(message='First name and last name must be greater than 1 character'), 400
-
-    if password != confirm_password:
-        return jsonify(message='Passwords do not match'), 400
-
-    if not is_password_valid(password):
-        return jsonify(message='Password not strong enough'), 400
-
-    if not is_phone_number_valid(phone_number):
-        return jsonify(message='Invalid UK phone number'), 400
-
-    if phone_number.startswith('0'):
-        phone_number = '+44' + phone_number[1:]
-
-    if not is_email_valid(email):
-        return jsonify(message='Invalid Email'), 400
-
-    secret_hash = get_secret_hash(username=email, client_id=CLIENT_ID, client_secret=CLIENT_SECRET)
-    attributes = [
-        {'Name': 'email', 'Value': email},
-        {'Name': 'given_name', 'Value': first_name},
-        {'Name': 'family_name', 'Value': last_name},
-        {'Name': 'phone_number', 'Value': phone_number}
-    ]
-    try:
-        response = client.sign_up(
-            ClientId=CLIENT_ID,
-            SecretHash=secret_hash,
-            Username=email,
-            Password=password,
-            UserAttributes=attributes
-        )
-
-        user_id = response['UserSub']
-        insert_into_table(user_id, first_name, last_name, email)
+        user_data = extract_user_data(data)
+        validate_user_data(user_data)
+        user_data['phone_number'] = format_phone_number(user_data['phone_number'])
+        user_id = create_user(user_data)
+        insert_into_table(user_id, user_data['first_name'], user_data['last_name'], user_data['email'])
         return jsonify(message='Success'), 200
+    except (KeyError, ValueError) as e:
+        return jsonify(message=str(e)), 400
+    except client.exceptions.Boto3Error as e:
+        error_messages = {
+            'UsernameExistsException': 'User with provided email already exists',
+            'InvalidPasswordException': 'Password does not satisfy strength restraints',
+            'TooManyRequestsException': 'Please try again later',
+        }
+        return jsonify(message=error_messages.get(e.__class__.__name__, 'Internal Server Error'), error=str(e)), 500
 
-    except client.exceptions.UsernameExistsException:
-        return jsonify(message='User with provided email already exists'), 400
-    except client.exceptions.InvalidPasswordException:
-        return jsonify(message='Password does not satisfy strength restraints'), 400
-    except client.exceptions.TooManyRequestsException:
-        return jsonify(message='Please try again later'), 400
-    except Exception as e:    
-        return jsonify(message='Internal Server Error', error=str(e)), 500
-    
+def extract_user_data(data):
+    required_keys = ['first_name', 'last_name', 'email', 'phone_number', 'password', 'confirm_password']
+    return {key: data[key] for key in required_keys}
+
+def validate_user_data(user_data):
+    if len(user_data['first_name']) < 2 or len(user_data['last_name']) < 2:
+        raise ValueError('First name and last name must be greater than 1 character')
+    if user_data['password'] != user_data['confirm_password']:
+        raise ValueError('Passwords do not match')
+    if not is_password_valid(user_data['password']):
+        raise ValueError('Password not strong enough')
+    if not is_phone_number_valid(user_data['phone_number']):
+        raise ValueError('Invalid UK phone number')
+    if not is_email_valid(user_data['email']):
+        raise ValueError('Invalid Email')
+
+def format_phone_number(phone_number):
+    if phone_number.startswith('0'):
+        return '+44' + phone_number[1:]
+    return phone_number
+
+def create_user(user_data):
+    secret_hash = get_secret_hash(username=user_data['email'], client_id=CLIENT_ID, client_secret=CLIENT_SECRET)
+    attributes = [
+        {'Name': 'email', 'Value': user_data['email']},
+        {'Name': 'given_name', 'Value': user_data['first_name']},
+        {'Name': 'family_name', 'Value': user_data['last_name']},
+        {'Name': 'phone_number', 'Value': user_data['phone_number']}
+    ]
+    response = client.sign_up(
+        ClientId=CLIENT_ID,
+        SecretHash=secret_hash,
+        Username=user_data['email'],
+        Password=user_data['password'],
+        UserAttributes=attributes
+    )
+    return response['UserSub']
+
+# -------------- RESEND CONFIRMATION CODE -----------------------
 
 def resend_confirmation_code(email):
     secret_hash = get_secret_hash(username=email, client_id=CLIENT_ID, client_secret=CLIENT_SECRET)
@@ -93,8 +91,6 @@ def resend_confirmation_code(email):
         Username=email
     )
     return response
-
-
 
 @coach.route('/auth/coach/confirm/resend', methods=['POST'])
 def resend_coach_confirmation_code():
@@ -110,6 +106,7 @@ def resend_coach_confirmation_code():
 
     return jsonify(response), 200
 
+# -------------- CONFIRM SIGN UP -----------------------
 
 @coach.route('/auth/coach/confirm', methods=['POST'])
 def confirm_coach_sign_up():
@@ -156,6 +153,7 @@ def get_coach_slug_helper(access_token):
     except IndexError:
         return None
 
+# -------------- COACH SIGN IN -----------------------
 
 @coach.route('/auth/coach/sign-in', methods=['POST'])
 def coach_sign_in():
@@ -192,7 +190,8 @@ def coach_sign_in():
 
     except Exception as e:
         return jsonify(message=f"Error: {e}", consequence='ShowServerError'), 500
-    
+   
+# -------------- REFRESH TOKEN ----------------------- 
 
 @coach.route('/auth/coach/refresh', methods=['POST'])
 def refresh_coach_tokens():
@@ -238,6 +237,7 @@ def get_coach_id(coach_email):
     except Exception as e:
         return None
     
+# ---------- GET COACH SLUG ----------------
 
 @coach.route('/auth/coach/slug', methods=['GET'])
 def get_coach_slug():
@@ -258,6 +258,8 @@ def get_coach_slug():
     else:
         return jsonify(message='Unauthorized'), 400
 
+
+# ---------- GET COACH PROFILE ----------------
 
 def get_coach_profile_url(coach_id=None, slug=None):
 
@@ -338,6 +340,7 @@ def get_coach_details():
     else:
         return jsonify(message='Unauthorized, no access token provided'), 400
     
+# ---------- UPDATE COACH PROFILE ----------------
 
 @coach.route('/auth/coach/me', methods=['POST'])
 def update_coach_details():
@@ -370,6 +373,8 @@ def update_coach_details():
             return jsonify(message='Internal Server Error', error=str(e)), 500
     else:
         return jsonify(message='Missing Authentication Token'), 400
+
+# ---------- UPDATE COACH PROFILE PICTURE ----------------
 
 @coach.route('/auth/coach/profile-picture-upload-url', methods=['GET'])
 def get_profile_picture_upload_url():
@@ -405,6 +410,7 @@ def get_profile_picture_upload_url():
         return jsonify(message='Unauthorised'), 400
     
 
+# ---------- GET COACH PROFILE PICTURE ----------------
 @coach.route('/auth/coach/<slug>/profile-picture', methods=['GET'])
 def get_profile_picture(slug):
 
@@ -416,6 +422,7 @@ def get_profile_picture(slug):
         return jsonify(message='Coach does not have a public profile'), 400
     
 
+# ---------- CHECK IF AUTHORISED ----------------
 @coach.route('/auth/coach/check', methods=['GET'])
 def check_is_coach():
 
