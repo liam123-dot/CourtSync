@@ -61,6 +61,7 @@ jobs:
             for FILE in $CHANGED_FILES; do
             if [[ $FILE == backend/Containers/*Container* ]]; then
                 CONTAINER=$(echo $FILE | cut -d'/' -f3)
+            
                 if [[ ! " ${TESTED_CONTAINERS[@]} " =~ " ${CONTAINER} " ]]; then
                 cd backend/Containers/$CONTAINER 
                 export PYTHONPATH=$PWD

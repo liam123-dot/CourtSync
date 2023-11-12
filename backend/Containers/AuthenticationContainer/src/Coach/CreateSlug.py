@@ -1,4 +1,4 @@
-from src.utils.ExecuteQuery import execute_query
+from src.shared.ExecuteQuery import execute_query
 
 def insert_into_table(coach_id, first_name, last_name, email):
     coach_slug = find_valid_slug(first_name, last_name)

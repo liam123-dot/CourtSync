@@ -6,11 +6,11 @@ from flask import Blueprint, request, jsonify
 import logging
 logging.basicConfig(level=logging.DEBUG)
 
-from src.utils.GetSecretHash import get_secret_hash
 from src.Coach.AttributeVerification import is_password_valid, is_phone_number_valid, is_email_valid
 from src.Coach.CreateSlug import insert_into_table
-from src.utils.ExecuteQuery import execute_query
-from src.utils.CheckAuthorization import get_access_token_username
+from src.Coach.GetSecretHash import get_secret_hash
+from src.shared.ExecuteQuery import execute_query
+from src.shared.CheckAuthorization import get_access_token_username
 
 coach = Blueprint('main', __name__)
 
