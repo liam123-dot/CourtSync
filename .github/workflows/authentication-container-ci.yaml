@@ -39,6 +39,7 @@ jobs:
             - name: Run Tests
               run: |
                 cd backend/Containers/AuthenticationContainer
+                export PYTHONPATH=$PWD
                 pytest
                 cd ../../..
             
