@@ -1,4 +1,4 @@
-name: Authentication Container CI/CD
+name: Database Container CI/CD
 
 on:
   push:

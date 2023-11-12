@@ -1,4 +1,4 @@
-name: Authentication Container CI/CD
+name: shared Container files CI/CD
 
 on:
   push:

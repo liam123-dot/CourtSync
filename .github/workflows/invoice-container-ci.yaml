@@ -1,4 +1,4 @@
-name: Authentication Container CI/CD
+name: Invoice Container CI/CD
 
 on:
   push:
