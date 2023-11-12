@@ -44,6 +44,7 @@ echo "Building and pushing new Docker image with tag: $NEW_TAG"
 ./distribute-shared.sh
 
 cd $CONTAINER_DIR
+pytest
 # Build the new Docker image with the incremented tag
 sudo docker build -t $DOCKER_HUB_REPO:$NEW_TAG .
 

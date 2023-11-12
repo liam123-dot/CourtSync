@@ -1,6 +1,7 @@
 requests
 Flask-CORS
 flask
+flask[async]
 gunicorn
 boto3
 python-jose

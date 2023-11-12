@@ -38,6 +38,7 @@ def lambda_handler(event, context):
 
         try:
             response = send_email(localFrom, toAddress, subject, bodyText, bodyHTML)
+            print(f"Email sent! Message ID: {response['MessageId']}")
         except client.exceptions.ClientError as e:
             print(e.response['Error']['Message'])
         except client.exceptions.InvalidParameterValue as e:

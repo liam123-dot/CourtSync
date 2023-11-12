@@ -16,14 +16,13 @@ class TestExecuteQuery(unittest.TestCase):
             # Assert
             assert str(e) == "args must be a list or tuple"
             
-            
-        args = ['test']
-        
+        query = 'SELECT * FROM test_table'
+        args = ('test')
         try:
             execute_query(query, args)
         except Exception as e:
             # Assert
-            assert str(e) == "args must have more than one element"
+            assert str(e) == "args must be a list or tuple"                        
             
     @patch('src.ExecuteQuery.requests.post')
     def test_valid_args(self, mock_post):
@@ -32,6 +31,19 @@ class TestExecuteQuery(unittest.TestCase):
         args = ['test', 'test2']
         
         # Act
+        result = execute_query(query, args)
+        
+        # Assert that the post request was called once with the correct params    
+        mock_post.assert_called_once_with('http://db-service.default.svc.cluster.local:8000/query', json={
+            "query": query,
+            "args": args
+        })
+        
+    @patch('src.ExecuteQuery.requests.post')
+    def test_length_one_args(self, mock_post):
+        query = 'SELECT * FROM test_table'
+        args = ('test', )
+        
         result = execute_query(query, args)
         
         # Assert that the post request was called once with the correct params    

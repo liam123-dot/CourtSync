@@ -36,7 +36,8 @@ export default function LessonDetailsModal({isOpen, onClose, booking}){
                         <p><strong>Contact Name:</strong> {booking.contact_name ? booking.contact_name: 'Player is contact'}</p>
                         <p><strong>Contact Email:</strong> {booking.contact_email}</p>
                         <p><strong>Contact Phone Number:</strong> {booking.contact_phone_number}</p>
-                        <p><strong>Cost:</strong> £{booking.cost}</p>
+                        <p><strong>Cost:</strong> £{(booking.cost / 100).toFixed(2)}</p>
+
                         <p><strong>Duration:</strong> {booking.duration} minutes</p>
                         <p><strong>Start Time:</strong> {formatTime(booking.start_time)}</p>
                         <p><strong>End Time:</strong> {formatTime(booking.start_time + booking.duration)}</p>

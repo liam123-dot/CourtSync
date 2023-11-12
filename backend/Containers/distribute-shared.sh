@@ -16,7 +16,7 @@ for CONTAINER_DIR in $CONTAINERS; do
     mkdir -p $CONTAINER_DIR/src/shared
 
     # Copy the shared file into the container's src/shared directory
-    cp $SHARED_DIR/* $CONTAINER_DIR/src/shared/
+    cp -r $SHARED_DIR/src/ $CONTAINER_DIR/src/shared/
 
 done
 
