@@ -1,5 +1,8 @@
 import unittest
-from src.Coach.CoachEndpoints import validate_user_data
+from unittest.mock import patch
+
+with patch('boto3.client') as mock_boto3:
+    from src.Coach.CoachEndpoints import validate_user_data
 
 class TestValidateUserData(unittest.TestCase):
     def test_validate_user_data_success(self):
