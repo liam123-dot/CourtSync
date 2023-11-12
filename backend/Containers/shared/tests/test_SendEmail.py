@@ -1,7 +1,7 @@
 import unittest
 import json
 from unittest.mock import patch
-
+#
 with patch('boto3.client') as mock_boto3:
     from src.SendEmail import send_email, validate_parameters
 
