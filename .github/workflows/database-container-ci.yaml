@@ -3,10 +3,10 @@ name: Authentication Container CI/CD
 on:
   push:
     paths:
-      - 'backend/Containers/AuthenticationContainer/**'
+      - 'backend/Containers/DatabaseContainer/**'
   pull_request:
     paths:
-      - 'backend/Containers/AuthenticationContainer/**'
+      - 'backend/Containers/DatabaseContainer/**'
 
 jobs:
     test-build-deploy:
@@ -29,24 +29,24 @@ jobs:
 
             - name: Install requirements
               run: |
-                pip install -r backend/Containers/AuthenticationContainer/requirements.txt
+                pip install -r backend/Containers/DatabaseContainer/requirements.txt
 
             - name: Copy Shared Files
               run: |
                 pip install -r backend/Containers/shared/requirements.txt
-                cp -r backend/Containers/shared/src/* backend/Containers/AuthenticationContainer/src/shared
+                cp -r backend/Containers/shared/src/* backend/Containers/DatabaseContainer/src/shared
 
             - name: Run Tests
               run: |
-                cd backend/Containers/AuthenticationContainer
+                cd backend/Containers/DatabaseContainer
                 export PYTHONPATH=$PWD
                 pytest
                 cd ../../..
             
             - name: Build and Push Docker Image
               run: |
-                cd backend/Containers/AuthenticationContainer
-                LATEST_TAG=$(curl -s https://registry.hub.docker.com/v2/repositories/tennisdockerimages/authentication/tags | jq -r '.results[].name' | grep -oE '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n1)
+                cd backend/Containers/DatabaseContainer
+                LATEST_TAG=$(curl -s https://registry.hub.docker.com/v2/repositories/tennisdockerimages/database/tags | jq -r '.results[].name' | grep -oE '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n1)
                 NEW_TAG=$(echo $LATEST_TAG | awk -F. -v OFS=. '{$NF = $NF + 1; print}')
 
-                docker buildx build --platform linux/arm64 -t tennisdockerimages/authentication:$NEW_TAG --push .
+                docker buildx build --platform linux/arm64 -t tennisdockerimages/database:$NEW_TAG --push .
