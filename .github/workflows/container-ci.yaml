@@ -33,15 +33,17 @@ jobs:
       # Install requirements for each container
       - name: Install requirements
         run: |
-            # Get the list of containers
-            CONTAINERS=$(ls backend/Containers)
+          # Get the list of containers
+          CONTAINERS=$(ls backend/Containers)
 
-            # Loop through each container and install requirements
-            for CONTAINER in $CONTAINERS; do
-                cd backend/Containers/$CONTAINER
-                pip install -r requirements.txt
-                cd ../../..
-            done
+          # Loop through each container and install requirements
+          for CONTAINER in $CONTAINERS; do
+            if [[ "$CONTAINER" == *"Container"* ]]; then
+              cd backend/Containers/$CONTAINER
+              pip install -r requirements.txt
+              cd ../../..
+            fi
+          done
 
       - name: Test containers shared directory
         run: |

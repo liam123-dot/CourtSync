@@ -83,7 +83,7 @@ def get_weekly_or_monthly_invoices(username, limit, offset, view):
 
     # Execute the query to get contact names
     contact_names_result = execute_query(contact_name_sql, phone_numbers)
-
+#
     # Map contact phone numbers to contact names for quick lookup
     contact_info = {row[0]: row[1] for row in contact_names_result}
 
