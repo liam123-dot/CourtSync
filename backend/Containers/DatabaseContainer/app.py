@@ -19,35 +19,26 @@ query_queue = queue.Queue()  # Queue to hold queries
 
 import os
 
-# Remove the while loop asking for input
-env_choice = os.environ.get('ENV_CHOICE', 'backend-sync').lower()
+class DBConfig:
+    def __init__(self) -> None:
+        self.DATABASE_HOST = os.environ['DATABASE_HOST']
+        self.DATABASE_USERNAME = os.environ['DATABASE_USERNAME']
+        self.DATABASE_PASSWORD = os.environ['DATABASE_PASSWORD']
+        self.DATABASE = os.environ['DATABASE']
+        self.connection = self.get_db_connection()
+        
+    def get_db_connection(self):
 
-if env_choice == 'backend-sync':
-    env_file = 'env_testing.json'
-elif env_choice == 'backend-test':
-    env_file = 'env_staging.json'
-elif env_choice == 'backend-prod':
-    env_file = 'env_production.json'
-else:
-    raise ValueError(f"Invalid environment choice: {env_choice}")
-
-with open(env_file, "r") as reader:
-    data = json.loads(reader.read())
-    DATABASE_HOST = data['DATABASE_HOST']
-    DATABASE_USERNAME = data['DATABASE_USERNAME']
-    DATABASE_PASSWORD = data['DATABASE_PASSWORD']
-    DATABASE = data['DATABASE']
-
-
-def get_db_connection():
-    return pymysql.connect(
-        host=DATABASE_HOST,
-        user=DATABASE_USERNAME,
-        password=DATABASE_PASSWORD,
-        database=DATABASE,
-        ssl_ca='cert.pem',
-        autocommit=True
-    )
+        return pymysql.connect(
+            host=self.DATABASE_HOST,
+            user=self.DATABASE_USERNAME,
+            password=self.DATABASE_PASSWORD,
+            database=self.DATABASE,
+            ssl_ca='cert.pem',
+            autocommit=True
+        )
+        
+DBConfig = DBConfig()
 
 def convert_bit_to_bool(row, cursor):
     """Converts bit fields in a row to boolean."""
@@ -57,7 +48,7 @@ def convert_bit_to_bool(row, cursor):
             new_row[idx] = row[idx] == b'\x01'
     return tuple(new_row)
 
-connection = get_db_connection()
+connection = DBConfig.get_db_connection()
 
 def execute_query(query, args=None, retry=False):
     global connection
@@ -72,7 +63,7 @@ def execute_query(query, args=None, retry=False):
             return True, response
     except MySQLError as e:
         if not retry:
-            connection = get_db_connection()
+            connection = DBConfig.get_db_connection()
             return execute_query(query, args, True)
         logging.debug(f"Error: {e}")
         return False, str(e)
