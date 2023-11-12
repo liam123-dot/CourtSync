@@ -33,8 +33,8 @@ jobs:
 
             - name: Copy Shared Files
               run: |
-                pip install -r backend/shared/requirements.txt
-                cp -r backend/shared backend/Containers/AuthenticationContainer/src/shared
+                pip install -r backend/Containers/shared/requirements.txt
+                cp -r backend/Containers/shared backend/Containers/AuthenticationContainer/src/shared
 
             - name: Run Tests
               run: |
