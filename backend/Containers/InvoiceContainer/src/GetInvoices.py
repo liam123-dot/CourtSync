@@ -5,9 +5,10 @@ from src.shared.CheckAuthorization import get_access_token_username
 from src.shared.ExecuteQuery import execute_query
 
 invoices = Blueprint('invoices', __name__)
+
+# ------------------------------ GET DAILY INVOICES ------------------------------
     
-def get_daily_invoices(username, limit, offset):
-    invoices = []
+def fetch_daily_invoices(username, limit, offset):
     sql = f"""SELECT booking_id, player_name, start_time, contact_name, cost, paid, extra_costs, duration
                 FROM Bookings
                 WHERE coach_id=%s
@@ -16,18 +17,13 @@ def get_daily_invoices(username, limit, offset):
                 ORDER BY start_time
                 LIMIT %s OFFSET %s"""
 
-    results = execute_query(sql, (username, time.now(), limit, offset))
+    results = execute_query(sql, (username, time.time(), limit, offset))
+    return results
 
+def process_daily_invoices(results):
+    invoices = []
     for invoice in results:
-        booking_id = invoice[0]
-        player_name = invoice[1]
-        start_time = invoice[2]
-        contact_name = invoice[3]
-        cost = invoice[4]
-        paid = invoice[5]
-        extra_costs = invoice[6]
-        duration = invoice[7]
-
+        booking_id, player_name, start_time, contact_name, cost, paid, extra_costs, duration = invoice
         invoices.append({
             'booking_id': booking_id,
             'player_name': player_name,
@@ -40,10 +36,16 @@ def get_daily_invoices(username, limit, offset):
             })
     return invoices
 
-def get_weekly_or_monthly_invoices(username, limit, offset, view):
-    invoices = []
+def get_daily_invoices(username, limit, offset):
+    results = fetch_daily_invoices(username, limit, offset)
+    invoices = process_daily_invoices(results)
+    return invoices
+
+# ------------------------------ GET WEEKLY OR MONTHLY INVOICES ------------------------------
+
+def fetch_invoices(username, limit, offset, view):
     if view == 'weekly':
-        sql=""" SELECT
+        sql = """SELECT
                     contact_phone_number,
                     COUNT(booking_id) AS bookings_count,
                     SUM(cost) AS total_cost,
@@ -69,24 +71,21 @@ def get_weekly_or_monthly_invoices(username, limit, offset, view):
                 LIMIT %s OFFSET %s;"""
 
     results = execute_query(sql, (username, limit, offset))
+    return results
 
-    # Fetch all phone numbers from the results
-    phone_numbers = [result[0] for result in results]
-
-    # Construct the contact name query using placeholders for the IN clause
+def fetch_contact_names(phone_numbers):
     placeholders = ', '.join(['%s'] * len(phone_numbers))
     contact_name_sql = f"""
     SELECT contact_phone_number, contact_name
     FROM Bookings
     WHERE contact_phone_number IN ({placeholders})
     """
-
-    # Execute the query to get contact names
     contact_names_result = execute_query(contact_name_sql, phone_numbers)
-#
-    # Map contact phone numbers to contact names for quick lookup
-    contact_info = {row[0]: row[1] for row in contact_names_result}
+    return contact_names_result
 
+def process_invoices(results, contact_names_result, view):
+    contact_info = {row[0]: row[1] for row in contact_names_result}
+    invoices = []
     for invoice in results:
         contact_phone_number = invoice[0]
         contact_name = contact_info.get(contact_phone_number)
@@ -117,6 +116,15 @@ def get_weekly_or_monthly_invoices(username, limit, offset, view):
         invoices.append(invoice_data)
         
     return invoices
+
+def get_weekly_or_monthly_invoices(username, limit, offset, view):
+    results = fetch_invoices(username, limit, offset, view)
+    phone_numbers = [result[0] for result in results]
+    contact_names_result = fetch_contact_names(phone_numbers)
+    invoices = process_invoices(results, contact_names_result, view)
+    return invoices
+
+# ------------------------------ GET INVOICES ENDPOINT ------------------------------
 
 @invoices.route('/invoices', methods=['GET'])
 def get_invoices():
