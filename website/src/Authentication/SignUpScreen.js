@@ -72,9 +72,13 @@ export default function SignUpScreen() {
 
 
     const handleInputChange = (e) => {
+        let value = e.target.value;
+        if (e.target.name === 'first_name' || e.target.name === 'last_name') {
+            value = value.charAt(0).toUpperCase() + value.slice(1);
+        }
         setFormData({
             ...formData,
-            [e.target.name]: e.target.value
+            [e.target.name]: value
         });
     };
 
@@ -85,7 +89,7 @@ export default function SignUpScreen() {
             <Form onSubmit={handleSubmit}>
                 <Input name="first_name" value={formData.first_name} placeholder="First Name" onChange={handleInputChange} />
                 {errors.first_name && <div style={{ color: 'red' }}>{errors.first_name}</div>}
-                <Input name="last_name" placeholder="Last Name" onChange={handleInputChange} />
+                <Input name="last_name" value={formData.last_name} placeholder="Last Name" onChange={handleInputChange} />
                 {errors.last_name && <div style={{ color: 'red' }}>{errors.last_name}</div>}
                 <Input name="email" placeholder="Email" onChange={handleInputChange} />
                 {errors.email && <div style={{ color: 'red' }}>{errors.email}</div>}

@@ -9,9 +9,10 @@ const formatTime = (minutes) => {
   };
   
 function Booking({ columnStartTime, columnEndTime, booking, authorised }) {
+
+  console.log(booking)
  
     const [isLessonDetailsModalOpen, setIsLessonDetailsModalOpen] = useState(false);
-
     const toggleModal = () => {
       if (authorised){
         setIsLessonDetailsModalOpen(!isLessonDetailsModalOpen);

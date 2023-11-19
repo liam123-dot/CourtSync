@@ -29,3 +29,10 @@ spec:
             name: ingress-invoice
             port:
               number: 8000
+      - path: /user
+        pathType: Prefix
+        backend:
+          service:
+            name: ingress-user
+            port:
+              number: 8000

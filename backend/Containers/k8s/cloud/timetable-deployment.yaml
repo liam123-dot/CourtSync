@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: timetable-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: timetable-service
+  template:
+    metadata:
+      labels:
+        app: timetable-service
+    spec:
+      containers:
+      - name: timetable-container
+        image: tennisdockerimages/timetable:v0.0.7
+        ports:
+        - containerPort: 8000
+        envFrom:
+        - configMapRef:
+            name: aws-cognito-secrets
+        resources:
+          requests:
+            memory: "150Mi"
+            cpu: "250m"
+          limits:
+            memory: "200Mi"
+            cpu: "250m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingress-timetable
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000
+      protocol: TCP
+  selector:
+    app: timetable-service

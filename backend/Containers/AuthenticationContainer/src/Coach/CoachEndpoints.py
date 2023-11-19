@@ -92,7 +92,7 @@ def refresh_coach_tokens():
         return jsonify(message=f"Error: {e}"), 500
 
 def get_coach_id(coach_email):
-    sql = "SELECT coach_id FROM Coaches WHERE username=%s"
+    sql = "SELECT coach_id FROM Coaches WHERE email=%s"
     response = execute_query(sql, (coach_email, ))
 
     try:

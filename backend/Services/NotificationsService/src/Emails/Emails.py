@@ -26,7 +26,6 @@ def send_email(localFrom, toAddresses, subject, bodyText, bodyHTMl):
     return response
 
 def lambda_handler(event, context):
-    print(event)
     for record in event['Records']:
         body = json.loads(record['body'])
         

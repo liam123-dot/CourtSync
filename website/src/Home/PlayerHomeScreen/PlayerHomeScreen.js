@@ -5,12 +5,13 @@ import styled from '@emotion/styled';
 import {css, Global} from "@emotion/react";
 import axios from "axios";
 
-import Timetable from "../Calendar/Timetable";
+import PlayerTimetable from "./PlayerTimetable";
 import BookLessonModal from "./BookLessonModal";
 import GetDaysBetweenDates from "../GetDaysBetweenDates";
 import ProfileButton from "../../SidePanel/ProfilePicture";
 import { TitleSection, ArrowButtonGroup, Button, DateLabel, checkRefreshRequired, handleSetView, getStartEndOfWeek, handleNext, handlePrevious } from "../HomescreenHelpers";
 import {fetchTimetable} from "../FetchTimetable";
+import PlayerTimetable from "./PlayerTimetable";
 
 const CoachNotSetUp = styled.div`
     display: flex;
@@ -47,6 +48,8 @@ export default function PlayerHomeScreen() {
 
     const [coachExists, setCoachExists] = useState(false);
 
+    const [all, setAll] = useState({});
+
     const navigate = useNavigate();
 
     const redo = () => {
@@ -71,19 +74,17 @@ export default function PlayerHomeScreen() {
 
             console.log(data);
 
-            setWorkingHours(prevWorkingHours => ({
-                ...prevWorkingHours,
-                ...data.workingHours
+            setAll(prevAll => ({
+                ...prevAll,
+                ...data.alll
             }));
+
             setAuthorised(data.authorised);
-            setBookings(prevBookings => ({
-                ...prevBookings,
-                ...data.bookings
-            }))
+
             setPricingRules(data.pricingRules);
             setDurations(data.durations);
 
-            const newDates = Object.keys(data.pricingRules);
+            const newDates = Object.keys(data.all);
             setLoadedDates(prevDates => [...prevDates, ...newDates]);
             setAuthorised(data.authorised);
             setCoachExists(true);
@@ -154,27 +155,14 @@ export default function PlayerHomeScreen() {
         updateFormattedDateRange();
     }, [fromDate, toDate]);
 
-    const checkDataLoaded = () => {
-        return durations && workingHours && pricingRules;
-    }
-
     const checkDataInitialised = () => {
         
         return durations.length > 0 && 
-        Object.keys(workingHours).length > 0 && 
+        // Object.keys(workingHours).length > 0 && 
         Object.keys(pricingRules).length > 0;
     }
 
     // Helper components or functions to keep the JSX clean
-    const GlobalStyles = () => (
-        <Global
-            styles={css`
-                body {
-                    overflow: hidden;
-                }
-            `}
-        />
-    );
 
     const ArrowNavigation = ({ handlePrevious, handleNext, fromDate, toDate, setFromDate, setToDate, refresh, view }) => (
         <ArrowButtonGroup>
@@ -262,12 +250,11 @@ export default function PlayerHomeScreen() {
                                 />
                             <ProfileButton imageUrl={profilePictureUrl}/>                        
                         </TitleSection>
-                        <Timetable  
+                        <PlayerTimetable  
                             fromDate={fromDate} 
                             toDate={toDate} 
                             view={view} 
-                            workingHours={workingHours}
-                            bookings={bookings}
+                            all={all}
                             authorised={false}
                         />
 

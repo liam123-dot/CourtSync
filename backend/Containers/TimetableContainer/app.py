@@ -4,12 +4,15 @@ from src.Timetable.TimetableEndpoints import timetable
 from src.Timetable.GetTimetable.GetTimetable import GetTimetable
 from src.Timetable.Bookings.BookingsCancelling import bookings_cancelling_blueprint
 from src.Timetable.Bookings.AddBooking import add_booking_blueprint
+from src.Timetable.Bookings.EditBooking import EditBooking
 
 app = Flask(__name__)
 app.register_blueprint(timetable)
 app.register_blueprint(GetTimetable)
 app.register_blueprint(bookings_cancelling_blueprint)
 app.register_blueprint(add_booking_blueprint)
+app.register_blueprint(EditBooking)
+
 CORS(app)
 
 @app.route('/timetable/routes', methods=['GET'])

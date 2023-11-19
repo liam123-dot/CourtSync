@@ -340,10 +340,14 @@ export default function BookLessonModal({ isOpen, onClose, workingHours, booking
     }
     
     const handlePlayerNameChange = (e) => {
-        setPlayerName(e.target.value);
+        const name = e.target.value;
+        const capitalized = name.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+        setPlayerName(capitalized);
     }
     const handleContactNameChange = (e) => {
-        setContactName(e.target.value);
+        const name = e.target.value;
+        const capitalized = name.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+        setContactName(capitalized);
     }
     const handleCheckboxChange = (e) => {
         setIsSameAsPlayerName(e.target.checked);

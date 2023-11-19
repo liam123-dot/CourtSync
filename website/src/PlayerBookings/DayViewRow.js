@@ -1,7 +1,8 @@
-import React from "react";
-import { Button } from "./Button";
+import React, { useState } from "react";
+import { FaEdit } from "react-icons/fa";
+import axios from "axios";
 
-export default function DayViewRow({ data }) {
+export default function DayViewRow({ data, subView }) {
     const columnStyle = {
         flex: 1,
         padding: '0 10px', // Added padding for better spacing
@@ -20,7 +21,7 @@ export default function DayViewRow({ data }) {
         minute: '2-digit',
         hour12: false
     });
-
+ 
     return (
         <div style={{
             borderTop: '1px solid #000',
@@ -29,9 +30,11 @@ export default function DayViewRow({ data }) {
             padding: '5px 0', // Increase padding for visual comfort
         }}>
 
-            <div style={columnStyle}>
-                {data.contact_name}
-            </div>
+            {!subView &&
+                <div style={columnStyle}>
+                    {data.contact_name}
+                </div>
+            }
             <div style={columnStyle}>
                 {startDate}
             </div>
@@ -42,13 +45,11 @@ export default function DayViewRow({ data }) {
                 {endTime}
             </div>
             <div style={columnStyle}>
-                £{data.cost}
+                £{(data.cost / 100).toFixed(2)}
             </div>
-
-            <Button>
-                Send Invoice
-            </Button>
-
+            <div style={columnStyle}>
+                £{(data.extra_costs / 100).toFixed(2)}
+            </div>            
         </div>
     );
 }

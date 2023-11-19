@@ -2,6 +2,8 @@ from flask import Blueprint, request, jsonify
 from datetime import datetime, timedelta
 import logging
 import asyncio
+import math
+
 from src.shared.CheckAuthorization import get_access_token_username
 from src.Timetable.GetTimetable.CalculateOverlaps import calculate_overlaps, reconstructe_bookings_and_events
 from src.shared.ExecuteQuery import execute_query
@@ -244,7 +246,7 @@ def get_timetable(slug):
         to_time = int(request.args.get('to_time'))
     except KeyError as e:
         return jsonify(message=f"Invalid/Missing query string parameter: {e}")
-    except ValueError as e:
+    except (ValueError, TypeError) as e:
         return jsonify(message='Times must be valid integers'), 400
     
     token = request.headers.get('Authorization')
@@ -270,20 +272,58 @@ def get_timetable(slug):
     durations = get_durations(coach_id)
     pricing_rules = get_pricing_rules(coach_id)
     
+    global_min, global_max = get_global_min_max(working_hours)
+    
+    all = get_all(bookings, coach_events, working_hours, global_min, global_max)
     
     bookings, coach_events = process_overlaps(bookings, coach_events)
     
-    return jsonify(
-        authorised=authorised,
-        bookings=bookings,
-        coach_events=coach_events,
-        default_working_hours=default_working_hours,
-        durations=durations,
-        exists=True,
-        pricing_rules=pricing_rules,
-        working_hours=working_hours
-    ), 200
+    if authorised:
+        return jsonify(
+            authorised=authorised,
+            bookings=bookings,
+            coach_events=coach_events,
+            default_working_hours=default_working_hours,
+            durations=durations,
+            exists=True,
+            pricing_rules=pricing_rules,
+            working_hours=working_hours,
+            all=all,
+            global_min=global_min,
+            global_max=global_max
+        ), 200
+    else:
+        return jsonify(
+            authorised=authorised,
+            all=all,
+            pricing_rules=pricing_rules,
+            durations=durations,
+            global_min=global_min,
+            global_max=global_max
+        )
 
+def get_global_min_max(working_hours):
+    global_min = None
+    global_max = None
+    
+    for key in working_hours:
+        if working_hours[key]['start_time'] and working_hours[key]['end_time']:
+            if not global_min:
+                global_min = working_hours[key]['start_time']
+            elif working_hours[key]['start_time'] < global_min:
+                global_min = working_hours[key]['start_time']
+                
+            if not global_max:
+                global_max = working_hours[key]['end_time']
+            elif working_hours[key]['end_time'] > global_max:
+                global_max = working_hours[key]['end_time']
+                
+    if not global_min:
+        global_min = 12
+    if not global_max:
+        global_max = 12
+                
+    return math.floor(global_min / 60), math.ceil(global_max / 60)
 
 def get_coach_id(slug):
     sql = "SELECT coach_id FROM Coaches WHERE slug=%s"
@@ -315,3 +355,77 @@ def process_overlaps(bookings, coach_events):
     
     bookings, coach_events = reconstructe_bookings_and_events(temp_dict)
     return bookings, coach_events
+
+def get_all(bookings, coach_events, working_hours, global_min, global_max):
+    all = {}
+
+    for key in bookings:
+        if key not in all.keys():
+            all[key] = []
+        
+        for booking in bookings[key]:
+            all[key].append({
+                'type': 'booking',
+                'start_time': booking['start_time'],
+                'duration': booking['duration']
+            })
+            
+    for key in coach_events:
+        if key not in all.keys():
+            all[key] = []
+        
+        for coach_event in coach_events[key]:
+            all[key].append({
+                'type': 'coach_event',
+                'start_time': coach_event['start_time'],
+                'duration': coach_event['duration']
+            })
+            
+    for key in working_hours:
+        if key not in all.keys():
+            all[key] = []
+        
+        if not working_hours[key]['start_time'] and not working_hours[key]['end_time']:
+            # key is the date dd-mm-yyyy. If no start_time or end_time, set start_time to global_min and end_time to global_max in epoch
+            start_time = datetime.strptime(key, "%d-%m-%Y").replace(hour=global_min, minute=0, second=0, microsecond=0).timestamp()
+            end_time = datetime.strptime(key, "%d-%m-%Y").replace(hour=global_max, minute=0, second=0, microsecond=0).timestamp()
+            duration = int((end_time - start_time) / 60)
+            
+            all[key].append({
+                'type': 'working_hour',
+                'start_time': int(start_time),
+                'duration': duration,
+                'start_time_without_global': 0,
+                'duration_without_global': 1440
+            })
+        else:
+            # the start time and end time are in minutes. Representing how many minutes into the day they are. Get the epoch time
+            start_time = datetime.strptime(key, "%d-%m-%Y").replace(hour=0, minute=0, second=0, microsecond=0).timestamp() + (working_hours[key]['start_time'] * 60)
+            end_time = datetime.strptime(key, "%d-%m-%Y").replace(hour=0, minute=0, second=0, microsecond=0).timestamp() + (working_hours[key]['end_time'] * 60)
+            
+            # Add working hour block from global_min to start_time
+            start_time_min = datetime.strptime(key, "%d-%m-%Y").replace(hour=global_min, minute=0, second=0, microsecond=0).timestamp()
+            duration_min = int((start_time - start_time_min) / 60)
+            
+            all[key].append({
+                'type': 'working_hour',
+                'start_time': int(start_time_min),
+                'duration': duration_min,
+                'start_time_without_global': 0,
+                'duration_without_global': working_hours[key]['start_time']
+            })
+            
+            # Add working hour block from end_time to global_max
+            end_time_max = datetime.strptime(key, "%d-%m-%Y").replace(hour=global_max, minute=0, second=0, microsecond=0).timestamp()
+            duration_max = int((end_time_max - end_time) / 60)
+            
+            all[key].append({
+                'type': 'working_hour',
+                'start_time': int(end_time),
+                'duration': duration_max,
+                'start_time_without_global': working_hours[key]['end_time'],
+                'duration_without_global': 1440 - working_hours[key]['end_time']
+            })
+
+    return all
+    

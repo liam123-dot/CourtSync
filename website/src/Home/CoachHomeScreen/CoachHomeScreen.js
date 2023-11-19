@@ -14,6 +14,8 @@ import Searchbar from "./Searchbar";
 import { TitleSection, ArrowButtonGroup, Button, DateLabel, checkRefreshRequired, handleSetView, handleNext, handlePrevious } from "../HomescreenHelpers";
 import {fetchTimetable} from "../FetchTimetable";
 import { BookingCancellationProvider } from "./BookingContextProvider";
+import { BookingObject } from "../Calendar/BookingObject";
+import { WorkingHoursObject } from "../Calendar/WorkingHoursObject";
 
 export default function HomeScreen() {
 
@@ -25,6 +27,10 @@ export default function HomeScreen() {
     const [toDate, setToDate] = useState(null);
 
     const [view, setView] = useState('day');
+
+    const [workingHours, setWorkingHours] = useState({});
+    const [bookings, setBookings] = useState({});
+    const [all, setAll] = useState({});
 
     const [selected, setSelected] = useState([]);
 
@@ -38,16 +44,16 @@ export default function HomeScreen() {
     const [isWorkingHoursModalOpen, setIsWorkingHoursModalOpen] = useState(false);
     const [isAddEventModalOpen, setIsAddEventModalOpen] = useState(false);
 
-    const [workingHours, setWorkingHours] = useState(null);
     const [defaultWorkingHours, setDefaultWorkingHours] = useState({});
     const [durations, setDurations] = useState([]);
-
-    const [bookings, setBookings] = useState(null);
 
     const [profilePictureUrl, setProfilePictureUrl] = useState(null);
     const [formattedDateRange, setFormattedDateRange] = useState("");
 
-    const [coachExists, setCoachExists] = useState(false);
+    const [timetableEvents, setTimetableEvents] = useState({});
+
+    const [min, setMin] = useState(null);
+    const [max, setMax] = useState(null);
 
     const redo = () => {
 
@@ -70,13 +76,25 @@ export default function HomeScreen() {
 
         if (data.exists) {
 
+            // console.log(data);
+
             setWorkingHours(prevWorkingHours => ({
                 ...prevWorkingHours,
                 ...data.workingHours
             }));
             setAuthorised(data.authorised);
             setDefaultWorkingHours(data.defaultWorkingHours);
+            
+            
+            const newAll = {
+                ...all,
+                ...data.all
+            };
+    
+            setAll(newAll);
 
+            setMin(data.global_min);
+            setMax(data.global_max);
             setDurations(data.durations);
 
             setBookings(prevBookings => ({
@@ -86,16 +104,85 @@ export default function HomeScreen() {
             const newDates = Object.keys(data.workingHours);
             setLoadedDates(prevDates => [...prevDates, ...newDates]);
 
-            setCoachExists(true);
+            // return newAll;
 
         } else {
-            setCoachExists(false);
         }
 
         setIsStartingUp(false);
 
     }
+
+    useEffect(() => {
+
+        const convertBookingsToTimetableEvents = (events) => {
+            const newTimetableEvents = { ...events };
+
+            Object.keys(bookings).forEach((key) => {
+                if (Array.isArray(bookings[key])) {
+                    const eventArray = bookings[key].map((booking) => {
+                        return new BookingObject(
+                            booking.booking_id,
+                            booking.start_time,
+                            booking.duration,
+                            key,
+                            booking.contact_name,
+                            booking.contact_email,
+                            booking.contact_phone_number,
+                            booking.cost,
+                            booking.paid,
+                            booking.player_name,
+                            booking.status,
+                            booking.position,
+                            booking.width
+                        );
+                    });
+
+                    if (newTimetableEvents[key]) {
+                        newTimetableEvents[key] = [...newTimetableEvents[key], ...eventArray];
+                    } else {
+                        newTimetableEvents[key] = eventArray;
+                    }
+                }
+            });
+            return newTimetableEvents;
+        };
+
+        const getWorkingHoursFromAll = (events) => {
+            const newTimetableEvents = { ...events };
+            console.log(newTimetableEvents)
+            Object.keys(all).forEach((key) => {
+                const eventArray = all[key].map((item) => {                    
+                    if (item.type === "working_hour") {
+                        console.log(item)
+                        return new WorkingHoursObject(
+                            0,
+                            item.start_time,
+                            item.duration,
+                            key,
+                            item.start_time_without_global,
+                            item.duration_without_global                                
+                        );                        
+                    }
+                    return null; // Add this line to handle cases where item.type is not "working_hours"
+                }).filter(item => item !== null); // Add this line to remove null items from eventArray
     
+                if (newTimetableEvents[key]) {
+                    newTimetableEvents[key] = [...newTimetableEvents[key], ...eventArray];
+                } else {
+                    newTimetableEvents[key] = eventArray;
+                }
+            });
+            return newTimetableEvents; // Change this line to return newTimetableEvents instead of workingHours
+        }
+
+        setTimetableEvents(convertBookingsToTimetableEvents(getWorkingHoursFromAll(timetableEvents)));
+
+    }, [bookings, all]);
+
+    useEffect(() => {
+        console.log(timetableEvents);
+    }, [timetableEvents]);
 
     useEffect(() => {
 
@@ -229,7 +316,7 @@ export default function HomeScreen() {
             {!isStartingUp ? (
                 <>
                     <GlobalStyles />
-                    {coachExists ? (
+                    {authorised ? (
                         <>
                             <TitleSection>
                                 <ArrowButtonGroup>
@@ -251,7 +338,11 @@ export default function HomeScreen() {
                                     onClose={() => setIsWorkingHoursModalOpen(false)}       
                                     settings={{
                                         durations: durations
-                                    }}                                             
+                                    }}           
+                                    loadedDates={loadedDates}
+                                    all={timetableEvents}
+                                    durations={durations}   
+                                    fetchTimetableData={fetchTimetableData}
                                 />
                                 
                                 <div style={{ display: 'flex', alignItems: 'center' }}>
@@ -297,15 +388,16 @@ export default function HomeScreen() {
                                     fromDate={fromDate}
                                     toDate={toDate}
                                     view={view}
-                                    workingHours={workingHours}
-                                    bookings={bookings}
-                                    authorised={true}
+                                    timetableObjects={timetableEvents}
+                                    coachView={true}
+                                    min={min}
+                                    max={max}
                                 />
                             </BookingCancellationProvider>
                         </>
                     ) : (
                         <div>
-                            <h1>invalid url</h1>
+                            <h1>Unauthorised, please use the sign in button to log in again. Or if you are a player visit the url provided by your coach</h1>
                         </div>
                     )}
                 </>

@@ -3,14 +3,18 @@ import {Button} from "./Button"
 import DayViewRow from "./DayViewRow";
 import WeekViewRow from "./WeekViewRow";
 import MonthViewRow from "./MonthViewRow";
+import Titles from "./Titles";
 
 import axios from 'axios';
 
-const fetchInvoiceData = async (view) => {
+const fetchInvoiceData = async (view, statusView, contactPhoneNumber) => {
 
     try {
-
-        const response = await axios.get(`${process.env.REACT_APP_URL}/invoices?view=${view}`, {
+        let url = `${process.env.REACT_APP_URL}/invoices?view=${view}&statusView=${statusView}`;
+        if (contactPhoneNumber !== null) {
+            url += `&contactPhoneNumber=${contactPhoneNumber}`;
+        }
+        const response = await axios.get(url, {
             headers: {
                 Authorization: localStorage.getItem('AccessToken')
             }
@@ -26,12 +30,21 @@ const fetchInvoiceData = async (view) => {
 export default function InvoicePage () {
 
     const [view, setView] = useState('daily')
+    const [statusView, setStatusView] = useState('pending') // ['completed', 'pending']
     const [data, setData] = useState([]);
+
+    const [invoicesInitialised, setInvoicesInitialised] = useState(false);
+    const [invoiceType, setInvoiceType] = useState('')
+
+    const [playerSelected, setPlayerSelected] = useState(null);
 
     useEffect(() => {
 
         const initialLoad = async () => {
-            const results = await fetchInvoiceData(view);            
+            const results = await fetchInvoiceData(view, statusView, playerSelected);
+            setInvoicesInitialised(results.invoices_initialised); 
+            setInvoiceType(results.invoice_type)
+            setView(results.invoice_type);
             setData(results.data);
         }
 
@@ -42,15 +55,20 @@ export default function InvoicePage () {
     useEffect(() => {
         
         const fetchData = async () => {
-            const results = await fetchInvoiceData(view);
+            const results = await fetchInvoiceData(view, statusView, playerSelected);
+
+            setInvoicesInitialised(results.invoices_initialised);
+
             setData(results.data);
         }
 
         fetchData();
 
-    }, [view])
+    }, [view, statusView, playerSelected])
 
-    return (
+
+
+    return invoicesInitialised ? (
         <div style={{
             borderTop: '4px solid #000',
             width: '100%',
@@ -66,41 +84,70 @@ export default function InvoicePage () {
                     flexDirection: 'row',
                     justifyContent: 'space-between'
                 }}>
+                                                
+                    {playerSelected && 
+                        <div style={{
+                            display: 'flex',
+                            flexDirection: 'row',
+                            alignItems: 'center'
+                        
+                        }}>
+                            <h1>{playerSelected}</h1>
+                            <button onClick={() => setPlayerSelected(null)}>x</button>
+                        </div>
+                    }
 
                     <div>
-                    
-                        <Button selected={view==='daily'} onClick={() => setView('daily')}>Daily</Button>
-                        <Button selected={view==='weekly'} onClick={(() => setView('weekly'))}>Weekly</Button>
-                        <Button selected={view==='monthly'} onClick={(() => setView('monthly'))}>Monthly</Button>
-
-                    </div>
-
-                    <div>
-                        <Button>Completed</Button>
-                        <Button>Pending</Button>
+                        <Button selected={statusView==='completed'} onClick={() => setStatusView('completed')}>Completed</Button>
+                        <Button selected={statusView==='pending'} onClick={() => setStatusView('pending')}>Pending</Button>
                     </div>
                 </div>
 
                 {
                     view === 'daily' && 
-                    data.map((invoice) => (                         
-                        <DayViewRow data={invoice} key={invoice.booking_id}/>                
-                    ))
+                    <>
+                        <Titles titles={['Name', 'Date', 'Start Time', 'End Time', 'Price', 'Court Cost']}/>
+                        {
+                            data.map((invoice) => (                         
+                                <DayViewRow data={invoice} key={invoice.booking_id} setSelectedPlayer={setPlayerSelected}/>                
+                            ))
+                        }
+                    </>
                 }
                 {
                     view === 'weekly' &&
-                    data.map((invoice) => (
-                        <WeekViewRow data={invoice}/>
-                    ))
+                    <>
+                        <Titles titles={['Name', 'Number Of Lessons', 'Week', 'Total Cost']}/>
+                        {
+                            data.map((invoice) => (
+                                <WeekViewRow data={invoice} key={invoice.booking_id} setSelectedPlayer={setPlayerSelected}/>
+                            ))
+                        }
+                    </>
                 }
                 {
                     view === 'monthly' &&
-                    data.map((invoice) => (
-                        <MonthViewRow data={invoice}/>
-                    ))
+                    
+                        <>
+                            <Titles titles={['Name', 'Number Of Lessons', 'Month', 'Total Cost']}/>
+                            {
+                                data.map((invoice) => (
+                                    <MonthViewRow data={invoice} key={invoice.booking_id} setSelectedPlayer={setPlayerSelected}/>
+                                ))
+                            }
+                        </>
+                    
                 }            
 
             </div>
         </div>
+    ): (
+        // Screen that says invoice set up must be completed first and provides a link to do so. Nice styling
+        <div>
+            <h1>Set up your invoicing preferences</h1>
+            <p>Before you can view your invoices you must set up your invoice details</p>
+            <Button>Set up invoices</Button>
+        </div>
+
     )
 }

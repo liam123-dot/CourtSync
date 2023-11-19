@@ -1,6 +1,5 @@
 # Find all Python files in the specified directory
-python_files=$(find "backend" -type f -name "*.py")
-
+python_files=$(find "backend" -type f -name "*.py" -not -path "*/.aws-sam/*")
 overall_lines=0
 
 # Initialize a counter variable

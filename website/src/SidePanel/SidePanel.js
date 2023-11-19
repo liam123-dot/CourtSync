@@ -54,9 +54,9 @@ function SidePanel({imageUrl}) {
     const navigate = useNavigate();
 
     const [options, setOptions] = useState({
-        'Settings': '/settings',
         'Invoices': '/dashboard/invoices',
-        'Players': '/dashboard/players'
+        'Players': '/dashboard/players',
+        'Settings': '/settings',
     });
 
     const togglePanel = () => {
@@ -77,8 +77,8 @@ function SidePanel({imageUrl}) {
                 const slug = response.data.slug;
 
                 setOptions(prevOptions => ({
-                    ...prevOptions,
-                    'Timetable': `/${slug}`
+                    'Timetable': `/${slug}`,                    
+                    ...prevOptions
                 }));
             } catch (error){
                 console.log(error);

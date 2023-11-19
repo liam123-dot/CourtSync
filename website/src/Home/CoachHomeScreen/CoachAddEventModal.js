@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ModalOverlay, ModalContent } from "../Calendar/ModalStyles";
 import styled from '@emotion/styled';
+import ChooseDateTimeComponent from '../ChooseDateTimeComponent';
 
 const Label = styled.label`
   margin-right: 15px;
@@ -29,8 +30,9 @@ const SelectField = styled.select`
 `;
 
 const OptionButton = styled.button`
-
-`
+  background-color: ${props => props.selected ? 'blue' : ''};
+  color: ${props => props.selected ? 'white' : ''};
+`;
 
 const dateToString = (date) => {
   if (date){
@@ -38,10 +40,12 @@ const dateToString = (date) => {
   }
 }
 
-export default function CoachAddEventModal({ isOpen, onClose }) {
+export default function CoachAddEventModal({ isOpen, onClose, loadedDates, all, durations, fetchTimetableData, min, max }) {
 
   const [selectedDate, setSelectedDate] = useState();
   const [selectedStartTime, setSelectedStartTime] = useState(null);
+  const [selectedDuration, setSelectedDuration] = useState(null);
+  const [selectedOption, setSelectedOption] = useState(null);
 
   if (!isOpen) return;
 
@@ -59,30 +63,28 @@ export default function CoachAddEventModal({ isOpen, onClose }) {
             flexDirection: 'column'
         }}>
 
-            <div>
-                <OptionButton>Lesson</OptionButton>
-                <OptionButton>Other</OptionButton>
-            </div>
+          <div>
+            <OptionButton selected={selectedOption === 'lesson'} onClick={() => setSelectedOption('lesson')}>
+              Lesson
+            </OptionButton>
+            <OptionButton selected={selectedOption === 'other'} onClick={() => setSelectedOption('other')}>
+              Other
+            </OptionButton>
+          </div>
 
-            <Label>
-
-                Date
-                <InputField
-                  type="date"
-                  value={dateToString(selectedDate)}
-                  onChange={setDate}
-                />
-
-            </Label>
-
-            <Label>
-
-              Start Time
-              <InputField
-
-              />
-
-            </Label>
+          <ChooseDateTimeComponent
+            fetchTimetableData={fetchTimetableData}
+            durations={durations}
+            all={all}
+            selectedDate={selectedDate}
+            setSelectedDate={setSelectedDate}
+            startTime={selectedStartTime}
+            setStartTime={setSelectedStartTime}
+            duration={selectedDuration}
+            setDuration={setSelectedDuration}
+            loadedDates={loadedDates}
+            coachSlug={''}
+          />
 
         </div>
 

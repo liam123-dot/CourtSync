@@ -143,93 +143,110 @@ function WorkingHours({columnStartTime, columnEndTime, workingHour}){
 // Utility function to convert minutes to HH:MM format
 
 
-function Column({ workingHours, startTime, endTime, bookings, authorised, dayView }) {
+function Column({ workingHours, startTime, endTime, dayView, all }) {
     const columnRef = useRef(null);
 
-    let wHStartTime;
-    let wHEndTime;
-    if (workingHours && 'start_time' in workingHours && 'end_time' in workingHours) {
-        wHStartTime = workingHours['start_time']
-        wHEndTime = workingHours['end_time']
+    if (authorised) {
+
+      let wHStartTime;
+      let wHEndTime;
+      if (workingHours && 'start_time' in workingHours && 'end_time' in workingHours) {
+          wHStartTime = workingHours['start_time']
+          wHEndTime = workingHours['end_time']
+      } else {
+          wHStartTime = null;
+          wHEndTime = null;
+      }
+
+      bookings = bookings.map(booking => {
+          let bookingDate = new Date(booking.start_time * 1000);
+          let minutesIntoTheDay = bookingDate.getHours() * 60 + bookingDate.getMinutes();
+
+          return {
+              ...booking,
+              start_time: minutesIntoTheDay
+          };
+      });
+
+      return (
+          <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              border: '1px solid rgba(0,0,0,1)',
+              flex: dayView ? 7: 1,
+              minWidth: '120px',
+              backgroundColor: 'lightgrey',
+              position: 'relative'
+          }}
+              ref={columnRef}
+          >
+            <WorkingHours
+              columnStartTime={startTime}
+              columnEndTime={endTime}
+              workingHour={workingHours}
+            />
+            {
+              bookings.map((booking, index) => {
+                return (
+                  <Booking
+                    key={index}
+                    columnStartTime={startTime}
+                    columnEndTime={endTime}
+                    booking={booking}
+                    authorised={authorised}
+                  />
+                )
+              })
+            }
+          </div>
+      );
+
     } else {
-        wHStartTime = null;
-        wHEndTime = null;
-    }
 
-    bookings = bookings.map(booking => {
-        let bookingDate = new Date(booking.start_time * 1000);
-        let minutesIntoTheDay = bookingDate.getHours() * 60 + bookingDate.getMinutes();
-
+      all = all.map(all => {
+        let allDate = new Date(all.start_time * 1000);
+        let minutesIntoTheDay = allDate.getHours() * 60 + allDate.getMinutes();
         return {
-            ...booking,
-            start_time: minutesIntoTheDay
-        };
-    });
+          ...all,
+          start_time: minutesIntoTheDay
+        };        
+      })
 
-    return (
+      return (
         <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            border: '1px solid rgba(0,0,0,1)',
-            flex: dayView ? 7: 1,
-            minWidth: '120px',
-            backgroundColor: 'lightgrey',
-            position: 'relative'
-        }}
-            ref={columnRef}
-        >
-          <WorkingHours
-            columnStartTime={startTime}
-            columnEndTime={endTime}
-            workingHour={workingHours}
-          />
-          {
-            bookings.map((booking, index) => {
-              return (
-                <Booking
-                  key={index}
-                  columnStartTime={startTime}
-                  columnEndTime={endTime}
-                  booking={booking}
-                  authorised={authorised}
-                />
-              )
-            })
+          display: 'flex',
+          flexDirection: 'column',
+          border: '1px solid rgba(0,0,0,1)',
+          flex: dayView ? 7: 1,
+          minWidth: '120px',
+          backgroundColor: 'lightgrey',
+          position: 'relative'
+      }}
+          ref={columnRef}
+      >
+
+        {
+          all.map((all, index) => {
+            return (
+              <Booking
+                key={index}
+                columnStartTime={startTime}
+                columnEndTime={endTime}
+                booking={all}
+                authorised={authorised}
+              />
+            )
           }
-        </div>
-    );
-}
+          )}
 
-const generateDateToDayMap = (fromDate, toDate) => {
-    const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-    const map = {};
+      </div>
+      )
 
-    let currentDate = new Date(fromDate);
-    while (currentDate <= toDate) {
-        const key = `${String(currentDate.getDate()).padStart(2, '0')}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${currentDate.getFullYear()}`;
-        const value = dayNames[currentDate.getDay()];
-        map[key] = value;
-
-        currentDate.setDate(currentDate.getDate() + 1);
     }
-    return map;
-}
-
-const generateDateArray = (fromDate, toDate) => {
-    const dates = [];
-
-    let currentDate = new Date(fromDate);
-    while (currentDate <= toDate) {
-        const key = `${String(currentDate.getDate()).padStart(2, '0')}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${currentDate.getFullYear()}`;
-        dates.push(key);
-
-        currentDate.setDate(currentDate.getDate() + 1);
-    }
-    return dates;
 }
 
 
-function Timetable({ workingHours, bookings, fromDate, toDate, authorised }) {
+function Timetable({ workingHours, bookings, fromDate, toDate, authorised, all, min, max }) {
 
     const [columnTitles, setColumnTitles] = useState([]);
     const [dates, setDates] = useState([]);
@@ -241,47 +258,39 @@ function Timetable({ workingHours, bookings, fromDate, toDate, authorised }) {
 
     const [loaded, setLoaded] = useState(false);
 
-    const calculateGlobalTimes = () => {
-    let minStartTime = 24 * 60;  // set to max possible value initially (23:59 in minutes)
-    let maxEndTime = 0;         // set to min possible value initially (00:00 in minutes)
-
-    let currentDate = new Date(fromDate);
-    while (currentDate <= toDate) {
-          // Convert currentDate to dd-mm-yyyy format
-          let formattedDate = `${String(currentDate.getDate()).padStart(2, '0')}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${currentDate.getFullYear()}`;
-
-          // Check if data for the key exists in workingHours
-          if (workingHours && workingHours[formattedDate]) {
-              let start = workingHours[formattedDate].start_time;
-              let end = workingHours[formattedDate].end_time;
-
-              if (start && end){
-
-                if (start < minStartTime) minStartTime = start;
-                if (end > maxEndTime) maxEndTime = end;
-
-              }
-          }
-          
-
-        // Move to the next day
-        currentDate.setDate(currentDate.getDate() + 1);
-    }
-    // Convert minStartTime and maxEndTime from minutes to hours
-
-    const start = Math.floor(minStartTime / 60)
-    const end = Math.ceil(maxEndTime / 60)
-
-    setGlobalStartTime(start);
-    setGlobalEndTime(end);
-
-    return {start: start, end: end}
-
-    }
-
     useEffect(() => {
       setLoaded(false);
-    }, [])
+      setGlobalStartTime(min);
+      setGlobalEndTime(max);  
+    }, [min, max])
+
+    const generateDateToDayMap = (fromDate, toDate) => {
+      const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+      const map = {};
+  
+      let currentDate = new Date(fromDate);
+      while (currentDate <= toDate) {
+          const key = `${String(currentDate.getDate()).padStart(2, '0')}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${currentDate.getFullYear()}`;
+          const value = dayNames[currentDate.getDay()];
+          map[key] = value;
+  
+          currentDate.setDate(currentDate.getDate() + 1);
+      }
+      return map;
+  }
+  
+  const generateDateArray = (fromDate, toDate) => {
+      const dates = [];
+  
+      let currentDate = new Date(fromDate);
+      while (currentDate <= toDate) {
+          const key = `${String(currentDate.getDate()).padStart(2, '0')}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${currentDate.getFullYear()}`;
+          dates.push(key);
+  
+          currentDate.setDate(currentDate.getDate() + 1);
+      }
+      return dates;
+  }
 
     useEffect(() => {
       if (fromDate && toDate) {
@@ -290,14 +299,13 @@ function Timetable({ workingHours, bookings, fromDate, toDate, authorised }) {
   
           setColumnTitles(generateDateToDayMap(fromDate, toDate));
           setDates(generateDateArray(fromDate, toDate));
-          const temp = calculateGlobalTimes();
-          const rowTitles = Array.from({ length: (temp.end - temp.start) }, (_, i) => i + temp.start);
+          const rowTitles = Array.from({ length: (max - min) }, (_, i) => i + min);
           setRowTitles(rowTitles);
           
           // Set loaded to true at the end of the effect
           setLoaded(true);
       }
-  }, [fromDate, toDate, workingHours]);
+  }, []);
 
   const dayView = toDate.getDay() - fromDate.getDay() == 0;
   
@@ -328,6 +336,7 @@ function Timetable({ workingHours, bookings, fromDate, toDate, authorised }) {
                             date={date}
                             authorised={authorised}
                             dayView={dayView}
+                            all={all}                        
                         />
                     ))}
                 </div>

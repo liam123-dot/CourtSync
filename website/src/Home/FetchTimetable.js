@@ -23,8 +23,6 @@ export const fetchTimetable = async (fromDate, toDate, coachSlug) => {
             {headers: headers}  
         );
 
-        console.log(response);
-
         const data = response.data
 
         return {
@@ -35,6 +33,9 @@ export const fetchTimetable = async (fromDate, toDate, coachSlug) => {
             exists: true,
             pricingRules: data.pricing_rules,
             workingHours: data.working_hours,
+            all: data.all,
+            global_max: data.global_max,
+            global_min: data.global_min,
         }
 
     } catch (error) {

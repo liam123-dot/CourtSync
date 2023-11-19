@@ -53,4 +53,4 @@ jobs:
                 LATEST_TAG=$(curl -s https://registry.hub.docker.com/v2/repositories/tennisdockerimages/invoice/tags | jq -r '.results[].name' | grep -oE '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n1)
                 NEW_TAG=$(echo $LATEST_TAG | awk -F. -v OFS=. '{$NF = $NF + 1; print}')
 
-                docker buildx build --platform linux/arm64 -t tennisdockerimages/invoice:$NEW_TAG --push .
+                docker buildx build --platform linux/amd64 -t tennisdockerimages/invoice:$NEW_TAG --push .

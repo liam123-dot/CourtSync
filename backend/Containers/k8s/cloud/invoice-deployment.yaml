@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: auth-deployment
+  name: invoice-deployment
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: auth-service
+      app: invoice-service
   template:
     metadata:
       labels:
-        app: auth-service
+        app: invoice-service
     spec:
       containers:
-      - name: auth-container
-        image: tennisdockerimages/authentication-container:v1.0.72
+      - name: invoice-container
+        image: tennisdockerimages/invoice:v0.0.3
         ports:
         - containerPort: 8000
         envFrom:
@@ -22,22 +22,22 @@ spec:
             name: aws-cognito-secrets
         resources:
           requests:
-            memory: "200Mi"
+            memory: "100Mi"
             cpu: "250m"
           limits:
-            memory: "300Mi"
+            memory: "200Mi"
             cpu: "250m"
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: ingress-auth
+  name: ingress-invoice
 spec:
-  type: ClusterIP
+  selector:
+    app: invoice-service
   ports:
     - name: http
+      protocol: TCP
       port: 8000
       targetPort: 8000
-      protocol: TCP
-  selector:
-    app: auth-service
+  type: ClusterIP

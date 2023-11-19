@@ -1,0 +1,38 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: my-ingress
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: localhost
+    http:
+      paths:
+      - path: /auth
+        pathType: Prefix
+        backend:
+          service:
+            name: ingress-auth
+            port:
+              number: 8000
+      - path: /timetable
+        pathType: Prefix
+        backend:
+          service:
+            name: ingress-timetable
+            port:
+              number: 8000
+      - path: /invoices
+        pathType: Prefix
+        backend:
+          service:
+            name: ingress-invoice
+            port:
+              number: 8000
+      - path: /user
+        pathType: Prefix
+        backend:
+          service:
+            name: ingress-user
+            port:
+              number: 8000
