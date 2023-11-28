@@ -1,7 +1,7 @@
 #!/bin/sh
 
 CONTAINER_DIR="TimetableContainer"
-DEPLOYMENT_FILE="k8s/timetable-deployment.yaml"
+DEPLOYMENT_FILE="k8s/local/timetable-deployment.yaml"
 DOCKER_HUB_REPO="tennisdockerimages/timetable-container"
 K8S_FILE="timetable-deployment.yaml"
 
@@ -57,6 +57,6 @@ sed -i '' "s|$DOCKER_HUB_REPO:v[0-9]*\.[0-9]*\.[0-9]*|$DOCKER_HUB_REPO:$NEW_TAG|
 echo "Updated the Kubernetes deployment file with the new tag: $NEW_TAG"
 
 cd k8s
-kubectl apply -f $K8S_FILE
+kubectl apply -f local/$K8S_FILE
 kubectl get pods
 cd ..

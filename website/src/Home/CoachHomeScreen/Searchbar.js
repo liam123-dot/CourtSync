@@ -8,87 +8,38 @@ the search items do not exist at all in locally stored data.
 */
 
 
-import React, { useCallback, useState } from "react";
+import React, { useState } from "react";
+import { useParams } from "react-router-dom";
+import axios from "axios";
 
 export default function Searchbar({ bookings, setBookings, selected, setSelected }) {
   // State for the search query input
   const [searchQuery, setSearchQuery] = useState('');
-  // State for the filtered search results
-  const [filteredResults, setFilteredResults] = useState({});
-
-  const handleBookingSelectionChange = (contactEmail, filteredValue) => {
-    setBookings((currentBookings) => {
-      // Create a new object to hold the updated bookings
-      const updatedBookings = {};
+  const {coachSlug} = useParams();
   
-      // Iterate over each key in the currentBookings object
-      Object.keys(currentBookings).forEach((key) => {
-        // Check if the current key has a list of bookings
-        if (Array.isArray(currentBookings[key])) {
-          // If so, map over that list to update the 'filtered' property
-          updatedBookings[key] = currentBookings[key].map((booking) => {
-            if (booking.contact_email === contactEmail) {
-                if (filteredValue){
-                    setSelected([...selected, contactEmail]);
-                } else {
-                    setSelected(prevSelected => {
-                        // Check if the contactEmail is already in the selected array
-                        const isAlreadySelected = prevSelected.includes(contactEmail);
-                        console.log(isAlreadySelected);
-                      
-                        if (isAlreadySelected) {
-                          // If it's already selected, filter it out
-                          return prevSelected.filter(email => email !== contactEmail);
-                        }
-                      });
-                      
-                }
-                return { ...booking, filtered: filteredValue };
-            } else {
-                return {...booking, filtered: false};
-            }
-            return booking;
-          });
-        }
-      });
-  
-      // Return the updated bookings object
-      return updatedBookings;
-    });
-  };
+  const handleSearch = async (e) => {
 
-
-  // Handler for search input changes
-  const handleSearch = (event) => {
-    let filtered = {};
-    const query = event.target.value.toLowerCase();
+    const query = e.target.value;
     setSearchQuery(query);
 
-    Object.keys(bookings).forEach((key) => {
-      bookings[key].forEach((booking) => {
-        if (booking.player_name.toLowerCase().startsWith(query)) {
-          // Initialize the nested dictionary if it doesn't exist
-          if (!filtered[booking.contact_email]) {
-            filtered[booking.contact_email] = {};
-          }
-          // Add the booking to the nested dictionary, using the booking id as a key
-          filtered[booking.contact_email][booking.id] = booking;
-        }
+    try{
+      // post request to search endpoint
+
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/timetable/${coachSlug}/filter?query=${query}`, {
+        headers: {
+          Authorization: localStorage.getItem("AccessToken")
+        },
       });
-    });
 
-    setFilteredResults(filtered);
-  };
+      console.log(response.data);
+  
+    } catch (error) {
+      console.log(error);
+    }
 
-  // Pass `handleBookingSelection` down to `Searchbar` instead of `setBookings`
+  }
 
   // In Searchbar
-  const selectName = useCallback((contactEmail) => {
-    // Call the passed-in function from the parent component
-    handleBookingSelectionChange(contactEmail, true);
-    setFilteredResults({})
-    // setSearchQuery('');
-  }, [])
 
   return (
     <div style={{ position: 'relative' }}>
@@ -103,7 +54,7 @@ export default function Searchbar({ bookings, setBookings, selected, setSelected
             padding: '10px' // Add some padding for aesthetics
         }}
       />
-      {searchQuery && (
+      {/* {searchQuery && (
         <ul style={{
             position: 'absolute', // This positions the dropdown over the content
             zIndex: 1000, // This ensures the dropdown is above other content
@@ -145,7 +96,7 @@ export default function Searchbar({ bookings, setBookings, selected, setSelected
                   </button>
               )                        
           })
-      }
+      } */}
     </div>
   );
 }

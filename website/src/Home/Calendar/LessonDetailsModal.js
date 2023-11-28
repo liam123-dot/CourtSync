@@ -14,6 +14,8 @@ export default function LessonDetailsModal({isOpen, onClose, booking}){
         return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
     };
 
+    console.log(booking);
+
     return (
         <ModalOverlay onClick={() => {
                 setOnCancelProcess(false)
@@ -39,8 +41,8 @@ export default function LessonDetailsModal({isOpen, onClose, booking}){
                         <p><strong>Cost:</strong> £{(booking.cost / 100).toFixed(2)}</p>
 
                         <p><strong>Duration:</strong> {booking.duration} minutes</p>
-                        <p><strong>Start Time:</strong> {formatTime(booking.start_time)}</p>
-                        <p><strong>End Time:</strong> {formatTime(booking.start_time + booking.duration)}</p>
+                        <p><strong>Start Time:</strong> {formatTime(booking.minutesIntoDay)}</p>
+                        <p><strong>End Time:</strong> {formatTime(booking.minutesIntoDay + booking.duration)}</p>
                         <p><strong>Status:</strong> {booking.status || 'N/A'}</p>
 
                         <button onClick={() => {

@@ -15,7 +15,7 @@ export default function InvoicingSettings({}) {
 
         const fetchData = async () => {
 
-            const resposne = await axios.get(`${process.env.REACT_APP_URL}/user/me`, {
+            const resposne = await axios.get(`${process.env.REACT_APP_API_URL}/user/me`, {
                 headers: {
                     'Authorization': localStorage.getItem("AccessToken")
                 }
@@ -41,7 +41,7 @@ export default function InvoicingSettings({}) {
 
             setIsSaveLoading(true);
 
-            const response = await axios.put(`${process.env.REACT_APP_URL}/user`, {
+            const response = await axios.put(`${process.env.REACT_APP_API_URL}/user/me`, {
                 invoice_type: invoiceType
             }, {
                 headers: {
@@ -60,7 +60,7 @@ export default function InvoicingSettings({}) {
 
     const generateOnboardingLink = async () => {
         setIsStripeSetupLoading(true);
-        const response = await axios.post(`${process.env.REACT_APP_URL}/user/stripe-account`, {}, {
+        const response = await axios.post(`${process.env.REACT_APP_API_URL}/user/stripe-account`, {}, {
             headers: {
                 'Authorization': localStorage.getItem("AccessToken")
             }
@@ -78,6 +78,7 @@ export default function InvoicingSettings({}) {
 
             <p>Send invoices: 
             <select value={invoiceType} onChange={(e) => setInvoiceType(e.target.value)}>
+                <option value="" disabled>Select Option</option>
                 <option value="daily">Daily</option>
                 <option value="weekly">Weekly</option>
                 <option value="monthly">Monthly</option>

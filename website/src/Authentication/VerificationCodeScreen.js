@@ -19,7 +19,7 @@ function VerificationScreen() {
         e.preventDefault();
         setVerificationCodeLoading(true);
         try {
-            const response = await axios.post(`${process.env.REACT_APP_URL}/auth/coach/confirm`, {
+            const response = await axios.post(`${process.env.REACT_APP_API_URL}/coach/confirm`, {
                 email: email,
                 confirmation_code: verificationCode,
             });
@@ -47,7 +47,7 @@ function VerificationScreen() {
         setResendCodeLoading(true);
 
         try {
-            const response = await axios.post(`${process.env.REACT_APP_URL}/auth/coach/confirm/resend`, {
+            const response = await axios.post(`${process.env.REACT_APP_API_URL}/coach/confirm/resend`, {
                 email: email
             })
             console.log(response);

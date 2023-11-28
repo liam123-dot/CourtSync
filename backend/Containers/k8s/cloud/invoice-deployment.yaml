@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: invoice-container
-        image: tennisdockerimages/invoice:v0.0.3
+        image: tennisdockerimages/invoice:v0.0.4
         ports:
         - containerPort: 8000
         envFrom:

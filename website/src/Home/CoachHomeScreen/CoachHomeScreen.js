@@ -7,15 +7,20 @@ import axios from "axios";
 
 import Timetable from "../Calendar/Timetable";
 import WorkingHoursModal from '../Calendar/WorkingHoursModal'
-import CoachAddEventModal from "./CoachAddEventModal";
+import CoachAddEventModal from "./CoachAddEventModal/CoachAddEventModal";
 import SidePanel from "../../SidePanel/SidePanel"
 import { refreshTokens } from "../../Authentication/RefreshTokens";
-import Searchbar from "./Searchbar";
-import { TitleSection, ArrowButtonGroup, Button, DateLabel, checkRefreshRequired, handleSetView, handleNext, handlePrevious } from "../HomescreenHelpers";
+import { TitleSection, ArrowButtonGroup, Button, checkRefreshRequired, handleSetView, handleNext, handlePrevious } from "../HomescreenHelpers";
 import {fetchTimetable} from "../FetchTimetable";
-import { BookingCancellationProvider } from "./BookingContextProvider";
 import { BookingObject } from "../Calendar/BookingObject";
+import { CoachEventObject } from "../Calendar/CoachEventObject";
 import { WorkingHoursObject } from "../Calendar/WorkingHoursObject";
+import { LessonDetailsProvider } from "../Calendar/LessonDetailsContext";
+import LessonDetailsModal from "../Calendar/LessonDetailsModal";
+import DateSelector from "./DateSelector";
+import CoachEventDetailsModal from "../Calendar/CoachEventDetailsModal";
+import {CoachEventDetailsProvider} from "../Calendar/CoachEventDetailsContext";
+import { RefreshTimetableProvider } from "./RefreshTimetableContext";
 
 export default function HomeScreen() {
 
@@ -31,6 +36,7 @@ export default function HomeScreen() {
     const [workingHours, setWorkingHours] = useState({});
     const [bookings, setBookings] = useState({});
     const [all, setAll] = useState({});
+    const [coachEvents, setCoachEvents] = useState({});
 
     const [selected, setSelected] = useState([]);
 
@@ -48,12 +54,17 @@ export default function HomeScreen() {
     const [durations, setDurations] = useState([]);
 
     const [profilePictureUrl, setProfilePictureUrl] = useState(null);
-    const [formattedDateRange, setFormattedDateRange] = useState("");
 
     const [timetableEvents, setTimetableEvents] = useState({});
 
     const [min, setMin] = useState(null);
     const [max, setMax] = useState(null);
+
+    const [isLessonDetailsShown, setIsLessonDetailsShown] = useState(false);
+    const [lessonDetailsBooking, setLessonDetailsBooking] = useState(null);
+
+    const [isCoachEventShown, setIsCoachEventShown] = useState(false);
+    const [coachEvent, setCoachEvent] = useState(null);
 
     const redo = () => {
 
@@ -61,7 +72,6 @@ export default function HomeScreen() {
         fetchTimetableData(fromDate, toDate);
 
     }
-
 
     const refresh = async (fromDate, toDate) => {
         const refreshRequired = checkRefreshRequired(loadedDates, fromDate, toDate);
@@ -72,37 +82,46 @@ export default function HomeScreen() {
 
     const fetchTimetableData = async (fromDate, toDate) => {
 
-        const data = await fetchTimetable(fromDate, toDate, coachSlug);
+        const data = await fetchTimetable(fromDate, toDate, coachSlug, true);
 
         if (data.exists) {
 
-            // console.log(data);
+            const authorised = data.authorised;
 
-            setWorkingHours(prevWorkingHours => ({
-                ...prevWorkingHours,
-                ...data.workingHours
-            }));
-            setAuthorised(data.authorised);
-            setDefaultWorkingHours(data.defaultWorkingHours);
-            
-            
-            const newAll = {
-                ...all,
-                ...data.all
-            };
-    
-            setAll(newAll);
+            setAuthorised(authorised);
 
-            setMin(data.global_min);
-            setMax(data.global_max);
-            setDurations(data.durations);
+            if (authorised) {
 
-            setBookings(prevBookings => ({
-                ...prevBookings,
-                ...data.bookings
-            }))
-            const newDates = Object.keys(data.workingHours);
-            setLoadedDates(prevDates => [...prevDates, ...newDates]);
+                setWorkingHours(prevWorkingHours => ({
+                    ...prevWorkingHours,
+                    ...data.workingHours
+                }));
+                setDefaultWorkingHours(data.defaultWorkingHours);
+                
+                
+                const newAll = {
+                    ...all,
+                    ...data.all
+                };
+        
+                setAll(newAll);
+
+                setMin(data.global_min);
+                setMax(data.global_max);
+                setDurations(data.durations);
+
+                setBookings(prevBookings => ({
+                    ...prevBookings,
+                    ...data.bookings
+                }));
+                setCoachEvents(prevCoachEvents => ({
+                    ...prevCoachEvents,
+                    ...data.coachEvents
+                }));
+                const newDates = Object.keys(data.workingHours);
+                setLoadedDates(prevDates => [...prevDates, ...newDates]);
+
+            }
 
             // return newAll;
 
@@ -154,7 +173,7 @@ export default function HomeScreen() {
             Object.keys(all).forEach((key) => {
                 const eventArray = all[key].map((item) => {                    
                     if (item.type === "working_hour") {
-                        console.log(item)
+                        // console.log(item)
                         return new WorkingHoursObject(
                             0,
                             item.start_time,
@@ -176,9 +195,33 @@ export default function HomeScreen() {
             return newTimetableEvents; // Change this line to return newTimetableEvents instead of workingHours
         }
 
-        setTimetableEvents(convertBookingsToTimetableEvents(getWorkingHoursFromAll(timetableEvents)));
+        const convertCoachEventsToTimetableEvents = (events) => {
+            const newTimetableEvents = { ...events };
+            Object.keys(coachEvents).forEach((key) => {
+                const eventArray = coachEvents[key].map((item) => {
+                    return new CoachEventObject(
+                        item.id,
+                        item.start_time,
+                        item.duration,
+                        key,
+                        item.title,
+                        item.description,
+                        item.position,
+                        item.width
+                    );                
+                })
+                if (newTimetableEvents[key]) {
+                    newTimetableEvents[key] = [...newTimetableEvents[key], ...eventArray];
+                } else {
+                    newTimetableEvents[key] = eventArray;
+                }                
+            })
+            return newTimetableEvents;
+        }
 
-    }, [bookings, all]);
+        setTimetableEvents(convertCoachEventsToTimetableEvents(convertBookingsToTimetableEvents(getWorkingHoursFromAll(timetableEvents))));
+
+    }, [bookings, all, coachEvents]);
 
     useEffect(() => {
         console.log(timetableEvents);
@@ -204,9 +247,9 @@ export default function HomeScreen() {
             }
 
             try {
-                const response = await axios.get(`${process.env.REACT_APP_URL}/auth/coach/${coachSlug}/profile-picture`)
+                const response = await axios.get(`${process.env.REACT_APP_API_URL}/user/${coachSlug}/public-profile/profile_picture_url`)
 
-                const url = response.data.url
+                const url = response.data.profile_picture_url;
 
                 setProfilePictureUrl(url);
 
@@ -222,29 +265,6 @@ export default function HomeScreen() {
         fetchTimetableData(startDate, startDate);
 
     }, []);
-
-    const updateFormattedDateRange = () => {
-        if (!fromDate || !toDate) return;
-
-        const formatSingleDate = (date) => {
-            return `${date.getDate()} ${date.toLocaleString('default', { month: 'long' })}`;
-        }
-
-        let formattedRange;
-        if (fromDate.toDateString() === toDate.toDateString()) {
-            formattedRange = formatSingleDate(fromDate);
-        } else if (fromDate.getMonth() === toDate.getMonth()) {
-            formattedRange = `${fromDate.getDate()} - ${formatSingleDate(toDate)}`;
-        } else {
-            formattedRange = `${formatSingleDate(fromDate)} - ${formatSingleDate(toDate)}`;
-        }
-
-        setFormattedDateRange(formattedRange);
-    }
-
-    useEffect(() => {
-        updateFormattedDateRange();
-    }, [fromDate, toDate]);
 
     
       useEffect(() => {
@@ -356,7 +376,12 @@ export default function HomeScreen() {
                                         refresh={refresh}
                                         view={view}
                                     />
-                                    <DateLabel>{formattedDateRange}</DateLabel>
+                                    <DateSelector
+                                        fromDate={fromDate}
+                                        toDate={toDate}
+                                        setFromDate={setFromDate}
+                                        setToDate={setToDate}
+                                    />
                                 </div>
 
                                 <ViewButtons
@@ -370,30 +395,33 @@ export default function HomeScreen() {
                                     refresh={refresh}
                                 />
 
-                                {/* Search and SidePanel components */}
+                                {/* Search and SidePanel components
                                 <div>
                                     <Searchbar 
-                                        bookings={bookings}
-                                        setBookings={setBookings}
+                                        timetableEvents={timetableEvents}
+                                        setTimetableEvents={setTimetableEvents}
                                         selected={selected}
                                         setSelected={setSelected}
                                     />
-                                </div>
-                                <SidePanel
-                                imageUrl={profilePictureUrl}
-                                />
+                                </div> */}
                             </TitleSection>
-                            <BookingCancellationProvider setBookings={setBookings}>
-                                <Timetable
-                                    fromDate={fromDate}
-                                    toDate={toDate}
-                                    view={view}
-                                    timetableObjects={timetableEvents}
-                                    coachView={true}
-                                    min={min}
-                                    max={max}
-                                />
-                            </BookingCancellationProvider>
+                            <CoachEventDetailsProvider setCoachEvent={setCoachEvent} setShown={setIsCoachEventShown}>
+                                <LessonDetailsProvider setBookings={setLessonDetailsBooking} setShown={setIsLessonDetailsShown}>
+                                    <Timetable
+                                        fromDate={fromDate}
+                                        toDate={toDate}
+                                        view={view}
+                                        timetableObjects={timetableEvents}
+                                        coachView={true}
+                                        min={min}
+                                        max={max}
+                                    />
+                                </LessonDetailsProvider>
+                            </CoachEventDetailsProvider>
+                            <RefreshTimetableProvider refresh={redo}>
+                                <CoachEventDetailsModal isOpen={isCoachEventShown} onClose={() => setIsCoachEventShown(false)} coachEvent={coachEvent}/>
+                                <LessonDetailsModal isOpen={isLessonDetailsShown} onClose={() => setIsLessonDetailsShown(false)} booking={lessonDetailsBooking}/>
+                            </RefreshTimetableProvider>
                         </>
                     ) : (
                         <div>

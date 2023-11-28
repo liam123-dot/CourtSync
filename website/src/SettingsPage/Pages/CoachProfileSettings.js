@@ -9,6 +9,9 @@ export default function CoachProfileSettings() {
     const [profileImage, setProfileImage] = useState(null); // State to hold selected image
     const [isLoading, setIsLoading] = useState(false);
 
+    const [coachLink, setCoachLink] = useState('');
+    const [coachSetUp, setCoachSetUp] = useState(false);
+
     const [isSaving, setIsSaving] = useState(false);
 
     const saveDetails = async () => {
@@ -18,7 +21,7 @@ export default function CoachProfileSettings() {
 
             console.log(coachDetails);
 
-            const response = await axios.post(`${process.env.REACT_APP_URL}/auth/coach/me`, 
+            const response = await axios.put(`${process.env.REACT_APP_API_URL}/user/me`, 
                 coachDetails,
                 {headers: {
                     'Authorization': localStorage.getItem('AccessToken')
@@ -37,15 +40,20 @@ export default function CoachProfileSettings() {
         setIsLoading(true);
         try {
             const response = await axios.get(
-                `${process.env.REACT_APP_URL}/auth/coach/me`,
+                `${process.env.REACT_APP_API_URL}/user/me`,
                 {
                     headers: {
                         'Authorization': localStorage.getItem('AccessToken')
                     }
                 }
             );
-            setCoachDetails(response.data);
+            const data = response.data;
+            setCoachDetails(data);
             console.log(response.data);
+
+            setCoachLink(`${process.env.REACT_APP_WEBSITE_URL}/#${data.slug}`);
+            setCoachSetUp(data.coach_setup);
+
         } catch (error) {
             console.error("Error fetching coach details", error);
         }
@@ -77,7 +85,7 @@ export default function CoachProfileSettings() {
     
         try {
             // 1. Fetch the pre-signed URL from the server
-            const response = await axios.get(`${process.env.REACT_APP_URL}/auth/coach/profile-picture-upload-url`, {
+            const response = await axios.get(`${process.env.REACT_APP_API_URL}/user/me/post-profile-picture-url`, {
                 headers: {
                     'Authorization': localStorage.getItem('AccessToken')
                 }
@@ -92,6 +100,8 @@ export default function CoachProfileSettings() {
                 console.error("No pre-signed URL returned from server");
                 return;
             }
+
+            console.log('uploading')
     
             // 2. Use the pre-signed URL to upload the image to S3
             const s3Response = await axios.put(presignedUrl, profileImage, {
@@ -100,9 +110,12 @@ export default function CoachProfileSettings() {
                 }
             });
 
+            console.log(s3Response)
+
             fetchCoachDetails();
             setProfileImage(null);
             // 3. Optional: Refresh the profile image or coach details after successful upload
+
             // (e.g., by re-fetching coach details or setting the new profile image in your state)
     
         } catch (error) {
@@ -122,11 +135,13 @@ export default function CoachProfileSettings() {
             {coachDetails && (
                 <>
                     <div style={dividerStyle}>
-                        <p><strong>First Name:</strong> {coachDetails.given_name}</p>
+                        <p><strong>First Name:</strong> {coachDetails.first_name}</p>
                     </div>
-
                     <div style={dividerStyle}>
-                        <p><strong>Last Name:</strong> {coachDetails.family_name}</p>
+                        <p><strong>Last Name:</strong> {coachDetails.last_name}</p>
+                    </div>
+                    <div>
+                        <p><strong>Bio:</strong> {coachDetails.bio}</p>
                     </div>
 
                     <div style={dividerStyle}>
@@ -173,6 +188,21 @@ export default function CoachProfileSettings() {
                                 }}
                             />
                         </p>
+                    </div>
+                    <div style={dividerStyle}>
+                        {coachSetUp ? (
+                            <p>
+                                Share this link with your players to allow them to book lessons with you: <br/>
+                                <a href={coachLink}>{coachLink}</a>
+                            </p>
+                        ): (
+                            <p>
+
+                                First you must set some working hours, durations and prices for your lessons. <br/>
+
+                            </p>
+                        )
+                        }
                     </div>
                 </>
             )}

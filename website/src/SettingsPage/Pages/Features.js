@@ -72,29 +72,26 @@ function DurationSelector({selectedDurations, setSelectedDurations}) {
 
 function CostInput({ price = 0, setPrice }) {
     const [errorMessage, setErrorMessage] = useState('');
+    const [displayPrice, setDisplayPrice] = useState('');
 
     const handlePriceChange = (e) => {
         const value = e.target.value;
-        const isValidCurrency = /^\d*(\.\d{0,2})?$/.test(value);
 
-        if (!isValidCurrency) {
-            setErrorMessage("Please enter a valid price");
-        } else {
-            setErrorMessage('');
-            const pennies = Math.round(parseFloat(value) * 100);
-            setPrice(pennies); // Store the price in pennies
-        }
+        const pennies = Math.round(parseFloat(value) * 100);
+        setPrice(pennies); // Store the price in pennies
+        setDisplayPrice(value); // Store the price as a string in pounds
+            
     };
 
-    // Convert the price in pennies to a string in pounds when displaying
-    const displayPrice = (price / 100).toFixed(2);
+    // Convert the price in pennies to a string in pounds when displaying it
 
     return (
         <div>
             <p>Lesson Cost per Hour:</p>
             <span>£</span>
             <input
-                type="text"
+                type="number"
+                min="0"
                 value={displayPrice}
                 onChange={handlePriceChange}
                 placeholder="0.00"
@@ -104,7 +101,6 @@ function CostInput({ price = 0, setPrice }) {
         </div>
     );
 }
-
 export default function FeaturesPage() {
     const [price, setPrice] = useState(null);
     const [selectedDurations, setSelectedDurations] = useState([]);
@@ -116,39 +112,47 @@ export default function FeaturesPage() {
     const isSaveDisabled = selectedDurations.length === 0 || !price || price === '0' || price === '0.00';
 
     const handleSave = async () => {
-        if (isSaveDisabled) {
-            setErrorMessage('Please select at least one duration and enter a valid price.');
-        
-        } else {
-            // TODO: Handle save logic here
-            setErrorMessage(''); // Clear any error messages            
+            // verify that the price is a valid number
+            if (isNaN(price)) {
+                setErrorMessage('Please enter a valid price.');
+            } else {
+                // Rest of your code...
             
-            setIsSaving(true);
+
+            if (isSaveDisabled) {
+                setErrorMessage('Please select at least one duration and enter a valid price.');
+            
+            } else {
+                // TODO: Handle save logic here
+                setErrorMessage(''); // Clear any error messages            
+                
+                setIsSaving(true);
 
 
 
-            try {
+                try {
 
-                const response = await axios.post(
-                    `${process.env.REACT_APP_URL}/timetable/features`, {
-                        default_lesson_cost: price,
-                        durations: selectedDurations,
-                        is_update: isUpdate
-                    }, {
-                        headers: {
-                            Authorization: localStorage.getItem('AccessToken')
+                    const response = await axios.put(
+                        `${process.env.REACT_APP_API_URL}/features`, {
+                            default_lesson_cost: price,
+                            durations: selectedDurations,
+                            is_update: isUpdate
+                        }, {
+                            headers: {
+                                Authorization: localStorage.getItem('AccessToken')
+                            }
                         }
-                    }
-                )
+                    )
 
-                console.log(response);
+                    console.log(response);
 
-            } catch (error){
-                console.log(error)
+                } catch (error){
+                    console.log(error)
+                }
+
+                setIsSaving(false);
+
             }
-
-            setIsSaving(false);
-
         }
     };
 
@@ -158,7 +162,7 @@ export default function FeaturesPage() {
 
             setIsLoading(true);
 
-            const response = await axios.get(`${process.env.REACT_APP_URL}/timetable/features`, {
+            const response = await axios.get(`${process.env.REACT_APP_API_URL}/features`, {
                 headers: {
                     Authorization: localStorage.getItem('AccessToken')
                 }
@@ -175,7 +179,7 @@ export default function FeaturesPage() {
             }
 
             setSelectedDurations(data.durations);
-            setPrice(data.default_pricing * 100); // Convert the default price to pennies
+            setPrice(data.hourly_rate * 100); // Convert the default price to pennies
             setIsLoading(false);
 
         }

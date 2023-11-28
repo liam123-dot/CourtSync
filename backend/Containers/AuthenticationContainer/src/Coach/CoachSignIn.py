@@ -5,7 +5,7 @@ from botocore.exceptions import ClientError
 
 from src.shared.CheckAuthorization import get_access_token_username
 from src.shared.ExecuteQuery import execute_query
-from src.Coach.GetSecretHash import get_secret_hash
+from backend.API.src.Users.Auth.GetSecretHash import get_secret_hash
 
 CoachSignIn = Blueprint('CoachSignIn', __name__)
 

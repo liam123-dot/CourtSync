@@ -35,12 +35,11 @@ export default function WorkingHoursComponent({columnStartTime, columnEndTime, w
 
     return (
         <div style={{
-            position: 'absolute',
+            position: 'relative',
             top: `${top}%`,            
             height: `${height}%`,
             zIndex: 2,
             width: '100%',
-            backgroundImage:  'none', // Changed from backgroundColor to backgroundImage
             backgroundColor: 'lightgrey',
             borderRadius: 0,
             boxSizing: 'border-box',

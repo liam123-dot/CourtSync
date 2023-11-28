@@ -3,7 +3,7 @@ import DayViewRow from "./DayViewRow";
 import { fetchInvoiceData } from "./FetchInvoicesSpecificWeek";
 import Titles from "./Titles";
 
-export default function MonthViewRow ({data}) {
+export default function MonthViewRow ({data, statusView}) {
     const columnStyle = {
         flex: 1,
         padding: '0 10px', // Added padding for better spacing
@@ -23,7 +23,7 @@ export default function MonthViewRow ({data}) {
         } else {
 
             setIsOpen(true);
-            const data = await fetchInvoiceData(null, month, year, contactEmail);
+            const data = await fetchInvoiceData(null, month, year, contactEmail, statusView);
             setSubData(data.data);
         }
 
@@ -39,6 +39,7 @@ export default function MonthViewRow ({data}) {
             const formattedDate = `${date.toLocaleString('default', { month: 'long' })} ${data.year}`;
             setFormattedDate(formattedDate);
         }
+        console.log(data);
     }, [data.year, data.month]);
 
     return (

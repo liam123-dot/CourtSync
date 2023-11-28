@@ -1,33 +1,17 @@
 import React, {useEffect, useState} from "react";
-import { useParams, useNavigate } from "react-router-dom";
-/** @jsxImportSource @emotion/react */
-import styled from '@emotion/styled';
-import {css, Global} from "@emotion/react";
-import axios from "axios";
-
-import PlayerTimetable from "./PlayerTimetable";
-import BookLessonModal from "./BookLessonModal";
+import { useParams } from "react-router-dom";
+import { checkRefreshRequired, Button, handlePrevious, handleNext, getStartEndOfWeek, ArrowButtonGroup, TitleSection, DateLabel, handleSetView } from "../HomescreenHelpers";
 import GetDaysBetweenDates from "../GetDaysBetweenDates";
 import ProfileButton from "../../SidePanel/ProfilePicture";
-import { TitleSection, ArrowButtonGroup, Button, DateLabel, checkRefreshRequired, handleSetView, getStartEndOfWeek, handleNext, handlePrevious } from "../HomescreenHelpers";
-import {fetchTimetable} from "../FetchTimetable";
-import PlayerTimetable from "./PlayerTimetable";
-
-const CoachNotSetUp = styled.div`
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100%;
-    font-size: 1.5em;
-    color: red;
-`;
+import BookLessonModal from "./BookLessonModal";
+import { fetchTimetable } from "../FetchTimetable";
+import {css, Global} from "@emotion/react";
+import Timetable from "../Calendar/Timetable";
+import { TimetableEvent } from "../Calendar/TimetableEvent";
 
 export default function PlayerHomeScreen() {
 
-    const { coachSlug } = useParams();
-
-
-    const [authorised, setAuthorised] = useState(false);
+    const {coachSlug} = useParams();
 
     const [fromDate, setFromDate] = useState(null);
     const [toDate, setToDate] = useState(null);
@@ -36,21 +20,24 @@ export default function PlayerHomeScreen() {
 
     const [isBookLessonModalOpen, setIsBookLessonModalOpen] = useState(false);
 
-    const [loadedDates, setLoadedDates] = useState([]);
-
-    const [workingHours, setWorkingHours] = useState(null);
     const [durations, setDurations] = useState(null);
     const [pricingRules, setPricingRules] = useState(null);
-    const [bookings, setBookings] = useState(null);
-    const [profilePictureUrl, setProfilePictureUrl] = useState('');
 
     const [formattedDateRange, setFormattedDateRange] = useState("");
 
     const [coachExists, setCoachExists] = useState(false);
 
     const [all, setAll] = useState({});
+    const [timetableEvents, setTimetableEvents] = useState({});
 
-    const navigate = useNavigate();
+    const [loadedDates, setLoadedDates] = useState([]);
+
+    const [profilePictureUrl, setProfilePictureUrl] = useState('');
+
+    const [min, setMin] = useState(null);
+    const [max, setMax] = useState(null);
+
+    const [coachAccountSetUp, setCoachAccountSetUp] = useState(false);
 
     const redo = () => {
 
@@ -68,7 +55,9 @@ export default function PlayerHomeScreen() {
 
     const fetchTimetableData = async (fromDate, toDate) => {
 
-        const data = await fetchTimetable(fromDate, toDate, coachSlug);
+        const data = await fetchTimetable(fromDate, toDate, coachSlug, false);
+
+        console.log(data)
 
         if (data.exists) {
 
@@ -76,28 +65,36 @@ export default function PlayerHomeScreen() {
 
             setAll(prevAll => ({
                 ...prevAll,
-                ...data.alll
+                ...data.all
             }));
 
-            setAuthorised(data.authorised);
+            setMin(data.global_min);
+            setMax(data.global_max);
 
             setPricingRules(data.pricingRules);
             setDurations(data.durations);
 
-            const newDates = Object.keys(data.all);
-            setLoadedDates(prevDates => [...prevDates, ...newDates]);
-            setAuthorised(data.authorised);
             setCoachExists(true);
+            const newDates = Object.keys(data.all)
+            setLoadedDates(prevLoadedDates => [...prevLoadedDates, ...newDates]);
+
+            setCoachAccountSetUp(data.coach_setup);
+
         } else {
             setCoachExists(false);
         }
 
     }
 
-    console.log(bookings);
+    useEffect(() => {
+        const timetableEvents = Object.keys(all).reduce((events, key) => {
+            const eventArray = all[key].map(item => new TimetableEvent(0, item.start_time, item.duration, key));
+            return { ...events, [key]: eventArray };
+        }, {});
+        setTimetableEvents(timetableEvents);
+    }, [all]);
 
     useEffect(() => {
-
         const calculateStartingDates = () => {
 
             const currentDate = new Date();
@@ -110,27 +107,10 @@ export default function PlayerHomeScreen() {
             return startAndEnd;
 
         }
-
-        const fetchCoachProfile = async () => {
-
-            try {
-                const response = await axios.get(`${process.env.REACT_APP_URL}/auth/coach/${coachSlug}/profile-picture`)
-
-                const url = response.data.url
-
-                setProfilePictureUrl(url);
-
-            } catch (error){
-                console.log(error);
-            }
-
-        }
-        
-        fetchCoachProfile();
+                
         const dates = calculateStartingDates();
         fetchTimetableData(dates.fromDate, dates.toDate);
-
-    }, []);
+    }, [])
 
     const updateFormattedDateRange = () => {
         if (!fromDate || !toDate) return;
@@ -155,15 +135,6 @@ export default function PlayerHomeScreen() {
         updateFormattedDateRange();
     }, [fromDate, toDate]);
 
-    const checkDataInitialised = () => {
-        
-        return durations.length > 0 && 
-        // Object.keys(workingHours).length > 0 && 
-        Object.keys(pricingRules).length > 0;
-    }
-
-    // Helper components or functions to keep the JSX clean
-
     const ArrowNavigation = ({ handlePrevious, handleNext, fromDate, toDate, setFromDate, setToDate, refresh, view }) => (
         <ArrowButtonGroup>
             <Button onClick={() => handlePrevious(fromDate, toDate, setFromDate, setToDate, refresh, view)}>←</Button>
@@ -178,19 +149,11 @@ export default function PlayerHomeScreen() {
         </div>
     );
 
-    return (
-        <>
-            {!coachExists ? (
-                <CoachNotSetUp>
+    return (!coachExists ? (
+                <p>
                     No coach account exists with the provided url
-                </CoachNotSetUp>
-            ) : (
-                !checkDataInitialised() ? (
-                    <CoachNotSetUp>
-                    The coach has not set up their account. Lessons cannot be booked at this time.
-                    </CoachNotSetUp>
-                ): (
-
+                </p>
+            ) : coachAccountSetUp ? (
                     <div style={{ 
                         height: '100vh', 
                         width: '100%', 
@@ -216,10 +179,8 @@ export default function PlayerHomeScreen() {
                                 onClose={() => setIsBookLessonModalOpen(false)}
                                 days={GetDaysBetweenDates(fromDate.toISOString().split('T')[0], toDate.toISOString().split('T')[0])}
                                 fromDate={fromDate}
-                                bookings={bookings}
                                 durations={durations}
                                 pricingRules={pricingRules}
-                                workingHours={workingHours}
                                 coachSlug={coachSlug}
                                 loadedDates={loadedDates}
                                 redo={redo}
@@ -250,18 +211,25 @@ export default function PlayerHomeScreen() {
                                 />
                             <ProfileButton imageUrl={profilePictureUrl}/>                        
                         </TitleSection>
-                        <PlayerTimetable  
-                            fromDate={fromDate} 
-                            toDate={toDate} 
-                            view={view} 
-                            all={all}
-                            authorised={false}
-                        />
+                        <Timetable
+                            coachView={false}
+                            fromDate={fromDate}
+                            toDate={toDate}
+                            min={min}
+                            max={max}
+                            view={view}
+                            timetableObjects={timetableEvents}
+                        />                
 
                     </div>
-                )
-            )}
-            
-        </>
-    );
+            ): (
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+                    <h1 style={{textAlign: 'center'}}>
+                        Coach has not fully set up their account yet. Please check back later.
+                    </h1>
+                </div>
+            )
+    )
+    
+
 }

@@ -30,9 +30,8 @@ export default function GreyedOutObject ({columnStartTime, columnEndTime, timeta
             position: 'absolute',
             top: `${top}%`,            
             height: `${height}%`,
-            zIndex: 2,
+            zIndex: 1,
             width: '100%',
-            backgroundImage:  'none', // Changed from backgroundColor to backgroundImage
             backgroundColor: 'lightgrey',
             borderRadius: 0,
             boxSizing: 'border-box',

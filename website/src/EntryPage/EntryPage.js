@@ -4,6 +4,7 @@ import { refreshTokens } from "../Authentication/RefreshTokens";
 
 import styled from '@emotion/styled';
 import { useNavigate } from "react-router-dom";
+import { Spinner } from "../Spinner";
 
 export const Button = styled.button`
       width: 180px;
@@ -26,6 +27,10 @@ export default function EntryPage ({}) {
     const [isCoach, setIsCoach] = useState(false);
     const [coachSlug, setCoachSlug] = useState(null);
 
+    const [checkLoading, setCheckLoading] = useState(false);
+
+    console.log(`url: ${process.env.REACT_APP_API_URL}`)
+
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -34,11 +39,13 @@ export default function EntryPage ({}) {
 
             try {
 
+                setCheckLoading(true);
+
                 if (localStorage.getItem('RefreshLoading') === 'true'){
                     await refreshTokens();
                 }
 
-                const response = await axios.get(`${process.env.REACT_APP_URL}/auth/coach/check`, {
+                const response = await axios.get(`${process.env.REACT_APP_API_URL}/auth/coach/check`, {
                     headers: {
                         Authorization: localStorage.getItem('AccessToken')
                     }
@@ -55,6 +62,8 @@ export default function EntryPage ({}) {
             } catch (error){
                 console.log(error);
             }
+
+            setCheckLoading(false);
 
         }
 
@@ -92,36 +101,40 @@ export default function EntryPage ({}) {
               flex: 2,
               textAlign: 'right', // Align the button text to the right
             }}>
-              {isCoach ? (
-                <Button 
-                  onClick={() => { navigate(`/dashboard/${coachSlug}`) }} 
-                  style={{
-                    backgroundColor: 'white', // Button background color
-                    color: '#004d99', // Button text color to match the navbar
-                    padding: '10px 20px', // Spacing inside the button
-                    border: 'none', // No border for a flat design
-                    borderRadius: '5px', // Slightly rounded corners for the button
-                    cursor: 'pointer', // Pointer cursor on hover
-                    fontSize: '1em', // Button text size
-                  }}
-                >
-                  Dashboard
-                </Button>
+              {checkLoading ? (
+                <Spinner /> // Show Spinner while loading
               ) : (
-                <Button 
-                  onClick={() => { navigate('/coach/signin') }}
-                  style={{
-                    backgroundColor: 'white',
-                    color: '#004d99',
-                    padding: '10px 20px',
-                    border: 'none',
-                    borderRadius: '5px',
-                    cursor: 'pointer',
-                    fontSize: '1em',
-                  }}
-                >
-                  Sign In
-                </Button>
+                isCoach ? (
+                  <Button 
+                    onClick={() => { navigate(`/dashboard/${coachSlug}`) }} 
+                    style={{
+                      backgroundColor: 'white',
+                      color: '#004d99',
+                      padding: '10px 20px',
+                      border: 'none',
+                      borderRadius: '5px',
+                      cursor: 'pointer',
+                      fontSize: '1em',
+                    }}
+                  >
+                    Dashboard
+                  </Button>
+                ) : (
+                  <Button 
+                    onClick={() => { navigate('/coach/signin') }}
+                    style={{
+                      backgroundColor: 'white',
+                      color: '#004d99',
+                      padding: '10px 20px',
+                      border: 'none',
+                      borderRadius: '5px',
+                      cursor: 'pointer',
+                      fontSize: '1em',
+                    }}
+                  >
+                    Sign In
+                  </Button>
+                )
               )}
             </div>
       

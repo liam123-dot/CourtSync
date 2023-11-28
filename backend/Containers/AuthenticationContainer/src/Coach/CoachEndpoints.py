@@ -66,7 +66,7 @@ def refresh_tokens(coach_email, refresh_token):
     )
     return response
 
-@coach.route('/auth/coach/refresh', methods=['POST'])
+@coach.route('/coach/refresh', methods=['POST'])
 def refresh_coach_tokens():
     data = request.json
 

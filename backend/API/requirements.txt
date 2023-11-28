@@ -1,0 +1,8 @@
+python-dotenv
+gunicorn
+flask
+flask_cors
+pymysql
+python-jose
+boto3
+stripe

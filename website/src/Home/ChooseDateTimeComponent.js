@@ -2,7 +2,8 @@ import react, {useEffect, useState} from 'react';
 import { css } from "@emotion/react";
 import styled from '@emotion/styled';
 import { useParams } from 'react-router-dom';
-import { WorkingHoursObject } from './Calendar/WorkingHoursObject';
+import axios from 'axios';
+import { Spinner } from '../Spinner';
 
 const Label = styled.label`
   margin-right: 15px;
@@ -44,112 +45,30 @@ function formatDate(date) {
     return `${day}-${month}-${year}`;
 }
 
-export default function ChooseDateTimeComponent({fetchTimetableData, 
-    durations, 
-    all,
-    selectedDate,
-    setSelectedDate,
-    startTime,
-    setStartTime,
-    duration,
-    setDuration,
-    loadedDates,
+function formatEpochTime(epoch) {
+    // takes epoch time in seconds and returns time in format HH:MM
+    const date = new Date(epoch * 1000);
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    return `${hours}:${minutes}`;
+}
+
+export default function ChooseDateTimeComponent({
+        selectedDate,
+        setSelectedDate,
+        setStartTime,
+        setDuration,
     }) {
 
     const {coachSlug} = useParams();
 
     const [isDateValid, setIsDateValid] = useState(true); // New state to track date validity
     const [availableStartTimes, setAvailableStartTimes] = useState({}); // New state to track available start times
+    const [availableStartTimesLoading, setAvailableStartTimesLoading] = useState(false); // New state to track loading of available start times
 
-    useEffect(() => {
-        if (selectedDate){
-            calculateAvailableStartTimes(selectedDate);
-        }
-    }, [all, selectedDate, loadedDates])
+    const [selectedStartTime, setSelectedStartTime] = useState(null); // New state to track selected start time
 
-    const calculateStartAndEndTimes = (eventsOnDay) => {
-
-        const start = 24 * 60; // 24 hours * 60 minutes
-        const end = 0;
-
-        for (const event of eventsOnDay) {
-            if (event.type === 'working_hour') {
-                console.log(event)
-                if (event.minutesIntoDay < start) {
-                    start = event.minutesIntoDay;
-                }
-                if (event.minutesIntoDay + event.duration > end) {
-                    end = event.minutesIntoDay + event.duration;
-                }
-            }
-        }
-
-        console.log(start, end)
-
-        return {start: start, end: end}
-
-    }
-
-    const calculateAvailableStartTimes = async (date) => {
-
-        const formattedDate = formatDate(date);
-
-        console.log(formattedDate)
-        console.log(all)
-
-        if (!loadedDates.includes(formattedDate)){
-            console.log('redoing')
-            fetchTimetableData(date, date, coachSlug);
-        } else {
-            console.log('checing')
-
-            const eventsOnDay = all[formattedDate];
-            const availableStartTimes = {};
-        
-            // Define the start and end of the day in minutes
-            
-            const startAndEnd = calculateStartAndEndTimes(eventsOnDay)
-
-            const startOfDay = startAndEnd.start; // 00:00
-            const endOfDay = startAndEnd.end; // 24:00
-        
-            // Define the duration of each time slot in minutes
-            const timeSlotDuration = 15;
-        
-            // Iterate over the time slots in the day
-            for (let startTime = startOfDay; startTime < endOfDay; startTime += timeSlotDuration) {
-                // Iterate over the possible durations
-                for (let duration = timeSlotDuration; duration <= endOfDay - startTime; duration += timeSlotDuration) {
-                    // Check if the time slot can fit the event without overlapping any other events
-                    if (eventsOnDay.every(event => !overlaps(startTime, duration, event))) {
-                        // Convert the start time to a 24-hour time format
-                        const hours = Math.floor(startTime / 60);
-                        const minutes = startTime % 60;
-                        const formattedStartTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-            
-                        if (!availableStartTimes[formattedStartTime]) {
-                            availableStartTimes[formattedStartTime] = [];
-                        }
-                        availableStartTimes[formattedStartTime].push(duration);
-                    }
-                }
-            }
-        
-            setAvailableStartTimes(availableStartTimes);
-        }
-    }
-    
-    console.log(all)
-    // Helper function to check if a time slot overlaps with an event
-// Helper function to check if a time slot overlaps with an event
-function overlaps(startTime, duration, event) {
-    // If the event is a working hour, use startTimeWithoutGlobal and durationWithoutGlobal
-    if (event.type === 'working_hour' || event instanceof WorkingHoursObject) {
-        return startTime < event.startTimeWithoutGlobal + event.durationWithoutGlobal && startTime + duration > event.startTimeWithoutGlobal;
-    } else {
-        return startTime < event.minutesIntoDay + event.duration && startTime + duration > event.minutesIntoDay;
-    }
-}
+        // Helper function to check if a time slot overlaps with an event
 
     const setDate = (e) => {
         const date = new Date(e.target.value);
@@ -164,9 +83,44 @@ function overlaps(startTime, duration, event) {
             return
         }
         setSelectedDate(date);
-        calculateAvailableStartTimes(date);
+        getAvailableStartTimes(date);
         setStartTime(null);
         setDuration(null);
+
+    }
+
+    const getAvailableStartTimes = async (date) => {
+
+        // get epoch time in seconds of date
+
+        setAvailableStartTimesLoading(true);
+
+        try {
+
+            const epochTime = Math.floor(date.getTime() / 1000);
+
+            const response = await axios.get(`${process.env.REACT_APP_API_URL}/timetable/${coachSlug}/booking-availability?startTime=${epochTime}`);
+
+            setIsDateValid(true);
+            setAvailableStartTimes(response.data);
+
+        
+        } catch (error) {
+            console.log(error);
+        }
+
+        setAvailableStartTimesLoading(false)
+
+    }
+
+    const setStartTimeHandler = (e) => {
+        setSelectedStartTime(e.target.value);
+        setStartTime(e.target.value);
+    }
+
+    const setDurationHandler = (e) => {
+
+        setDuration(e.target.value);
 
     }
 
@@ -182,15 +136,33 @@ function overlaps(startTime, duration, event) {
                 {!isDateValid && <p css={css`color: red;`}>Please select a valid date (today or in the future).</p>}
             </Label>
 
+            {availableStartTimesLoading && <Spinner />}
+                
             <Label>
                 Start Time
-                <SelectField>
+                <SelectField onChange={setStartTimeHandler}>
                     <option value="">Select a start time</option>
-                    {availableStartTimes && Object.keys(availableStartTimes).map(startTime => (
-                        <option key={startTime} value={startTime}>{startTime}</option>
-                    ))}
+                    {availableStartTimes && Object.keys(availableStartTimes).map(startTime => {
+                        return (
+                            <option key={startTime} value={startTime}>{formatEpochTime(startTime)}</option>
+                        )
+                    }
+                    )}
                 </SelectField>
             </Label>
+
+            <Label>
+                End Time
+                <SelectField onChange={setDurationHandler}>
+                    <option value="">Select a end time</option>
+                    {availableStartTimes && selectedStartTime && availableStartTimes[selectedStartTime].map(duration => {
+                        return (
+                            <option key={duration} value={duration}>{duration} minutes</option>
+                        )
+                    })}
+                </SelectField>
+            </Label>
+            
         </div>
     )
 

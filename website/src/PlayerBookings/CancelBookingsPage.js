@@ -37,7 +37,7 @@ export default function CancelBookingPage () {
             setIsLoading(true);
 
             try {
-                const response = await axios.get(`${process.env.REACT_APP_URL}/timetable/player-bookings/${bookingHash}`)
+                const response = await axios.get(`${process.env.REACT_APP_API_URL}/timetable/player-bookings/${bookingHash}`)
 
                 const data = response.data;
                 
@@ -72,7 +72,7 @@ export default function CancelBookingPage () {
 
         try {
 
-            const response = await axios.post(`${process.env.REACT_APP_URL}/timetable/player-bookings/${bookingHash}/cancel`, {
+            const response = await axios.post(`${process.env.REACT_APP_API_URL}/timetable/player-bookings/${bookingHash}/cancel`, {
                 messageToCoach: cancellationNote
             })
 
@@ -107,8 +107,7 @@ export default function CancelBookingPage () {
             <p><b>Player Name:</b> {bookingData.player_name}</p>    
             <p><b>Start Time:</b> {epochToDateTime(bookingData.start_time)}</p>
             <p><b>Duration:</b> {bookingData.duration} minutes</p>
-            <p><b>Cost:</b> £{bookingData.cost}</p>
-            
+            <p><b>Cost:</b> £{(bookingData.cost / 100).toFixed(2)}</p>
             <p>Please write a note to your coach explaining reason for cancelling:</p>
             <input value={cancellationNote} onChange={(e) => {setCancellationNote(e.target.value)}}/>
             <button onClick={confirmCancel}>

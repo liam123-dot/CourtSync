@@ -67,7 +67,7 @@ function SidePanel({imageUrl}) {
         const getCoachSlug = async () => {
 
             try {
-                const url = `${process.env.REACT_APP_URL}/auth/coach/slug`;
+                const url = `${process.env.REACT_APP_API_URL}/user/me/slug`;
                 const response = await axios.get(url, {
                     headers: {
                         'Authorization': localStorage.getItem('AccessToken')

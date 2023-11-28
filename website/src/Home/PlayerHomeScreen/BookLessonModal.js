@@ -1,12 +1,12 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 /** @jsxImportSource @emotion/react */
 import styled from '@emotion/styled';
 import { css } from "@emotion/react";
 import { ModalOverlay, ModalContent } from "../Calendar/ModalStyles";
 import { SaveButton } from "../CommonAttributes/SaveButton";
 import axios from "axios";
-import {fetchTimetable} from "../FetchTimetable"
 import { Spinner } from "../../Spinner";
+import ChooseDateTimeComponent from "../ChooseDateTimeComponent";
 
 const Label = styled.label`
   margin-right: 15px;
@@ -34,79 +34,15 @@ const SelectField = styled.select`
   border-radius: 4px;
 `;
 
-function formatDate(date) {
-    let day = date.getDate().toString().padStart(2, '0');
-    let month = (date.getMonth() + 1).toString().padStart(2, '0'); // January is 0!
-    let year = date.getFullYear();
-  
-    return `${day}-${month}-${year}`;
-}
-
 function formatPriceInPounds(pennies) {
     // Convert pennies to pounds by dividing by 100 and fixing to 2 decimal places
     const pounds = (pennies / 100).toFixed(2);
     // Return the formatted string with the GBP symbol
     return `£${pounds}`;
-  }
-
-const calculateAvailableStartTimes = (date, durations, workingHoursInput, bookingsInput) => {
-    const formattedDate = formatDate(date);
-    let workingHours = { start_time: 0, end_time: 24 * 60 }; // Default to full day if not specified
-    let bookings = [];
-
-    if (formattedDate in workingHoursInput) {
-        workingHours = workingHoursInput[formattedDate];
-    }
-
-    if (formattedDate in bookingsInput) {
-        bookings = bookingsInput[formattedDate];
-    }
-
-    // Convert epoch times to minutes from the start of the day
-    const bookedRanges = bookings.map(booking => {
-        const startTimeDate = new Date(booking.start_time * 1000);
-        const startTime = startTimeDate.getHours() * 60 + startTimeDate.getMinutes();
-        return { start: startTime, end: startTime + booking.duration };
-    });
-
-    bookedRanges.sort((a, b) => a.start - b.start);
-
-    let availableStartTimes = {};
-
-    // Adjust start_time to the nearest quarter hour if not already at one
-    const startAdjustment = workingHours.start_time % 15;
-    if (startAdjustment > 0) {
-        workingHours.start_time += 15 - startAdjustment;
-    }
-
-    const latestPossibleStart = workingHours.end_time - Math.min(...durations);
-
-    for (let time = workingHours.start_time; time <= latestPossibleStart; time += 15) {
-        // Filter the durations that can fit into the current start time
-        const validDurations = durations.filter(duration => {
-            const lessonEnd = time + duration;
-            if (lessonEnd > workingHours.end_time) {
-                return false;
-            }
-            return !bookedRanges.some(range => time < range.end && lessonEnd > range.start);
-        });
-
-        if (validDurations.length > 0) {
-            // Convert start time from minutes to HH:mm format
-            const hours = Math.floor(time / 60).toString().padStart(2, '0');
-            const minutes = (time % 60).toString().padStart(2, '0');
-            const timeString = `${hours}:${minutes}`;
-
-            availableStartTimes[timeString] = validDurations;
-        }
-    }
-
-    console.log(availableStartTimes);
-    return availableStartTimes;
-};
+}
 
 
-export default function BookLessonModal({ isOpen, onClose, workingHours, bookings, pricingRules, durations, coachSlug, loadedDates, redo }) {
+export default function BookLessonModal({ isOpen, onClose, coachSlug, redo }) {
 
     const [selectedDate, setSelectedDate] = useState();
     const [selectedStartTime, setSelectedStartTime] = useState('');
@@ -119,13 +55,18 @@ export default function BookLessonModal({ isOpen, onClose, workingHours, booking
     const [contactEmail, setContactEmail] = useState(null);
     const [contactPhoneNumber, setContactPhoneNumber] = useState(null);
 
-    const [availableStartTimes, setAvailableStartTimes] = useState([]);
-    const [isDateValid, setIsDateValid] = useState(true); // New state to track date validity
-    const [availableDurations, setAvailableDurations] = useState([]);
+    const [possiblePlayerNames, setPossiblePlayerNames] = useState([]); // [ {name: 'John Smith', id: 1}, {name: 'Jane Doe', id: 2}
+    const [isNewName, setIsNewName] = useState(false); // [ {name: 'John Smith', id: 1}, {name: 'Jane Doe', id: 2
 
     const [isLoading, setIsLoading] = useState(false);
 
     const [errorMessage, setErrorMessage] = useState(null);
+
+    const [isEmailVerified, setIsEmailVerified] = useState(false);
+    const [localEmail, setLocalEmail] = useState(null);
+
+    const [awaitingVerification, setAwaitingVerification] = useState(false);
+    const [verificationCode, setVerificationCode] = useState(null);
 
     const handleBooking = async () => {
 
@@ -189,14 +130,14 @@ export default function BookLessonModal({ isOpen, onClose, workingHours, booking
                 contactPhoneNumber.replace('+44', '0')
             }
 
-            const startTime = getEpochTime(selectedDate, selectedStartTime);
+            const startTime = getEpochTime(selectedDate, selectedStartTime);            
 
             if (startTime < Date.now() / 1000) {
                 setErrorMessage('Cannot book lessons in the past')
             } else {
 
                 const payload = {
-                    startTime: startTime,
+                    startTime: selectedStartTime,
                     duration: selectedDuration,
                     playerName: playerName,
                     contactName: contactName,
@@ -207,11 +148,14 @@ export default function BookLessonModal({ isOpen, onClose, workingHours, booking
                     ruleId: selectedRuleId
                 }
 
-                const url = `${process.env.REACT_APP_URL}/timetable/${coachSlug}/booking`
+                const url = `${process.env.REACT_APP_API_URL}/timetable/${coachSlug}/booking`
 
                 try {
                     const result = await axios.post(url, payload);
                     console.log(result);
+
+                    localStorage.setItem('contactEmail', contactEmail);
+
                     setSelectedDate(null);
                     setSelectedStartTime(null);
                     setPlayerName(null);
@@ -222,6 +166,7 @@ export default function BookLessonModal({ isOpen, onClose, workingHours, booking
                     setLessonCost(null);
                     setSelectedRuleId(null);
                     setErrorMessage('');
+                    setIsNewName(false);
                     onClose();
                     redo();
 
@@ -230,9 +175,6 @@ export default function BookLessonModal({ isOpen, onClose, workingHours, booking
                     const errorResponse = error.response
                     console.log(errorResponse)
                     setErrorMessage(errorResponse.data.message)
-                    setSelectedDate(null);
-                    setSelectedStartTime(null);
-                    setSelectedDuration(null);
                     redo();
                 }
             }
@@ -243,101 +185,75 @@ export default function BookLessonModal({ isOpen, onClose, workingHours, booking
 
     }
 
-    function calculateLessonCost(inputtedDate, startTime, duration) {
-        // Convert the start time to epoch time
-        const startTimeParts = startTime.split(':').map(part => parseInt(part, 10));
-        const lessonStartDate = new Date(inputtedDate.getTime()); // Clone the inputted date object
-        lessonStartDate.setHours(startTimeParts[0], startTimeParts[1], 0, 0); // Set hours and minutes for the lesson start time
-        const lessonStartEpoch = lessonStartDate.getTime();
-      
-        // Calculate the end time of the lesson in epoch time
-        const lessonEndEpoch = lessonStartEpoch + duration * 60 * 1000; // Convert minutes to milliseconds
-      
-        // Use the formatDate function to format the inputted date for rule matching
-        const formattedDate = formatDate(inputtedDate);
-      
-        // Find the applicable pricing rule
-        let applicableRule = pricingRules['default'] || {}; // Fallback to an empty object if 'default' does not exist
-        const dateRules = pricingRules[formattedDate];
-      
-        if (dateRules) {
-          for (const rule of dateRules) {
-            // Check if the rule intersects with the booking time
-            if (
-              (lessonStartEpoch >= rule.start_time && lessonStartEpoch < rule.end_time) ||
-              (lessonEndEpoch > rule.start_time && lessonEndEpoch <= rule.end_time) ||
-              (lessonStartEpoch <= rule.start_time && lessonEndEpoch >= rule.end_time)
-            ) {
-              applicableRule = rule;
-              break; // Exit the loop once an applicable rule is found
+    useEffect(() => {
+        setLocalEmail(localStorage.getItem('contactEmail'));
+    },[])
+
+    useEffect(() => {
+        
+        if (localEmail && contactEmail && localEmail !== contactEmail) {
+            setPossiblePlayerNames([]);
+        }
+
+    }, [contactEmail])
+
+    useEffect(() => {
+
+        const getPrice = async () => {
+
+            if (selectedDate && selectedStartTime && selectedDuration){
+                try {
+
+                    const response = await axios.get(`${process.env.REACT_APP_API_URL}/timetable/${coachSlug}/lesson-cost?startTime=${selectedStartTime}&duration=${selectedDuration}`);
+
+                    setLessonCost(response.data.cost);
+                    setSelectedRuleId(response.data.ruleID);
+
+                } catch (error) {
+                    console.log(error);
+                }
             }
-          }
-        }
-      
-        // Calculate the cost based on the applicable rule
-        const durationHours = duration / 60; // Convert duration to hours
-        const cost = durationHours * applicableRule.hourly_rate;
-      
-        // Return the applicable rule and the calculated cost
-        return {
-          rule_id: applicableRule.rule_id,
-          cost: cost ? cost : 0 // Ensure there's a fallback for cost
-        };
-      }
 
-    const handleStartTimeChange = (e) => {
-        const startTime = e.target.value;
-        setSelectedStartTime(startTime);
-        // Set the available durations for the selected start time
-        const durationsForStartTime = availableStartTimes[startTime] || [];
-        setAvailableDurations(durationsForStartTime);
-        // Reset selected duration
-        setSelectedDuration('');
-        setLessonCost(0)
-    };
-
-    // Function to handle when a duration is selected
-    const handleDurationChange = (e) => {
-        const duration = e.target.value;
-        setSelectedDuration(duration);
-        const result = calculateLessonCost(selectedDate, selectedStartTime, duration);
-        console.log(result)
-        setLessonCost(result.cost);
-        setSelectedRuleId(result.rule_id)
-    };
-
-   const setDate = async (e) => {
-        const date = new Date(e.target.value)
-
-        let workingHoursLocal = workingHours;
-        let bookingsLocal = bookings;
-        let durationsLocal = durations;
-
-        const formattedDate = formatDate(date);
-        if (!loadedDates.includes(formattedDate)){
-            const response = await fetchTimetable(date, date, coachSlug);
-            workingHoursLocal = response.workingHours;
-            bookingsLocal = response.bookings;
-            durationsLocal = response.durations;
         }
 
-        const today = new Date();
-        today.setHours(0, 0, 0, 0); // Reset time to the start of today
-        setSelectedDate(date);
+        getPrice();
 
-        // Check if the newDate is before today
-        if (date < today) {
-            setIsDateValid(false);
-            // return
+    }, [selectedDate, selectedStartTime, selectedDuration, lessonCost]);
+
+    useEffect(() => {
+
+        const getContactDetails = async () => {
+            // if contact email exists in local storage, get contact details
+
+            const contactEmail = localStorage.getItem('contactEmail');
+            
+            if (contactEmail) {
+                try {
+                    
+                    const response = await axios.get(`${process.env.REACT_APP_API_URL}/${coachSlug}/contact/${contactEmail}`);
+                    
+                    const data = response.data;
+
+                    console.log(data);
+
+                    setContactName(data.name);
+                    setContactEmail(data.email);
+                    setContactPhoneNumber(data.phone_number);
+                    // data.players is an array objects, convert to array of strings from object['name']
+                    const playerNames = data.players.map(player => player.name);
+                    console.log(playerNames)
+                    setPossiblePlayerNames(playerNames);
+                    setPlayerName(playerNames[0])
+
+                } catch (error) {
+                    console.log(error);
+                }
+            }
+            
         }
-        setIsDateValid(true);
+        getContactDetails();
 
-        const startTimes = calculateAvailableStartTimes(date, durationsLocal, workingHoursLocal, bookingsLocal);
-        setAvailableStartTimes(startTimes);
-        setSelectedStartTime('');
-        setSelectedDuration('');
-        setLessonCost(0)
-    }
+    }, [isOpen])
     
     const handlePlayerNameChange = (e) => {
         const name = e.target.value;
@@ -363,11 +279,31 @@ export default function BookLessonModal({ isOpen, onClose, workingHours, booking
         setContactPhoneNumber(e.target.value);
     }
 
-    // Convert the selectedDate state to a string in the 'YYYY-MM-DD' format
-    const dateToString = (date) => {
-        if (date){
-            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    const handleSendVerificationEmail = async () => {
+
+        try{
+            const response = await axios.post(`${process.env.REACT_APP_API_URL}/contacts/verify-email`, {email: contactEmail});
+            console.log(response);
+            setAwaitingVerification(true);
+        
+        } catch (error) {
+            console.log(error);
         }
+
+    }
+
+    const handleSubmitVerificationCode = async () => {
+
+        try{
+            const response = await axios.post(`${process.env.REACT_APP_API_URL}/contacts/confirm-email`, {email: contactEmail, code: verificationCode});
+            console.log(response);
+            setAwaitingVerification(false);
+            setIsEmailVerified(true);
+        
+        } catch (error) {
+            console.log(error);
+        }
+
     }
 
     if (!isOpen) return null;
@@ -378,55 +314,56 @@ export default function BookLessonModal({ isOpen, onClose, workingHours, booking
                 <h1 css={css`font-size: 24px; margin-bottom: 20px;`}>Book a Lesson</h1>
                 
                 Date input
-                <Label>
-                    Date
-                    <InputField 
-                        type="date"
-                        value={dateToString(selectedDate)} 
-                        onChange={setDate}
+                <ChooseDateTimeComponent
+                    selectedDate={selectedDate}
+                    setSelectedDate={setSelectedDate}
+                    setStartTime={setSelectedStartTime}
+                    setDuration={setSelectedDuration}
                     />
-                    {!isDateValid && <p css={css`color: red;`}>Please select a valid date (today or in the future).</p>}
-                </Label>
-                
-                <Label>
-                    Start Time
-                    <SelectField 
-                        value={selectedStartTime}
-                        onChange={handleStartTimeChange}
-                        disabled={Object.keys(availableStartTimes).length === 0}
-                    >
-                        <option value="">Select a start time</option>
-                        {Object.keys(availableStartTimes).map(startTime => (
-                            <option key={startTime} value={startTime}>{startTime}</option>
-                        ))}
-                    </SelectField>
-                </Label>
-                
-                <Label>
-                    Duration
-                    <SelectField 
-                        value={selectedDuration}
-                        onChange={handleDurationChange}
-                        disabled={availableDurations.length === 0}
-                    >
-                        <option value="">Select a duration</option>
-                        {availableDurations.map(duration => (
-                            <option key={duration} value={duration}>{duration} minutes</option>
-                        ))}
-                    </SelectField>
-                </Label>
                 <Label>
                     Lesson Cost : {formatPriceInPounds(lessonCost)}
                 </Label>
-                <Label>
-                    Player Name
-                    <InputField 
-                        type="text"
-                        value={playerName}
-                        onChange={handlePlayerNameChange}
-                        placeholder="Enter player's name"
-                    />
-                </Label>
+
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                    {
+                        possiblePlayerNames && possiblePlayerNames.length && !isNewName > 0 ? (
+                            <Label>
+                                Player Name
+                                <SelectField
+                                    value={playerName}
+                                    onChange={(e) => setPlayerName(e.target.value)}
+                                >
+                                    {possiblePlayerNames.map(name => {
+                                        return (
+                                            <option value={name}>{name}</option>
+                                        )
+                                    })}
+                                </SelectField>
+                            </Label>
+                        ) : (
+                            <Label>
+                                Player Name
+                                <InputField 
+                                    type="text"
+                                    value={playerName}
+                                    onChange={handlePlayerNameChange}
+                                    placeholder="Enter player's name"
+                                />
+                            </Label>
+                        )
+                    }
+                    {possiblePlayerNames && possiblePlayerNames.length && (
+                        <Label>
+                            <input
+                                type="checkbox"
+                                checked={isNewName}
+                                onChange={(e) => setIsNewName(e.target.checked)}
+                            />
+                            Add New Name
+                        </Label>
+                        
+                    )}
+                </div>             
                 
                 <div>
                     <Label>
@@ -461,6 +398,27 @@ export default function BookLessonModal({ isOpen, onClose, workingHours, booking
                     />
                 </Label>
 
+                {
+                    !isEmailVerified && (!localEmail || localEmail !== contactEmail) && (
+                        <>
+                            <button onClick={handleSendVerificationEmail}>Verify</button>
+                            {
+                                awaitingVerification && (
+                                    <>
+                                        <input
+                                            type="text"
+                                            placeholder="Enter 6-digit code"
+                                            maxLength="6"
+                                            onChange={(e) => setVerificationCode(e.target.value)}
+                                            />
+                                        <button onClick={handleSubmitVerificationCode}>Submit</button>
+                                    </>
+                                )
+                            }
+                        </>
+                    )
+                }
+
                 {/* Phone Number input */}
                 <Label>
                     Contact Phone Number
@@ -473,7 +431,7 @@ export default function BookLessonModal({ isOpen, onClose, workingHours, booking
                 </Label>
                 {/* ... rest of your modal content ... */}
                 {errorMessage && (<p>{errorMessage}</p>)}
-                <SaveButton onClick={handleBooking}>
+                <SaveButton onClick={handleBooking} disabled={!(isEmailVerified || (localEmail == contactEmail))}>
                     {isLoading ? <Spinner/>: 'Save'}
                 </SaveButton>
             </ModalContent>

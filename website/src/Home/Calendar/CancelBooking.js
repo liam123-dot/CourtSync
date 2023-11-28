@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { useBookingCancellation } from "../CoachHomeScreen/BookingContextProvider";
+import { useRefreshTimetable } from "../CoachHomeScreen/RefreshTimetableContext";
 
 export default function CancelBooking ({booking, close, onCancelProcess, setOnCancelProcess}) {
-    
-    const { setBookings } = useBookingCancellation();
 
+    const {refresh} = useRefreshTimetable();
+    
     const [passedConfirmation, setPassedConfirmation] = useState(false);
     const [cancellationNote, setCancellationNote] = useState('');
 
@@ -14,7 +14,7 @@ export default function CancelBooking ({booking, close, onCancelProcess, setOnCa
         try {
 
             const response = await axios.post(
-                `${process.env.REACT_APP_URL}/timetable/booking/${booking.booking_id}/cancel`,
+                `${process.env.REACT_APP_API_URL}/timetable/booking/${booking.id}/cancel`,
                 {
                     message_to_player: cancellationNote
                 }, {
@@ -23,34 +23,10 @@ export default function CancelBooking ({booking, close, onCancelProcess, setOnCa
                     }
                 }
             )
+            console.log(response);
+            refresh();
 
             setPassedConfirmation(false);
-            if (setBookings) {
-                setBookings(prevBookings => {
-                    // Create a new state object
-                    const newBookings = { ...prevBookings };
-                    
-                    Object.keys(prevBookings).forEach((date) => {
-                        // Map through the array of bookings for each date and create a new array
-                        newBookings[date] = prevBookings[date].map((localBooking) => {
-                            // If the booking id matches, return a new object with the status updated to 'cancelled'
-                            if (booking.booking_id === localBooking.booking_id){
-                                console.log(booking);
-                                return { ...localBooking, status: 'cancelled' };
-                            }
-                            // Otherwise, return the booking as is
-                            return localBooking;
-                        });
-                    });
-                    
-                    // Return the new state
-                    return newBookings;
-                });
-                
-            } else {
-                console.log('undefined')
-                console.log(setBookings)
-            }
             close();
 
             // console.log(response);

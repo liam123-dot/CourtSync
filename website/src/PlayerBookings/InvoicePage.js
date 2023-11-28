@@ -10,7 +10,7 @@ import axios from 'axios';
 const fetchInvoiceData = async (view, statusView, contactPhoneNumber) => {
 
     try {
-        let url = `${process.env.REACT_APP_URL}/invoices?view=${view}&statusView=${statusView}`;
+        let url = `${process.env.REACT_APP_API_URL}/invoices?view=${view}&statusView=${statusView}`;
         if (contactPhoneNumber !== null) {
             url += `&contactPhoneNumber=${contactPhoneNumber}`;
         }
@@ -100,6 +100,7 @@ export default function InvoicePage () {
                     <div>
                         <Button selected={statusView==='completed'} onClick={() => setStatusView('completed')}>Completed</Button>
                         <Button selected={statusView==='pending'} onClick={() => setStatusView('pending')}>Pending</Button>
+                        <Button selected={statusView==='upcoming'} onClick={() => setStatusView('upcoming')}>Upcoming</Button>
                     </div>
                 </div>
 
@@ -120,7 +121,7 @@ export default function InvoicePage () {
                         <Titles titles={['Name', 'Number Of Lessons', 'Week', 'Total Cost']}/>
                         {
                             data.map((invoice) => (
-                                <WeekViewRow data={invoice} key={invoice.booking_id} setSelectedPlayer={setPlayerSelected}/>
+                                <WeekViewRow data={invoice} key={invoice.booking_id} statusView={statusView} setSelectedPlayer={setPlayerSelected}/>
                             ))
                         }
                     </>
@@ -132,7 +133,7 @@ export default function InvoicePage () {
                             <Titles titles={['Name', 'Number Of Lessons', 'Month', 'Total Cost']}/>
                             {
                                 data.map((invoice) => (
-                                    <MonthViewRow data={invoice} key={invoice.booking_id} setSelectedPlayer={setPlayerSelected}/>
+                                    <MonthViewRow data={invoice} key={invoice.booking_id} statusView={statusView} setSelectedPlayer={setPlayerSelected}/>
                                 ))
                             }
                         </>
@@ -146,7 +147,7 @@ export default function InvoicePage () {
         <div>
             <h1>Set up your invoicing preferences</h1>
             <p>Before you can view your invoices you must set up your invoice details</p>
-            <Button>Set up invoices</Button>
+            <Button onClick={() => window.location.href = process.env.REACT_APP_WEBSITE_URL + '/settings'}>Set up invoices</Button>
         </div>
 
     )

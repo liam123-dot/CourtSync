@@ -8,7 +8,7 @@ export async function refreshTokens() {
 
     if (refreshToken && email){
 
-        const refreshUrl = `${process.env.REACT_APP_URL}/auth/coach/refresh`
+        const refreshUrl = `${process.env.REACT_APP_API_URL}/coach/refresh`
         const data = {
             refreshToken: refreshToken,
             email: email

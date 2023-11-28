@@ -33,13 +33,13 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: ingress-user
+  name: user-service
 spec:
+  selector:
+    app: user-service
   type: ClusterIP
   ports:
     - name: http
       port: 8000
       targetPort: 8000
       protocol: TCP
-  selector:
-    app: user-service

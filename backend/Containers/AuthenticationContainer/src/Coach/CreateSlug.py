@@ -2,7 +2,7 @@ from src.shared.ExecuteQuery import execute_query
 
 def insert_into_table(coach_id, first_name, last_name, email):
     coach_slug = find_valid_slug(first_name, last_name)
-    sql = "INSERT INTO Coaches(coach_id, slug, username) VALUES (%s, %s, %s)"
+    sql = "INSERT INTO Coaches(coach_id, slug, email) VALUES (%s, %s, %s)"
     execute_query(sql, (coach_id, coach_slug, email))
 
 

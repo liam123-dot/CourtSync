@@ -26,6 +26,12 @@ export default function SignUpScreen() {
     const validate = () => {
         let tempErrors = {};
 
+        if (!formData.first_name) tempErrors.first_name = "First name is required.";
+        else if (/\s/.test(formData.first_name)) tempErrors.first_name = "First name should not contain spaces. Please replace any spaces with a dash.";
+        
+        if (!formData.last_name) tempErrors.last_name = "Last name is required.";
+        else if (/\s/.test(formData.last_name)) tempErrors.last_name = "Last name should not contain spaces. Please replace any spaces with a dash.";
+        
         // Add more validation rules as needed
         if (!formData.first_name) tempErrors.first_name = "First name is required.";
         if (!formData.last_name) tempErrors.last_name = "Last name is required.";
@@ -47,7 +53,7 @@ export default function SignUpScreen() {
         if (validate()) {
             setSignUpLoading(true);
             try {
-                const response = await axios.post(`${process.env.REACT_APP_URL}/auth/coach`, formData);
+                const response = await axios.post(`${process.env.REACT_APP_API_URL}/coach/sign-up`, formData);
                 console.log(response.data);
                 setSignUpErrorMessage(null); // Clear any previous error messages
                 navigate(

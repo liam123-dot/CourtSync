@@ -6,7 +6,7 @@ const getMinutesIntoDay = (epochSeconds) => {
     return minutes;
 }
 
-export function checkIfOverlaps({suggestedStartTime, suggestedDuration, all}){
+function checkIfOverlaps({suggestedStartTime, suggestedDuration, all}){
 
     // get the date that the epoch seconds suggested start time corresponds to in dd-mm-yyyy
     const suggestedDate = new Date(suggestedStartTime * 1000).toLocaleDateString('en-GB', {

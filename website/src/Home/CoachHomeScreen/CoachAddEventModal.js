@@ -86,6 +86,21 @@ export default function CoachAddEventModal({ isOpen, onClose, loadedDates, all, 
             coachSlug={''}
           />
 
+          {
+            selectedOption === 'lesson' ? (
+              <></>
+            ): (
+              <>
+              
+                <Label>
+                  Description
+                  <InputField type='text'/>
+                </Label>
+
+              </>
+            )
+          }
+
         </div>
 
       </ModalContent>

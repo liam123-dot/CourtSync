@@ -2,7 +2,7 @@
 
 K8S_FILE="db-deployment.yaml"
 CONTAINER_DIR="DatabaseContainer"
-DEPLOYMENT_FILE="k8s/$K8S_FILE"
+DEPLOYMENT_FILE="k8s/local/$K8S_FILE"
 DOCKER_HUB_REPO="tennisdockerimages/database-container"
 
 # Function to increment version

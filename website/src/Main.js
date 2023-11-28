@@ -1,5 +1,5 @@
 import React, {useEffect} from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { HashRouter as Router, Route, Routes } from 'react-router-dom';
 import SignUpScreen from "./Authentication/SignUpScreen";
 import VerificationCodeScreen from "./Authentication/VerificationCodeScreen";
 // import PlayerHomeScreen from "./Home/PlayerHomeScreen/PlayerHomeScreen"
@@ -12,6 +12,7 @@ import CancelBookingPage from './PlayerBookings/CancelBookingsPage';
 import InvoicePage from './PlayerBookings/InvoicePage';
 import PlayerPage from './PlayerPage/PlayerPage';
 import PlayerHomeScreen from './Home/PlayerHomeScreen/PlayerHomeScreen';
+import NavigationBar from './NavigationBar';
 
 function Main() {
 
@@ -19,26 +20,50 @@ function Main() {
 
         refreshTokens();
 
+        const intervalId = setInterval(refreshTokens, 60 * 60 * 1000);
+
+        return () => clearInterval(intervalId);
+
     }, [])
 
     return (
-        <Router>
-            <Routes>
-                <Route path="/" element={<EntryPage/>} />
-                <Route path="/coach/signin" element={<SignInScreen/>} />
-                <Route path="/coach/signup" element={<SignUpScreen/>} />
-                <Route path="/coach/verify" element={<VerificationCodeScreen/>} />                
-                <Route path="/settings" element={<SettingsPage/>} />
-                <Route path="/:coachSlug" element={<PlayerHomeScreen/>} />
-                <Route path="/dashboard/:coachSlug" element={<CoachHomeScreen/>} />
-                <Route path="/dashboard/invoices" element={<InvoicePage />} />
-                <Route path="/dashboard/players" element={<PlayerPage/>}/>
+        <div style={{
+            width: "100%",
+            height: "100vh",
+        }}>
+            <Router>
+                <Routes>
+                    <Route path="/" element={<EntryPage/>} />
+                    <Route path="/coach/signin" element={<SignInScreen/>} />
+                    <Route path="/coach/signup" element={<SignUpScreen/>} />
+                    <Route path="/coach/verify" element={<VerificationCodeScreen/>} />                
+                    <Route path="/:coachSlug" element={<PlayerHomeScreen/>} />
 
-                <Route path="/bookings/:bookingHash/cancel" element={<CancelBookingPage/>} />
+                    <Route path="/dashboard/*" element={<CoachDashboard/>} />
 
-            </Routes>
-        </Router>
+                    <Route path="/bookings/:bookingHash/cancel" element={<CancelBookingPage/>} />
+
+                </Routes>
+            </Router>
+        </div>
     );
+}
+
+function CoachDashboard() {
+    return (    
+        <div style={{
+            width: "100%",
+            height: "100vh",
+        }}>
+            <NavigationBar/>
+            <Routes>
+                <Route path="/:coachSlug" element={<CoachHomeScreen/>} />
+                <Route path="/settings" element={<SettingsPage/>} />
+                <Route path="/invoices" element={<InvoicePage/>} />
+                <Route path="/players" element={<PlayerPage/>} />
+            </Routes>
+        </div>
+    )
 }
 
 export default Main;

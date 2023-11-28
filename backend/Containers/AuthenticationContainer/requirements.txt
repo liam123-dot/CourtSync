@@ -4,3 +4,4 @@ flask
 gunicorn
 boto3
 python-jose
+stripe

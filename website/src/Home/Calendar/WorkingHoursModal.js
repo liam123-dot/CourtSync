@@ -78,7 +78,7 @@ export default function WorkingHoursModal({ isOpen, onClose, workingHours, redo,
 
             setIsLoading(true);
 
-            const url = `${process.env.REACT_APP_URL}/timetable/working-hours`
+            const url = `${process.env.REACT_APP_API_URL}/timetable/working-hours`
 
             const headers = {
                 'Authorization': localStorage.getItem('AccessToken'),

@@ -1,7 +1,6 @@
 import axios from "axios";
 
-
-export const fetchTimetable = async (fromDate, toDate, coachSlug) => {
+export const fetchTimetable = async (fromDate, toDate, coachSlug, forCoachScreen) => {
 
     // Create new Date objects based on the passed dates to avoid direct mutation
     const fromDateCopy = new Date(fromDate);
@@ -13,13 +12,17 @@ export const fetchTimetable = async (fromDate, toDate, coachSlug) => {
     const epochFromDate = Math.floor(fromDateCopy.getTime() / 1000);
     const epochToDate = Math.floor(toDateCopy.getTime() / 1000);
 
-    const headers = {
-        'Authorization': localStorage.getItem('AccessToken')
+    let headers = {}
+
+    if (forCoachScreen){
+        headers = {
+            'Authorization': localStorage.getItem('AccessToken')
+        }
     }
         
     try {
         const response = await axios.get(
-            `${process.env.REACT_APP_URL}/timetable/${coachSlug}?from_time=${epochFromDate}&to_time=${epochToDate}`,
+            `${process.env.REACT_APP_API_URL}/timetable/${coachSlug}?from_time=${epochFromDate}&to_time=${epochToDate}`,
             {headers: headers}  
         );
 
@@ -28,14 +31,16 @@ export const fetchTimetable = async (fromDate, toDate, coachSlug) => {
         return {
             authorised: data.authorised,        
             bookings: data.bookings,
+            coachEvents: data.coach_events,
             defaultWorkingHours: data.default_working_hours,
             durations: data.durations,
-            exists: true,
+            exists: data.exists,
             pricingRules: data.pricing_rules,
             workingHours: data.working_hours,
             all: data.all,
             global_max: data.global_max,
             global_min: data.global_min,
+            coach_setup: data.coach_set_up
         }
 
     } catch (error) {

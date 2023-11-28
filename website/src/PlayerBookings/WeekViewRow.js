@@ -3,7 +3,7 @@ import { fetchInvoiceData } from "./FetchInvoicesSpecificWeek";
 import DayViewRow from "./DayViewRow";
 import Titles from "./Titles";
 
-export default function WeekViewRow ({data}) {
+export default function WeekViewRow ({data, statusView}) {
     const columnStyle = {
         flex: 1,
         padding: '0 10px', // Added padding for better spacing
@@ -16,24 +16,25 @@ export default function WeekViewRow ({data}) {
     const [year, setYear] = React.useState('');
     const [week, setWeek] = React.useState('');
 
-    const onRowClick = async (contactPhoneNumber) => {
+    console.log(data)
+    const onRowClick = async (contactEmail) => {
 
         if (isOpen) {
             setIsOpen(false);
         } else {
 
             setIsOpen(true);
-            const data = await fetchInvoiceData(week, null, year, contactPhoneNumber);
-            setSubData(data.data);            
+            const data = await fetchInvoiceData(week, null, year, contactEmail, statusView);
+            setSubData(data.data);       
 
         }
 
     }
 
     useEffect(() => {
-        if (data && data.year_week) {
-            const year = data.year_week.toString().slice(0, 4);
-            const week = data.year_week.toString().slice(4, 6);
+        if (data && data.time_group) {
+            const year = data.time_group.toString().slice(0, 4);
+            const week = data.time_group.toString().slice(4, 6);
             setYear(year);
             setWeek(week);
             const firstDayOfYear = new Date(year, 0, 1);
@@ -43,7 +44,7 @@ export default function WeekViewRow ({data}) {
             const formattedDate = `${startDate.getDate()} - ${endDate.getDate()} ${startDate.toLocaleString('default', { month: 'short' })}`;
             setFormattedDate(formattedDate);
         }
-    }, [data.year_week]);
+    }, [data.time_group]);
 
     return (
         <div>
@@ -55,7 +56,7 @@ export default function WeekViewRow ({data}) {
                 padding: '5px 0', // Increase padding for visual comfort
                 cursor: 'pointer',
             }}
-            onClick={() => onRowClick(data.contact_phone_number)}
+            onClick={() => onRowClick(data.contact_email)}
             >
 
                 <div style={columnStyle}>

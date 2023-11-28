@@ -36,7 +36,7 @@ function ProfileButton({ imageUrl, size = 50, onClick }) {
                 height: `${size}px`,
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center'
+                // justifyContent: 'center',
             }}
             onClick={onClick}
         >

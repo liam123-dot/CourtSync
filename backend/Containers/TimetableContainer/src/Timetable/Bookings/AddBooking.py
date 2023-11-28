@@ -24,52 +24,49 @@ def add_booking(slug):
     body = request.json
     
     try:
-        start_time = body['startTime']
+        start_time = int(body['startTime'])
         duration = int(body['duration'])
         player_name = body['playerName']
         contact_name = body['contactName']
         is_same_as_player_name = body['isSameAsPlayerName']
         contact_email = body['email']
         contact_phone_number = body['phoneNumber']
-        cost = body['cost']
+        cost = int(body['cost'])
         rule_id = body['ruleId']
         booking_time = int(time.time())
     except KeyError as e:
         return jsonify(message=f"Missing required field: {e}"), 400
     
-    try:
     
-        inputs_valid, message = validate_inputs(start_time, duration, player_name, contact_name, is_same_as_player_name, contact_email, contact_phone_number, cost, rule_id)
-            
-        if not inputs_valid:
-            return jsonify(message=message), 400
+    inputs_valid, message = validate_inputs(start_time, duration, player_name, contact_name, is_same_as_player_name, contact_email, contact_phone_number, cost, rule_id)
         
-        if contact_phone_number.startswith("+44"):
-            contact_phone_number = contact_phone_number[3:]
-        
-        coach_id, coach_email, show_email_publicly, show_phone_number_publicly = fetch_coach(slug)
-        
-        if not coach_id:
-            return jsonify(message="Coach not found"), 404
-        
-        overlapping = check_for_overlap(start_time, duration, coach_id)
-        
-        if overlapping:
-            return jsonify(message="Booking overlaps with another booking"), 400
-        
-        lesson_hash = insert_booking(player_name, contact_name, contact_email, contact_phone_number, start_time, cost, rule_id, duration, coach_id, booking_time)
-        
-        if not lesson_hash:
-            return jsonify(message="Error inserting booking"), 500
+    if not inputs_valid:
+        return jsonify(message=message), 400
     
-        try:
-            send_confirmation_emails(contact_email, start_time, duration, cost, lesson_hash, player_name, show_email_publicly, show_phone_number_publicly, coach_id)
-        except Exception as e:
-            logging.error(f"Error sending confirmation emails: {e}")
+    if contact_phone_number.startswith("+44"):
+        contact_phone_number = contact_phone_number[3:]
+    
+    coach_id, coach_email, show_email_publicly, show_phone_number_publicly = fetch_coach(slug)
+    
+    if not coach_id:
+        return jsonify(message="Coach not found"), 404
+    
+    overlapping = check_for_overlap(start_time, duration, coach_id)
+    
+    if overlapping:
+        return jsonify(message="Booking overlaps with another booking"), 400
+    
+    lesson_hash = insert_booking(player_name, contact_name, contact_email, contact_phone_number, start_time, cost, rule_id, duration, coach_id, booking_time)
+    
+    if not lesson_hash:
+        return jsonify(message="Error inserting booking"), 500
 
+    try:
+        send_confirmation_emails(contact_email, start_time, duration, cost, lesson_hash, player_name, show_email_publicly, show_phone_number_publicly, coach_id)
     except Exception as e:
-        logging.error(f"Error adding booking: {e}")
-        return jsonify(message="Error adding booking"), 500
+        logging.error(f"Error sending confirmation emails: {e}")
+
+
         
     return jsonify(message="Booking successfully created"), 200
     
@@ -78,7 +75,7 @@ def insert_booking(player_name, contact_name, contact_email, contact_phone_numbe
 
     try:
         hashed_value = hash_booking(contact_email, start_time, booking_time)
-        execute_query(sql, (player_name, contact_name, contact_email, contact_phone_number, start_time, cost, rule_id, duration, coach_id, hashed_value))
+        execute_query(sql, (player_name, contact_name, contact_email, contact_phone_number, start_time, cost, rule_id, duration, coach_id, hashed_value), is_get_query=False)
         return hashed_value        
     except Exception as e:
         logging.error(f"Error inserting booking: {e}")

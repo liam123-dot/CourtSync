@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: db-deployment
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app: db-service
@@ -14,9 +14,12 @@ spec:
     spec:
       containers:
       - name: db-container
-        image: tennisdockerimages/database-container:v1.0.12
+        image: tennisdockerimages/database-container:v1.0.13
         ports:
         - containerPort: 8000
+        envFrom:  
+        - configMapRef:
+            name: database-secrets-local
         resources:
           requests:
             memory: "100Mi"
@@ -24,6 +27,7 @@ spec:
           limits:
             memory: "200Mi"
             cpu: "250m"
+
 ---
 apiVersion: v1
 kind: Service
@@ -38,3 +42,23 @@ spec:
       port: 8000
       targetPort: 8000
   type: ClusterIP
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: db-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: db-deployment
+  minReplicas: 1
+  maxReplicas: 3
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 50

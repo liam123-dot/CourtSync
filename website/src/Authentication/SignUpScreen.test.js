@@ -59,7 +59,7 @@ describe('SignUpScreen', () => {
     fireEvent.click(screen.getByText('Sign Up'));
 
     await waitFor(() => {
-      expect(axios.post).toHaveBeenCalledWith(`${process.env.REACT_APP_URL}/coach`, {
+      expect(axios.post).toHaveBeenCalledWith(`${process.env.REACT_APP_API_URL}/coach`, {
         first_name: 'John',
         last_name: 'Doe',
         email: 'john.doe@example.com',

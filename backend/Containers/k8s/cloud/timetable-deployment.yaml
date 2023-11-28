@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: timetable-container
-        image: tennisdockerimages/timetable:v0.0.7
+        image: tennisdockerimages/timetable:v0.0.8
         ports:
         - containerPort: 8000
         envFrom:

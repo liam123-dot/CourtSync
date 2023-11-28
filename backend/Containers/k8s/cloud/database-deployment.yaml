@@ -14,9 +14,12 @@ spec:
     spec:
       containers:
       - name: db-container
-        image: tennisdockerimages/database:v0.0.2
+        image: tennisdockerimages/database:v0.0.4
         ports:
         - containerPort: 8000
+        envFrom:
+        - configMapRef:
+            name: database-secrets-test
         resources:
           requests:
             memory: "100Mi"

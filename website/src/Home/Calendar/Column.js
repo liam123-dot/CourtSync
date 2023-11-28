@@ -1,6 +1,6 @@
 import GreyedOutObject from "./GreyedOutObject";
 import BookingComponent, { BookingObject } from "./BookingObject";
-import { CoachEventObject } from "./CoachEventObject";
+import CoachEventComponent, { CoachEventObject } from "./CoachEventObject";
 import WorkingHoursComponent, { WorkingHoursObject } from "./WorkingHoursObject";
 import { useRef } from "react";
 
@@ -9,7 +9,7 @@ export default function Column({ coachView, globalStartTime, globalEndTime, time
     const columnRef = useRef(null);
 
     return (
-        <div style={{
+        <div style={{        
             height: '100%',
             display: 'flex',
             flexDirection: 'column',
@@ -17,7 +17,7 @@ export default function Column({ coachView, globalStartTime, globalEndTime, time
             flex: dayView ? 7: 1,
             minWidth: '120px',
             backgroundColor: 'white',
-            position: 'relative'
+            position: 'relative',
         }}
             ref={columnRef}
         >
@@ -40,7 +40,14 @@ export default function Column({ coachView, globalStartTime, globalEndTime, time
                             />
                         )
                     } else if (timetableObject instanceof CoachEventObject) {
-                    
+                        return (
+                            <CoachEventComponent
+                                key={index}
+                                columnStartTime={globalStartTime}
+                                columnEndTime={globalEndTime}
+                                coach={timetableObject}
+                            />
+                        )
                     } else if (timetableObject instanceof WorkingHoursObject) {
                         
                         return (
