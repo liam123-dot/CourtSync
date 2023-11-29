@@ -2,7 +2,7 @@ import os
 import pymysql
 from dotenv import load_dotenv
 
-load_dotenv('.env.testing')
+load_dotenv('.env')
 
 class DatabaseConnection():
     

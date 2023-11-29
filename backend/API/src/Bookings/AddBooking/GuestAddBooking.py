@@ -4,6 +4,8 @@ import logging
 import hashlib
 import time
 import re
+from dotenv import load_dotenv
+import os
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -14,7 +16,10 @@ from src.Contacts.Players.GetPlayer import get_player
 
 from src.Database.ExecuteQuery import execute_query
 
-website_url = 'http://localhost:3000'
+load_dotenv('.env')
+
+
+website_url = os.getenv('WEBSITE_URL')
 
 GuestAddBookingBlueprint = Blueprint('player_add_booking', __name__)
 
@@ -228,7 +233,7 @@ def send_player_confirmation_email(player_email, start_time, duration, cost, has
     
     # Complete the email body with the cancellation link
     bodyHTML += f"""
-            <p>To cancel your lesson, <a href="{website_url}/bookings/{hash}/cancel">click here.</a></p>
+            <p>To cancel your lesson, <a href="{website_url}/#/bookings/{hash}/cancel">click here.</a></p>
         </body>
     </html>
     """

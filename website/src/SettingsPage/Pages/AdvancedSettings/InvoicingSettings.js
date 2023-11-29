@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Button } from "../../../Authentication/styles";
-import { Spinner } from "../../../Authentication/styles";
+import { Spinner, Button } from "../../../Authentication/styles";
+import { usePopup } from "../../../Notifications/PopupContext";
 
 export default function InvoicingSettings({}) {
 
@@ -10,6 +10,8 @@ export default function InvoicingSettings({}) {
     const [isSaveLoading, setIsSaveLoading] = useState(false);
 
     const [invoiceType, setInvoiceType] = useState(null);
+
+    const { showPopup } = usePopup();
 
     useEffect(() => {
 
@@ -49,7 +51,7 @@ export default function InvoicingSettings({}) {
                 }
             });
             
-            console.log(response);
+            showPopup('Success')
 
         } catch (error) {
             console.log(error);
@@ -72,7 +74,7 @@ export default function InvoicingSettings({}) {
     }
 
     return (
-        <div>
+        <div>            
             <h1>Invoicing Settings</h1>
             <p>Here you can configure your invoicing settings.</p>
 

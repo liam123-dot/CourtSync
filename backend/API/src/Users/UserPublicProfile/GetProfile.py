@@ -1,12 +1,9 @@
 from flask import request, jsonify, Blueprint
 import time
-import boto3
 from src.Users.GetSelf.GetSelf import get_coach_from_slug
 from src.Users.UserPublicProfile.GetProfilePictureUrl import get_profile_picture_url
 
 GetProfileBlueprint = Blueprint('GetProfileBlueprint', __name__)
-
-client = boto3.client('s3')
 
 @GetProfileBlueprint.route('/user/<slug>/public-profile', methods=['GET'])
 def get_profile(slug):

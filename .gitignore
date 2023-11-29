@@ -243,3 +243,4 @@ backend/Containers/k8s/stripe-secrets.yaml
 backend/Containers/k8s/database-secrets-test.yaml
 backend/Containers/k8s/local/database-secrets-yaml.yaml
 backend/API/.env.testing
+backend/API/.env

@@ -239,28 +239,8 @@ export default function HomeScreen() {
             return currentDate;
 
         }
-
-        const fetchCoachProfile = async () => {
-
-            if (localStorage.getItem('RefreshLoading') === 'true'){
-                await refreshTokens();
-            }
-
-            try {
-                const response = await axios.get(`${process.env.REACT_APP_API_URL}/user/${coachSlug}/public-profile/profile_picture_url`)
-
-                const url = response.data.profile_picture_url;
-
-                setProfilePictureUrl(url);
-
-            } catch (error){
-                console.log(error);
-            }
-
-        }
         
         setIsStartingUp(true);
-        fetchCoachProfile();
         const startDate = calculateStartingDates();
         fetchTimetableData(startDate, startDate);
 

@@ -10,11 +10,9 @@ from src.Users.Auth.CreateSlug import insert_into_table
 from src.Users.Auth.AttributeVerification import is_password_valid, is_phone_number_valid, is_email_valid
 from src.Users.Auth.GetSecretHash import get_secret_hash
 
-
 CoachSignUp = Blueprint('CoachSignUp', __name__)
 
 client = boto3.client('cognito-idp')
-s3_client = boto3.client('s3')
 
 CLIENT_ID = os.getenv('CLIENT_ID')
 CLIENT_SECRET = os.getenv('CLIENT_SECRET')

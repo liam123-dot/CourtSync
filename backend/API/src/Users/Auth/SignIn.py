@@ -4,7 +4,7 @@ import boto3
 from botocore.exceptions import ClientError
 from dotenv import load_dotenv
 
-load_dotenv('.env.testing')
+load_dotenv('.env')
 
 from src.Users.Auth.GetSecretHash import get_secret_hash
 from src.Users.GetSelf.GetSelf import get_coach

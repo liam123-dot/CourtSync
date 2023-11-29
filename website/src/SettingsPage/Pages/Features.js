@@ -1,18 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { SaveButton } from '../../Home/CommonAttributes/SaveButton';
 import { Spinner } from '../../Spinner';
 import axios from "axios";
-
-const ModalStyle = {
-    border: '1px solid black',
-    padding: '20px',
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: 'translate(-50%, -50%)',
-    boxShadow: '0 0 15px rgba(0, 0, 0, 0.2)',
-    background: 'white'
-};
+import { usePopup } from '../../Notifications/PopupContext';
 
 const ButtonStyle = {
     padding: '10px 15px',
@@ -70,37 +59,33 @@ function DurationSelector({selectedDurations, setSelectedDurations}) {
     );
 }
 
-function CostInput({ price = 0, setPrice }) {
-    const [errorMessage, setErrorMessage] = useState('');
-    const [displayPrice, setDisplayPrice] = useState('');
-
+function CostInput({ price = '', setPrice }) {
     const handlePriceChange = (e) => {
         const value = e.target.value;
 
-        const pennies = Math.round(parseFloat(value) * 100);
-        setPrice(pennies); // Store the price in pennies
-        setDisplayPrice(value); // Store the price as a string in pounds
-            
-    };
+        // Check if the input is a valid number or decimal
+        if (!/^(\d+\.?\d*|\.\d+)$/.test(value) && value !== '') {
+            return;
+        }
 
-    // Convert the price in pennies to a string in pounds when displaying it
+        setPrice(value); // Store the price as a string
+    };
 
     return (
         <div>
             <p>Lesson Cost per Hour:</p>
             <span>£</span>
             <input
-                type="number"
-                min="0"
-                value={displayPrice}
+                type="text"
+                value={price}
                 onChange={handlePriceChange}
                 placeholder="0.00"
                 style={{ textAlign: 'right' }}
             />
-            {errorMessage && <p style={{color: 'red'}}>{errorMessage}</p>}
         </div>
     );
 }
+
 export default function FeaturesPage() {
     const [price, setPrice] = useState(null);
     const [selectedDurations, setSelectedDurations] = useState([]);
@@ -109,13 +94,18 @@ export default function FeaturesPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [isUpdate, setIsUpdate] = useState(false);
 
+    const {showPopup} = usePopup();
+
     const isSaveDisabled = selectedDurations.length === 0 || !price || price === '0' || price === '0.00';
+
+    console.log(price)
 
     const handleSave = async () => {
             // verify that the price is a valid number
-            if (isNaN(price)) {
+            if (!/^(\d+\.?\d*|\.\d+)$/.test(price) || price === '') {
                 setErrorMessage('Please enter a valid price.');
-            } else {
+                return;
+            }
                 // Rest of your code...
             
 
@@ -128,13 +118,13 @@ export default function FeaturesPage() {
                 
                 setIsSaving(true);
 
-
-
                 try {
+
+                    const priceInPennies = Math.round(parseFloat(price) * 100); // Convert the price to pennies
 
                     const response = await axios.put(
                         `${process.env.REACT_APP_API_URL}/features`, {
-                            default_lesson_cost: price,
+                            default_lesson_cost: priceInPennies,
                             durations: selectedDurations,
                             is_update: isUpdate
                         }, {
@@ -144,7 +134,7 @@ export default function FeaturesPage() {
                         }
                     )
 
-                    console.log(response);
+                    showPopup('Success');
 
                 } catch (error){
                     console.log(error)
@@ -152,7 +142,7 @@ export default function FeaturesPage() {
 
                 setIsSaving(false);
 
-            }
+            
         }
     };
 
@@ -179,7 +169,7 @@ export default function FeaturesPage() {
             }
 
             setSelectedDurations(data.durations);
-            setPrice(data.hourly_rate * 100); // Convert the default price to pennies
+            setPrice(data.hourly_rate / 100.0); // Convert the default price to pennies
             setIsLoading(false);
 
         }
@@ -204,7 +194,7 @@ export default function FeaturesPage() {
                 </div>
                 <div style={{ marginBottom: '20px' }}>
                     <CostInput
-                        price={price / 100}
+                        price={price}
                         setPrice={setPrice}
                     />
                 </div>

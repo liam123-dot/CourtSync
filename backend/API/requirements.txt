@@ -4,5 +4,8 @@ flask
 flask_cors
 pymysql
 python-jose
+botocore
+s3transfer
+awscrt
 boto3
 stripe

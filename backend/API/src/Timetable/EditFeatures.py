@@ -10,9 +10,10 @@ def update_pricing_rules(default_lesson_cost, username, is_update):
     result = execute_query(sql, (username, ), is_get_query=True)
     if len (result) > 0:
         sql = "UPDATE PricingRules SET hourly_rate=%s WHERE coach_id=%s AND is_default=1"
+        execute_query(sql, (default_lesson_cost, username), is_get_query=False)
     else:
         sql = "INSERT INTO PricingRules(rule_name, hourly_rate, coach_id, is_default) VALUES(%s, %s, %s, %s)"
-    execute_query(sql, ('Default Pricing', default_lesson_cost, username, 1), is_get_query=False)
+        execute_query(sql, ('Default Pricing', default_lesson_cost, username, 1), is_get_query=False)
 
 def delete_durations(username):
     delete_sql = "DELETE FROM Durations WHERE coach_id=%s"

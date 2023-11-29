@@ -59,6 +59,9 @@ def get_contacts_endpoint():
     
     token = request.headers.get('Authorization')
     
+    if not token:
+        return jsonify(error='No token provided'), 400
+    
     coach = get_coach(token)
 
     if not coach:

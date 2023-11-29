@@ -6,7 +6,7 @@ from src.Users.GetSelf.GetSelf import get_coach
 from dotenv import load_dotenv
 import os
 
-load_dotenv('.env.testing')
+load_dotenv('.env')
 
 import stripe
 

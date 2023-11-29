@@ -13,6 +13,8 @@ import InvoicePage from './PlayerBookings/InvoicePage';
 import PlayerPage from './PlayerPage/PlayerPage';
 import PlayerHomeScreen from './Home/PlayerHomeScreen/PlayerHomeScreen';
 import NavigationBar from './NavigationBar';
+import SuccessPopup from './Notifications/SuccessPopup';
+import { PopupProvider } from './Notifications/PopupContext';
 
 function Main() {
 
@@ -31,20 +33,26 @@ function Main() {
             width: "100%",
             height: "100vh",
         }}>
-            <Router>
-                <Routes>
-                    <Route path="/" element={<EntryPage/>} />
-                    <Route path="/coach/signin" element={<SignInScreen/>} />
-                    <Route path="/coach/signup" element={<SignUpScreen/>} />
-                    <Route path="/coach/verify" element={<VerificationCodeScreen/>} />                
-                    <Route path="/:coachSlug" element={<PlayerHomeScreen/>} />
+            <PopupProvider>
+                <Router>
+                    <Routes>
+                        <Route path="/" element={<EntryPage/>} />
+                        <Route path="/coach/signin" element={<SignInScreen/>} />
+                        <Route path="/coach/signup" element={<SignUpScreen/>} />
+                        <Route path="/coach/verify" element={<VerificationCodeScreen/>} />                
+                        <Route path="/:coachSlug" element={<PlayerHomeScreen/>} />
 
-                    <Route path="/dashboard/*" element={<CoachDashboard/>} />
+                        <Route path="/dashboard/*" element={<CoachDashboard/>} />
 
-                    <Route path="/bookings/:bookingHash/cancel" element={<CancelBookingPage/>} />
+                        <Route path="/bookings/:bookingHash/cancel" element={<CancelBookingPage/>} />
 
-                </Routes>
-            </Router>
+                    </Routes>
+                </Router>
+
+                <SuccessPopup />
+
+            </PopupProvider>
+
         </div>
     );
 }

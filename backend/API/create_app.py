@@ -1,9 +1,8 @@
 # Inside app.py
 from flask import Flask
 from flask_cors import CORS
-from src.Database.DatabaseConnection import DatabaseConnection
-from src.Bookings.GetBookings.GetBookings import GetBookingsBlueprint
 
+from src.Database.DatabaseConnection import DatabaseConnection
 
 from src.Users.Auth.SignIn import CoachSignIn
 from src.Users.Auth.SignUp import CoachSignUp
@@ -21,6 +20,7 @@ from src.Bookings.AddBooking.CalculateAvailableTimes import CalculateAvailableTi
 from src.Bookings.AddBooking.CalculateLessonCost import CalculateLessonCostBlueprint
 from src.Bookings.Cancellations.PlayerCancellation import PlayerCancelBookingBlueprint
 from src.Bookings.Cancellations.CoachCancellation import CoachCancellationBlueprint
+from src.Bookings.GetBookings.GetBookings import GetBookingsBlueprint
 
 from src.Contacts.GetContact import GetContactBlueprint
 from src.Contacts.Players.AddPlayer import CreatePlayerBlueprint
@@ -34,6 +34,8 @@ from src.Timetable.PostWorkingHours import PostWorkingHoursBlueprint
 from src.Timetable.GetTimetable.GetTimetable import GetTimetableBlueprint
 from src.Timetable.GetFeatures import GetFeaturesBlueprint
 from src.Timetable.EditFeatures import EditFeaturesBlueprint
+
+from src.TestBlueprint import TestBlueprint
 
 def create_app():
     app = Flask(__name__)
@@ -72,6 +74,8 @@ def create_app():
     app.register_blueprint(PostWorkingHoursBlueprint)
     app.register_blueprint(GetFeaturesBlueprint)
     app.register_blueprint(EditFeaturesBlueprint)
+    
+    app.register_blueprint(TestBlueprint)
     
     CORS(app)
     

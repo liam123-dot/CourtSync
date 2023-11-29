@@ -14,7 +14,6 @@ def get_profile_picture_url(coach):
 def get_new_get_profile_url(coach):
     
     expiry_time = 3600
-    
     url = client.generate_presigned_url(
         'get_object',
         Params={

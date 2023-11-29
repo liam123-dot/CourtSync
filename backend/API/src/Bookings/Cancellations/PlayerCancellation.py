@@ -1,5 +1,10 @@
 from datetime import datetime
 from flask import Blueprint, request, jsonify, current_app
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
+
+from src.Bookings.GetBooking import get_booking_by_hash
 
 from src.Notifications.Emails.SendEmail import send_email
 from src.Users.GetSelf.GetSelf import get_attributes
@@ -32,24 +37,6 @@ def player_cancel_booking_by_hash(bookingHash):
     send_player_cancellation_confirmation(booking['start_time'], booking['duration'], booking['player_name'], booking['contact_email'])
 
     return jsonify(message='Lesson Successfully Cancelled'), 200
-
-def get_booking_by_hash(bookingHash):
-    connection = current_app.config['db_connection'].connection
-    sql = "SELECT coach_id, start_time, player_name, status, duration, contact_email, contact_phone_number FROM Bookings WHERE hash=%s"
-    with connection.cursor() as cursor:
-        cursor.execute(sql, (bookingHash, ))
-        results = cursor.fetchall()
-    if len(results) == 0:
-        return None
-    return {
-        'coach_id': results[0][0],
-        'start_time': results[0][1],
-        'player_name': results[0][2],
-        'status': results[0][3],
-        'duration': results[0][4],
-        'contact_email': results[0][5],
-        'contact_phone_number': results[0][6]
-    }
 
 def update_booking_status(bookingHash, status, message_to_coach):
     connection = current_app.config['db_connection'].connection
@@ -115,32 +102,22 @@ def send_player_cancellation_confirmation(start_time, duration, player_name, con
     
 @PlayerCancelBookingBlueprint.route('/timetable/player-bookings/<bookingHash>', methods=['GET'])    
 def get_booking_by_hash_endpoint(bookingHash):
-    connection = current_app.config['db_connection'].connection
-    sql = "SELECT player_name, contact_name, duration, start_time, cost, status FROM Bookings WHERE hash=%s"
+    
+    logging.debug(bookingHash)
 
-    with connection.cursor() as cursor:
-        cursor.execute(sql, (bookingHash, ))
-        results = cursor.fetchall()
+    booking = get_booking_by_hash(bookingHash)
 
-    if len(results) == 0:
+    if not booking:
         return jsonify(message='Invalid link, no booking exists'), 400
     
-    booking = results[0]
-    player_name = booking[0]
-    contact_name = booking[1]
-    duration = booking[2]
-    start_time = booking[3]
-    cost = booking[4]
-    status = booking[5]
-
-    if status == 'cancelled':
+    if booking['status'] == 'cancelled':
         return jsonify(message='This lesson has already been cancelled'), 400
 
     return jsonify(
-        player_name=player_name,
-        contact_name=contact_name,
-        duration=duration,
-        start_time=start_time,
-        cost=cost,
-        status=status
+        player_name=booking['player_name'],
+        contact_name=booking['contact_name'],
+        duration=booking['duration'],
+        start_time=booking['start_time'],
+        cost=booking['cost'],
+        status=booking['status']
     ), 200
