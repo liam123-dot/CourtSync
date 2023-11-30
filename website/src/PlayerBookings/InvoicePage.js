@@ -147,7 +147,7 @@ export default function InvoicePage () {
         <div>
             <h1>Set up your invoicing preferences</h1>
             <p>Before you can view your invoices you must set up your invoice details</p>
-            <Button onClick={() => window.location.href = process.env.REACT_APP_WEBSITE_URL + '/settings'}>Set up invoices</Button>
+            <Button onClick={() => window.location.href = process.env.REACT_APP_WEBSITE_URL + '/#/dashboard/settings'}>Set up invoices</Button>
         </div>
 
     )

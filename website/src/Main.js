@@ -15,6 +15,7 @@ import PlayerHomeScreen from './Home/PlayerHomeScreen/PlayerHomeScreen';
 import NavigationBar from './NavigationBar';
 import SuccessPopup from './Notifications/SuccessPopup';
 import { PopupProvider } from './Notifications/PopupContext';
+import ContactSales from './EntryPage/ContactSales';
 
 function Main() {
 
@@ -38,9 +39,11 @@ function Main() {
                     <Routes>
                         <Route path="/" element={<EntryPage/>} />
                         <Route path="/coach/signin" element={<SignInScreen/>} />
-                        <Route path="/coach/signup" element={<SignUpScreen/>} />
+                        <Route path="/coach/signup/:hash" element={<SignUpScreen/>} />
                         <Route path="/coach/verify" element={<VerificationCodeScreen/>} />                
                         <Route path="/:coachSlug" element={<PlayerHomeScreen/>} />
+
+                        <Route path="/contact-sales" element={<ContactSales/>} />
 
                         <Route path="/dashboard/*" element={<CoachDashboard/>} />
 

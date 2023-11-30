@@ -98,14 +98,6 @@ export default function SignInScreen() {
                 <Button type="submit">
                     {isLoading ? <Spinner /> : "Sign In"}
                 </Button>
-                <Button 
-                style={{
-                    marginTop: 1
-                }}
-                onClick={() => {navigate('/coach/signup')}}
-                >
-                    No Account? Sign up here!
-                </Button>
             </Form>
         </Container>
     );

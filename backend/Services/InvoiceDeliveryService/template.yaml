@@ -8,10 +8,7 @@ Globals:
     Timeout: 900
     Environment:
       Variables:
-        DATABASE_HOST: aws.connect.psdb.cloud
-        DATABASE_USERNAME: lhf8dq0lx4h84o26ym4j
-        DATABASE_PASSWORD: pscale_pw_V1BteUKdqsKD8j723wRnkF548e0A0Zn0LKceMUbAhwO
-        DATABASE: main
+        DATABASE_SECRET_NAME: db-test-secret
     Architectures:
       - arm64
 
@@ -30,6 +27,7 @@ Resources:
       Runtime: python3.9
       Policies:
         - AmazonSQSFullAccess
+        - SecretsManagerReadWrite
       Environment:
         Variables:
           QUEUE_URL: !Ref MyQueue
@@ -48,6 +46,7 @@ Resources:
       Runtime: python3.9
       Policies:
         - AmazonSQSFullAccess
+        - SecretsManagerReadWrite
       Environment:
         Variables:
           QUEUE_URL: !Ref MyQueue
@@ -66,6 +65,7 @@ Resources:
       Runtime: python3.9
       Policies:
         - AmazonSQSFullAccess
+        - SecretsManagerReadWrite
       Environment:
         Variables:
           QUEUE_URL: !Ref MyQueue
@@ -84,6 +84,7 @@ Resources:
       Runtime: python3.9
       Policies:
         - AmazonSESFullAccess
+        - SecretsManagerReadWrite
       Environment:
         Variables:
           STRIPE_SECRET_KEY: sk_test_51O9ZfgHr5w2HXr5R8PQcEotoZ5FacJdXCm4yrAjWwjiFI9MkOwnqQLi6P2BBwYlrO5IeOZ7LznSW1oOBFdrV1Fci002J5POU5f

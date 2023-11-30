@@ -406,3 +406,18 @@ def get_all(bookings, coach_events, working_hours, global_min, global_max):
 
     return all
     
+
+@GetTimetableBlueprint.route('/timetable/working-hours', methods=['GET'])
+def get_working_hours_endpoint():
+    
+    token = request.headers.get('Authorization')
+    
+    coach = get_coach(token)
+    
+    if not coach:
+        return jsonify({'error': 'Invalid token'}), 400
+    
+    results = execute_working_hours_query(coach['coach_id'])
+    
+    return jsonify(results), 200
+    

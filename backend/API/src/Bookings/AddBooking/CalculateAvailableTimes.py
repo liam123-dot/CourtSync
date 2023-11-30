@@ -134,13 +134,13 @@ def get_start_times(epoch_start_time, coach_durations, events):
             for event in events:
                 event_start_time = event[0]
                 event_end_time = event[0] + event[1] * 60
-                if event_start_time <= start_time <= event_end_time:
+                if event_start_time <= start_time < event_end_time:
                     valid = False
-                elif event_start_time <= start_time + duration * 60 <= event_end_time:
+                elif event_start_time < start_time + duration * 60 <= event_end_time:
                     valid = False
-                elif start_time <= event_start_time <= start_time + duration * 60:
+                elif start_time <= event_start_time < start_time + duration * 60:
                     valid = False
-                elif start_time <= event_end_time <= start_time + duration * 60:
+                elif start_time < event_end_time <= start_time + duration * 60:
                     valid = False                
 
             if valid:

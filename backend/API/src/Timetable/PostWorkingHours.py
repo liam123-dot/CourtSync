@@ -46,7 +46,7 @@ def update_or_insert_working_hours(working_hours, username):
     # if a working hour id is present, then it is an update, otherwise it is an insert
     
     
-    sql_check = "SELECT start_time, end_time, day_of_week, working_hour_id FROM WorkingHours WHERE coach_id=%s AND is_default=1"
+    sql_check = "SELECT start_time, end_time, day_of_week, working_hour_id FROM WorkingHours WHERE coach_id=%s"
     sql_update = "UPDATE WorkingHours SET start_time=%s, end_time=%s WHERE working_hour_id=%s AND coach_id=%s"
     sql_insert = "INSERT INTO WorkingHours(day_of_week, start_time, end_time, coach_id) VALUES (%s, %s, %s, %s)"
     
@@ -55,16 +55,19 @@ def update_or_insert_working_hours(working_hours, username):
     for new_working_hour_day, new_working_hour_data in working_hours.items():
         working_hour_id = check_for_update(new_working_hour_data.get('working_hour_id', None), results)
         if working_hour_id:
-            execute_query(sql_update, (new_working_hour_data['start_time'], new_working_hour_data['end_time'], working_hour_id, username))
+            execute_query(sql_update, (new_working_hour_data['start_time'], new_working_hour_data['end_time'], working_hour_id, username), is_get_query=False)
         else:
-            execute_query(sql_insert, (int(new_working_hour_day), new_working_hour_data['start_time'], new_working_hour_data['end_time'], username))
+            execute_query(sql_insert, (int(new_working_hour_day), new_working_hour_data['start_time'], new_working_hour_data['end_time'], username), is_get_query=False)
     return True
 
 def check_for_update(working_hour_id, existing_working_hours):
+    print('testing')
+    print(working_hour_id)
+    print(existing_working_hours)
     if not working_hour_id:
         return False
     for working_hour in existing_working_hours:
-        if working_hour[3] == working_hour_id:
+        if working_hour['working_hour_id'] == working_hour_id:
             return working_hour_id
     return False
  
@@ -74,7 +77,7 @@ def check_working_hours_valid(working_hours, coach_id):
     results = execute_query(sql, (coach_id, int(current_time)))
 
     for booking in results:
-        if not check_booking_valid(minutes_into_day(booking[0]), booking[1], working_hours[str(get_day_of_week_from_epoch(booking[0]))]):
+        if not check_booking_valid(minutes_into_day(booking['start_time']), booking['duration'], working_hours[str(get_day_of_week_from_epoch(booking['start_time']))]):
             return False
     return True
 

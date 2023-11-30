@@ -3,31 +3,48 @@ import axios from "axios";
 import ProfileButton from "../../SidePanel/ProfilePicture";
 import {Spinner} from "../../Spinner"
 import {SaveButton} from '../../Home/CommonAttributes/SaveButton'
+import { usePopup } from "../../Notifications/PopupContext";
+import {useNavigate} from 'react-router-dom';
 
 export default function CoachProfileSettings() {
+    const [initialCoachDetails, setInitialCoachDetails] = useState(null);
     const [coachDetails, setCoachDetails] = useState(null);
+
     const [profileImage, setProfileImage] = useState(null); // State to hold selected image
     const [isLoading, setIsLoading] = useState(false);
+
+    const [isEditing, setIsEditing] = useState(false);
 
     const [coachLink, setCoachLink] = useState('');
     const [coachSetUp, setCoachSetUp] = useState(false);
 
     const [isSaving, setIsSaving] = useState(false);
+    const navigate = useNavigate();
+
+    const {showPopup} = usePopup();
 
     const saveDetails = async () => {
         setIsSaving(true);
 
         try {
+            const changes = Object.keys(coachDetails).reduce((result, key) => {
+                if (coachDetails[key] !== initialCoachDetails[key]) {
+                    result[key] = coachDetails[key];
+                }
+                return result;
+            }, {});
 
-            console.log(coachDetails);
+            console.log(changes);
 
             const response = await axios.put(`${process.env.REACT_APP_API_URL}/user/me`, 
-                coachDetails,
+                changes,
                 {headers: {
                     'Authorization': localStorage.getItem('AccessToken')
                 }}
             )
             console.log(response);
+            showPopup('Success');
+            setIsEditing(false);
 
         } catch (error) {
             console.log(error);
@@ -49,8 +66,8 @@ export default function CoachProfileSettings() {
             );
             const data = response.data;
             setCoachDetails(data);
-            console.log(response.data);
-
+            setInitialCoachDetails(data);
+            
             setCoachLink(`${process.env.REACT_APP_WEBSITE_URL}/#${data.slug}`);
             setCoachSetUp(data.coach_setup);
 
@@ -91,9 +108,6 @@ export default function CoachProfileSettings() {
                 }
             });
 
-            console.log(response)
-    
-            console.log(profileImage.type)
             const presignedUrl = response.data.url; // Assuming the response contains the URL under the 'url' key
     
             if (!presignedUrl) {
@@ -114,6 +128,7 @@ export default function CoachProfileSettings() {
 
             fetchCoachDetails();
             setProfileImage(null);
+            showPopup('Success');
             // 3. Optional: Refresh the profile image or coach details after successful upload
 
             // (e.g., by re-fetching coach details or setting the new profile image in your state)
@@ -122,7 +137,24 @@ export default function CoachProfileSettings() {
             console.error("Error uploading profile image", error);
         }
     }
+
+    const handleSignOut = () => {
+
+        localStorage.setItem('AccessToken', "");
+        localStorage.setItem('RefreshToken', "");
+        localStorage.setItem('email', "")
+
+        navigate('/')
+
+    }
     
+    const handleInputChange = (event) => {
+        const { name, value } = event.target;
+        setCoachDetails(prevDetails => ({
+            ...prevDetails,
+            [name]: value
+        }));
+    };
 
     return !isLoading ? (
         <div>
@@ -135,19 +167,37 @@ export default function CoachProfileSettings() {
             {coachDetails && (
                 <>
                     <div style={dividerStyle}>
-                        <p><strong>First Name:</strong> {coachDetails.first_name}</p>
+                        <p><strong>First Name:</strong> 
+                            {isEditing ? (
+                                <input type="text" name="first_name" value={coachDetails.first_name} onChange={handleInputChange} />
+                            ) : (
+                                coachDetails.first_name
+                            )}
+                        </p>
                     </div>
                     <div style={dividerStyle}>
-                        <p><strong>Last Name:</strong> {coachDetails.last_name}</p>
+                        <p><strong>Last Name:</strong> 
+                            {isEditing ? (
+                                <input type="text" name="last_name" value={coachDetails.last_name} onChange={handleInputChange} />
+                            ) : (
+                                coachDetails.last_name
+                            )}
+                        </p>
                     </div>
                     <div>
-                        <p><strong>Bio:</strong> {coachDetails.bio}</p>
+                        <p><strong>Bio:</strong> 
+                            {isEditing ? (
+                                <textarea name="bio" value={coachDetails.bio} onChange={handleInputChange} />
+                            ) : (
+                                coachDetails.bio
+                            )}
+                        </p>
                     </div>
 
                     <div style={dividerStyle}>
                         <p>
                             <strong>Email:</strong> {coachDetails.email}
-                            {coachDetails.email_verified === "true" ? (
+                            {coachDetails.email_verified ? (
                                 <span style={{ color: 'green', marginLeft: '10px' }}>(Verified)</span>
                             ) : (
                                 <span style={{ color: 'red', marginLeft: '10px' }}>(Not Verified)</span>
@@ -206,8 +256,14 @@ export default function CoachProfileSettings() {
                     </div>
                 </>
             )}
+            <button onClick={() => setIsEditing(!isEditing)}>
+                {isEditing ? 'Cancel' : 'Edit'}
+            </button>
             <SaveButton onClick={saveDetails}>
                 {isSaving ? <Spinner/>: 'Save'}
+            </SaveButton>
+            <SaveButton onClick={handleSignOut}>
+                Sign Out
             </SaveButton>
         </div>
     ): (

@@ -37,6 +37,10 @@ from src.Timetable.EditFeatures import EditFeaturesBlueprint
 
 from src.TestBlueprint import TestBlueprint
 
+from src.Sales.ContactSales import ContactSalesBlueprint
+from src.Sales.CreateSignUpLink import CreateSignUpLinkBlueprint
+from src.Sales.VerifyHash import VerifyHashBlueprint
+
 def create_app():
     app = Flask(__name__)
     
@@ -76,6 +80,10 @@ def create_app():
     app.register_blueprint(EditFeaturesBlueprint)
     
     app.register_blueprint(TestBlueprint)
+    
+    app.register_blueprint(ContactSalesBlueprint)
+    app.register_blueprint(CreateSignUpLinkBlueprint)
+    app.register_blueprint(VerifyHashBlueprint)
     
     CORS(app)
     

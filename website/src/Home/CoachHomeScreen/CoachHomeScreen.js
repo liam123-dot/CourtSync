@@ -6,7 +6,7 @@ import { FaRegClock } from 'react-icons/fa';
 import axios from "axios";
 
 import Timetable from "../Calendar/Timetable";
-import WorkingHoursModal from '../Calendar/WorkingHoursModal'
+// import WorkingHoursModal from '../Calendar/WorkingHoursModal'
 import CoachAddEventModal from "./CoachAddEventModal/CoachAddEventModal";
 import SidePanel from "../../SidePanel/SidePanel"
 import { refreshTokens } from "../../Authentication/RefreshTokens";
@@ -325,14 +325,14 @@ export default function HomeScreen() {
                                 </ArrowButtonGroup>
                                 
                                 {/* Modals and other components */}
-                                <WorkingHoursModal 
+                                {/* <WorkingHoursModal 
                                     isOpen={isWorkingHoursModalOpen} 
                                     onClose={() => setIsWorkingHoursModalOpen(false)} 
                                     workingHours={defaultWorkingHours} 
                                     setWorkingHours={setDefaultWorkingHours}
                                     redo={redo}
                                     bookings={bookings}
-                                />
+                                /> */}
                                 <CoachAddEventModal
                                     isOpen={isAddEventModalOpen}
                                     onClose={() => setIsWorkingHoursModalOpen(false)}       

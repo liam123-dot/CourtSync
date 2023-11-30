@@ -22,6 +22,17 @@ export const Button = styled.button`
       }
     `;
 
+const buttonStyles = {
+  backgroundColor: 'white',
+  color: '#004d99',
+  padding: '10px 20px',
+  border: 'none',
+  borderRadius: '5px',
+  cursor: 'pointer',
+  fontSize: '1em',
+  marginRight: '10px',
+}
+
 export default function EntryPage ({}) {
 
     const [isCoach, setIsCoach] = useState(false);
@@ -120,20 +131,21 @@ export default function EntryPage ({}) {
                     Dashboard
                   </Button>
                 ) : (
-                  <Button 
-                    onClick={() => { navigate('/coach/signin') }}
-                    style={{
-                      backgroundColor: 'white',
-                      color: '#004d99',
-                      padding: '10px 20px',
-                      border: 'none',
-                      borderRadius: '5px',
-                      cursor: 'pointer',
-                      fontSize: '1em',
-                    }}
-                  >
-                    Sign In
-                  </Button>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <Button 
+                          onClick={() => { navigate('/coach/signin') }}
+                          style={buttonStyles}
+                      >
+                          Sign In
+                      </Button>
+
+                      <Button 
+                          onClick={() => { navigate('/contact-sales') }}
+                          style={buttonStyles}
+                      >
+                          Contact Sales
+                      </Button>
+                  </div>                 
                 )
               )}
             </div>
@@ -164,6 +176,16 @@ export default function EntryPage ({}) {
             }}>
               Your end-to-end solution for all your coaching admin
             </h2>
+            <h3 style={{
+              fontSize: '1.5em', // Slightly smaller text for the subtitle
+              color: '#333', // Dark grey for the subtitle
+              fontWeight: 'normal', // Normal font weight for the subtitle
+              textAlign: 'center', // Center-align the subtitle
+              marginTop: '10px', // Space above the subtitle
+            }}>
+              Contact sales to get started!
+            </h3>
+            
       
           </div>
       

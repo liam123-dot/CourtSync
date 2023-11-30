@@ -48,8 +48,8 @@ def create_stripe_account():
     
     account_link = stripe.AccountLink.create(
         account=stripe_account,
-        refresh_url='https://www.courtsync.co.uk/profile/' + coach['slug'],
-        return_url='https://www.courtsync.co.uk/profile/' + coach['slug'],
+        refresh_url='https://www.courtsync.co.uk/#/' + coach['slug'],
+        return_url=f"{os.environ['WEBSITE_URL']}/#/dashboard/settings",
         type='account_onboarding'
     )
     

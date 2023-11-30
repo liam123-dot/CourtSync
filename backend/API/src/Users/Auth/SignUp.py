@@ -3,6 +3,10 @@ import boto3
 import os
 import logging
 from botocore.exceptions import ClientError
+import time
+
+from src.Database.ExecuteQuery import execute_query
+from src.Sales.VerifyHash import get_hash_from_db
 
 logging.basicConfig(level=logging.INFO)
 
@@ -22,10 +26,23 @@ def coach_sign_up():
     data = request.json
     try:
         user_data = extract_user_data(data)
+        
+        hash = get_hash_from_db(user_data['hash'])
+        
+        if not hash:
+            return jsonify(message='Invalid hash'), 400
+        
+        if hash['expiry'] < time.time():
+            return jsonify(message='Hash expired'), 400
+        
+        if hash['used']:
+            return jsonify(message='Hash already used'), 400        
+        
         validate_user_data(user_data)
         user_data['phone_number'] = format_phone_number(user_data['phone_number'])
         user_id = create_user(user_data)
         insert_into_table(user_id, user_data['first_name'], user_data['last_name'], user_data['email'], user_data['phone_number'])
+        mark_code_used(user_data['hash'])
         return jsonify(message='Success'), 200
     except (KeyError, ValueError) as e:
         return jsonify(message=str(e)), 400
@@ -45,7 +62,7 @@ def coach_sign_up():
         return jsonify(message='Internal Server Error', error=str(e)), 500
 
 def extract_user_data(data):
-    required_keys = ['first_name', 'last_name', 'email', 'phone_number', 'password', 'confirm_password']
+    required_keys = ['first_name', 'last_name', 'email', 'phone_number', 'password', 'confirm_password', 'hash']
     return {key: data[key] for key in required_keys}
 
 def validate_user_data(user_data):
@@ -109,6 +126,7 @@ def confirm_coach_sign_up():
     try:
         email, confirmation_code = get_request_data()
         response = confirm_sign_up(email, confirmation_code)
+        mark_as_verified(email)
         return jsonify(response), 200
     except ValueError as e:
         return jsonify(message=str(e)), 400
@@ -122,3 +140,12 @@ def confirm_coach_sign_up():
             return jsonify(message='The verification code has expired, please check your inbox for a new one'), 400
     except Exception as e:
         return jsonify(message=f"Error: {str(e)}"), 500
+    
+def mark_as_verified(email):
+    sql = "UPDATE Coaches SET email_verified=1 WHERE email=%s"
+    execute_query(sql, (email,), is_get_query=False)
+    
+    
+def mark_code_used(hash):
+    sql = "UPDATE SignUpCodes SET used=1 WHERE hash=%s"
+    execute_query(sql, (hash,), is_get_query=False)

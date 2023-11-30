@@ -1,11 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 /** @jsxImportSource @emotion/react */
 import { Container, Form, Input, Button, titleStyle, Spinner } from './styles';
 import { useNavigate } from 'react-router-dom';
+import { useParams } from "react-router-dom";
 
 
 export default function SignUpScreen() {
+
+    const {hash} = useParams();
 
     const navigate = useNavigate();
 
@@ -15,13 +18,16 @@ export default function SignUpScreen() {
         email: '',
         phone_number: '',
         password: '',
-        confirm_password: ''
+        confirm_password: '',
+        hash: hash
     });
     const [errors, setErrors] = useState({});
 
     const [signUpErrorMessage, setSignUpErrorMessage] = useState(null);
 
     const [signUpLoading, setSignUpLoading] = useState(false);
+
+    const [validHash, setValidHash] = useState(false);
 
     const validate = () => {
         let tempErrors = {};
@@ -75,8 +81,6 @@ export default function SignUpScreen() {
         }
     };
 
-
-
     const handleInputChange = (e) => {
         let value = e.target.value;
         if (e.target.name === 'first_name' || e.target.name === 'last_name') {
@@ -88,7 +92,23 @@ export default function SignUpScreen() {
         });
     };
 
-    return (
+    useEffect(() => {
+        const checkHash = async () => {
+    
+            try{
+                const response = await axios.get(`${process.env.REACT_APP_API_URL}/sales/verify-hash/${hash}`, {
+                    hash: hash
+                });
+                setValidHash(true);
+            
+            } catch(error) {
+                setValidHash(false);
+            }
+        }
+        checkHash();
+    }, [])
+
+    return validHash ? (
         <Container>
             <h1 css={titleStyle}>Coach Sign Up</h1>
             {signUpErrorMessage && <div style={{ color: 'red', marginBottom: '10px' }}>{signUpErrorMessage}</div>}
@@ -113,6 +133,10 @@ export default function SignUpScreen() {
             </Form>
 
         </Container>
-    );
+    ): (
+        <div>
+            Invalid Hash
+        </div>
+    )
 
 }

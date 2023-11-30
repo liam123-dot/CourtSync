@@ -79,33 +79,36 @@ def get_weekly_or_monthly_invoices(username, request_data):
 
 
 def get_daily_invoices(username, request_data):
+    if request_data['status_view'] == 'upcoming':
+        paid_status = 'AND paid=0 AND invoice_sent=0 AND status=\'confirmed\''
+    else:
+        paid_status = f'AND paid={0 if request_data["status_view"]=="pending" else 1} AND invoice_sent=1'
+
     if request_data['contact_email']:
         sql = f"""SELECT Bookings.booking_id, Players.name as player_name, Bookings.start_time, Contacts.name as contact_name, Bookings.cost, Bookings.paid, Bookings.extra_costs, Bookings.duration, Contacts.email as contact_email
                     FROM Bookings
                     INNER JOIN Players ON Bookings.player_id = Players.player_id
                     INNER JOIN Contacts ON Bookings.contact_id = Contacts.contact_id
                     WHERE Bookings.coach_id=%s
-                    AND Bookings.invoice_sent=1
                     AND Bookings.start_time < %s
-                    AND Bookings.paid=%s 
+                    {paid_status}
                     AND Contacts.email=%s
                     AND Bookings.status='confirmed'
                     ORDER BY Bookings.start_time
                     LIMIT %s OFFSET %s"""
-        results = execute_query(sql, (username, time.time(), 0 if request_data['status_view']=='pending' else 1, request_data['contact_email'], request_data['limit'], request_data['offset']), is_get_query=True)
+        results = execute_query(sql, (username, time.time(), request_data['contact_email'], request_data['limit'], request_data['offset']), is_get_query=True)
     else:
         sql = f"""SELECT Bookings.booking_id, Players.name as player_name, Bookings.start_time, Contacts.name as contact_name, Bookings.cost, Bookings.paid, Bookings.extra_costs, Bookings.duration, Contacts.email as contact_email
                     FROM Bookings
                     INNER JOIN Players ON Bookings.player_id = Players.player_id
                     INNER JOIN Contacts ON Bookings.contact_id = Contacts.contact_id
                     WHERE Bookings.coach_id=%s
-                    AND Bookings.invoice_sent=1
                     AND Bookings.start_time < %s
-                    AND Bookings.paid=%s 
+                    {paid_status}
                     AND Bookings.status='confirmed'
                     ORDER BY Bookings.start_time
                     LIMIT %s OFFSET %s"""
-        results = execute_query(sql, (username, time.time(), 0 if request_data['status_view']=='pending' else 1, request_data['limit'], request_data['offset']), is_get_query=True)
+        results = execute_query(sql, (username, time.time(), request_data['limit'], request_data['offset']), is_get_query=True)
          
     return results
 
