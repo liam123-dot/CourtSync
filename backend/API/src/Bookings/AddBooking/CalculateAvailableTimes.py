@@ -121,14 +121,17 @@ def get_start_times(epoch_start_time, coach_durations, events):
 
     day_start = datetime.fromtimestamp(epoch_start_time).replace(hour=0, minute=0, second=0).timestamp()
     day_end = datetime.fromtimestamp(epoch_start_time).replace(hour=23, minute=59, second=59).timestamp()
-
+    
+    # Sort the events list by the first element in ascending order
+    events.sort(key=lambda x: x[0])
+    
     # Initialize an empty dictionary to hold the valid start times
     valid_start_times = {}
     
     # Loop over each 15-minute interval of the day
     for start_time in range(int(day_start), int(day_end), 15 * 60):
         # For each interval, check if it's a valid start time for each of the coach's durations
-        for duration in coach_durations:        
+        for duration in coach_durations:
             # Check if the duration is valid for the event
             valid = True
             for event in events:
@@ -143,9 +146,71 @@ def get_start_times(epoch_start_time, coach_durations, events):
                 elif start_time < event_end_time <= start_time + duration * 60:
                     valid = False                
 
-            if valid:
+            if valid and check_start_time_leaves_space(start_time, events, duration, coach_durations):
                 if start_time not in valid_start_times:
                     valid_start_times[start_time] = []
                 valid_start_times[start_time].append(duration)
                     
     return valid_start_times
+
+
+def check_start_time_leaves_space(start_time, events, duration, durations):
+    # Convert the events list to the desired format
+    events = [[start_time, start_time + (duration * 60)] for start_time, duration in events]
+    before, after = find_nears(start_time, events)
+    
+    before_valid = False
+    after_valid = False
+    
+    logging.debug(f'before: {convert_epoch_to_hh_mm(before)}, {before}')
+    logging.debug(f'after: {convert_epoch_to_hh_mm(after)}, {after}')
+    logging.debug(f'start_time: {convert_epoch_to_hh_mm(start_time)}, {start_time}')
+    logging.debug(f'duration: {duration}')
+    logging.debug(f'durations: {durations}')
+    
+    if before == start_time:
+        before_valid = True
+    else:
+        if start_time - before >= min(durations) * 60:
+            before_valid = True
+            
+    if start_time + duration * 60 == after:
+        after_valid = True
+    else:
+        if after - (start_time + duration * 60) >= min(durations) * 60:
+            after_valid = True
+            
+    return_value = after_valid and before_valid
+
+    logging.debug(f'before_valid: {before_valid}')
+    logging.debug(f'after_valid: {after_valid}')
+    logging.debug(f'return_value: {return_value}')
+    logging.debug('-------------------------')
+    
+    return return_value
+
+
+def find_nears(start_time, events):
+    # given an epoch start time and a list of [epoch start time, epoch end time], need to fine the next event before and after if applicable
+
+    nearest = [None, None]
+    for event in events:
+        if event[0] < start_time:
+            nearest[0] = event
+        elif event[0] > start_time:
+            nearest[1] = event
+            break
+        
+    earlier_event_end = nearest[0][1]
+    later_event_start = nearest[1][0]
+
+    return earlier_event_end, later_event_start
+
+def convert_epoch_to_hh_mm(epoch_seconds):
+    # Convert epoch seconds to datetime object
+    dt = datetime.fromtimestamp(epoch_seconds)
+    
+    # Format datetime object as hh:mm
+    hh_mm = dt.strftime('%H:%M')
+    
+    return hh_mm

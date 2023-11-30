@@ -40,18 +40,39 @@ export default function EditWorkingHours({workingHours, setWorkingHours}) {
     };
 
     const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+    const styles = {
+        container: {
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+            padding: '10px',
+        },
+        hourContainer: {
+            marginBottom: '10px',
+            display: 'flex',
+            alignItems: 'center',
+        },
+        label: {
+            marginRight: '10px',
+        },
+        input: {
+            marginRight: '10px',
+        },
+    };
 
     return (
-        <div>
+        <div style={styles.container}>
             {workingHours.map((hour, index) => (
-                <div key={hour.working_hour_id}>
-                    <label>{days[hour.day_of_week]}:</label>
+                <div key={hour.working_hour_id} style={styles.hourContainer}>
+                    <label style={styles.label}>{days[hour.day_of_week]}:</label>
                     <input
+                        style={styles.input}
                         type="time"
                         value={hour.start_time || ''}
                         onChange={(e) => handleTimeChange(index, 'start_time', e.target.value)}
                     />
                     <input
+                        style={styles.input}
                         type="time"
                         value={hour.end_time || ''}
                         onChange={(e) => handleTimeChange(index, 'end_time', e.target.value)}
@@ -61,3 +82,4 @@ export default function EditWorkingHours({workingHours, setWorkingHours}) {
         </div>
     );
 }
+

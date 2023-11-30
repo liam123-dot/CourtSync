@@ -9,7 +9,6 @@ function Timetable({fromDate, toDate, min, max, view, timetableObjects, coachVie
     // each timetableObject has a start time being minutes from start of the day and a duration in minutes.
     // then we can check the type of timetable objects to see if it is a booking, or coach event or working hour
     // and render accordingly
-
     const generateDateToDayMap = (fromDate, toDate) => {
         const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
         const map = {};
@@ -17,7 +16,7 @@ function Timetable({fromDate, toDate, min, max, view, timetableObjects, coachVie
         let currentDate = new Date(fromDate);
         while (currentDate <= toDate) {
             const key = `${String(currentDate.getDate()).padStart(2, '0')}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${currentDate.getFullYear()}`;
-            const value = dayNames[currentDate.getDay()];
+            const value = `${dayNames[currentDate.getDay()]} ${currentDate.getDate()}`;
             map[key] = value;
     
             currentDate.setDate(currentDate.getDate() + 1);

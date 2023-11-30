@@ -1,24 +1,31 @@
 import React, { useEffect, useState } from 'react';
 
-export default function DateSelector({fromDate, setFromDate}) {
+export default function DateSelector({fromDate, setFromDate, toDate, setToDate}) {
 
     const [formattedDate, setFormattedDate] = useState('');
     const [isDatePickerOpen, setDatePickerOpen] = useState(false);
 
     const updateFormattedDate = () => {
-        if (!fromDate) return;
+        if (!fromDate || !toDate) return;
 
         const formatSingleDate = (date) => {
             return `${date.getDate()} ${date.toLocaleString('default', { month: 'long' })}`;
         }
 
-        let formatted = formatSingleDate(fromDate);
-        setFormattedDate(formatted);
+        let formattedRange;
+        if (fromDate.toDateString() === toDate.toDateString()) {
+            formattedRange = formatSingleDate(fromDate);
+        } else if (fromDate.getMonth() === toDate.getMonth()) {
+            formattedRange = `${fromDate.getDate()} - ${formatSingleDate(toDate)}`;
+        } else {
+            formattedRange = `${formatSingleDate(fromDate)} - ${formatSingleDate(toDate)}`;
+        }
+        setFormattedDate(formattedRange);
     }
 
     useEffect(() => {
         updateFormattedDate();
-    }, [fromDate]);
+    }, [fromDate, toDate]);
 
     const handleDateClick = () => {
         setDatePickerOpen(!isDatePickerOpen);

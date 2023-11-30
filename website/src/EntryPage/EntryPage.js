@@ -176,15 +176,17 @@ export default function EntryPage ({}) {
             }}>
               Your end-to-end solution for all your coaching admin
             </h2>
-            <h3 style={{
-              fontSize: '1.5em', // Slightly smaller text for the subtitle
-              color: '#333', // Dark grey for the subtitle
-              fontWeight: 'normal', // Normal font weight for the subtitle
-              textAlign: 'center', // Center-align the subtitle
-              marginTop: '10px', // Space above the subtitle
-            }}>
-              Contact sales to get started!
-            </h3>
+            { !isCoach &&
+              <h3 style={{
+                fontSize: '1.5em', // Slightly smaller text for the subtitle
+                color: '#333', // Dark grey for the subtitle
+                fontWeight: 'normal', // Normal font weight for the subtitle
+                textAlign: 'center', // Center-align the subtitle
+                marginTop: '10px', // Space above the subtitle
+              }}>
+                Contact sales to get started!
+              </h3>
+            }
             
       
           </div>

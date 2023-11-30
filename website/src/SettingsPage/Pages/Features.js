@@ -245,6 +245,7 @@ export default function FeaturesPage() {
                         setPrice={setPrice}
                     />
                 </div>
+                <EditWorkingHours workingHours={workingHours} setWorkingHours={setWorkingHours}/>
                 <button 
                     style={ButtonStyle} 
                     onClick={() => {
@@ -254,7 +255,6 @@ export default function FeaturesPage() {
                 >
                     {isSaving ? <Spinner/>: 'Save'}
                 </button>
-                <EditWorkingHours workingHours={workingHours} setWorkingHours={setWorkingHours}/>
                 {errorMessage && <p style={{ color: 'red', marginTop: '10px' }}>{errorMessage}</p>}
             </div>
         )

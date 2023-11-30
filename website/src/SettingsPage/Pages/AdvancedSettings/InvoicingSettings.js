@@ -77,7 +77,7 @@ export default function InvoicingSettings({}) {
         <div>            
             <h1>Invoicing Settings</h1>
             <p>Here you can configure your invoicing settings.</p>
-            <p>You must have a stripe account connected and set a invoice regularity before invoicing is enabled</p>
+            <p style={{ color: 'red' }}><b>You must have a stripe account connected and set a invoice regularity before invoicing is enabled</b></p>
 
             <p>Send invoices: 
             <select value={invoiceType} onChange={(e) => setInvoiceType(e.target.value)}>

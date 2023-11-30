@@ -22,12 +22,15 @@ from src.Bookings.Cancellations.PlayerCancellation import PlayerCancelBookingBlu
 from src.Bookings.Cancellations.CoachCancellation import CoachCancellationBlueprint
 from src.Bookings.GetBookings.GetBookings import GetBookingsBlueprint
 
+from src.CoachEvents.AddCoachEvent import AddCoachEventBlueprint
+
 from src.Contacts.GetContact import GetContactBlueprint
 from src.Contacts.Players.AddPlayer import CreatePlayerBlueprint
 from src.Contacts.AddContact import CreateContactBlueprint
 from src.Contacts.VerifyEmail import VerifyEmailBlueprint
 
 from src.Invoices.GetInvoices.GetInvoices import GetInvoicesBlueprint
+from src.Invoices.Private.InvoicePaidWebhook import InvoicePaidWebhookBlueprint
 
 from src.Timetable.CheckOverlaps import CheckOverlapsBlueprint
 from src.Timetable.PostWorkingHours import PostWorkingHoursBlueprint
@@ -66,12 +69,15 @@ def create_app():
     app.register_blueprint(PlayerCancelBookingBlueprint)
     app.register_blueprint(CoachCancellationBlueprint)
     
+    app.register_blueprint(AddCoachEventBlueprint)
+    
     app.register_blueprint(GetContactBlueprint)
     app.register_blueprint(CreatePlayerBlueprint)
     app.register_blueprint(CreateContactBlueprint)
     app.register_blueprint(VerifyEmailBlueprint)
     
     app.register_blueprint(GetInvoicesBlueprint)
+    app.register_blueprint(InvoicePaidWebhookBlueprint)
     
     app.register_blueprint(CheckOverlapsBlueprint)
     app.register_blueprint(GetTimetableBlueprint)

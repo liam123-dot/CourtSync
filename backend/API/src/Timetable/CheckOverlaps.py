@@ -1,19 +1,28 @@
 from flask import request, jsonify, Blueprint, current_app
 
 from src.Users.GetSelf.GetSelf import get_coach
-
+from src.Database.ExecuteQuery import execute_query
 
 CheckOverlapsBlueprint = Blueprint('CheckOverlapsBlueprint', __name__)
 
 def get_bookings(coach_id, from_time, to_time):
-    connection = current_app.config['db_connection'].connection
-    sql = "SELECT player_name, start_time FROM Bookings WHERE coach_id = %s AND status = 'confirmed' AND ((start_time >= %s AND start_time <= %s) OR (start_time + duration*60 >= %s AND start_time + duration*60 <= %s))"
+    
+    sql = """
+        SELECT Players.name as player_name, Bookings.start_time 
+        FROM Bookings 
+        INNER JOIN Players ON Bookings.player_id = Players.player_id
+        WHERE Bookings.coach_id = %s 
+        AND Bookings.status = 'confirmed' 
+        AND ((Bookings.start_time >= %s AND Bookings.start_time <= %s) 
+        OR (Bookings.start_time + Bookings.duration*60 >= %s AND Bookings.start_time + Bookings.duration*60 <= %s))
+    """
+    
     params = (coach_id, from_time, to_time, from_time, to_time)
-    with connection.cursor() as cursor:
-        cursor.execute(sql, params)
-        result = cursor.fetchall()
-    result = sorted(result, key=lambda x: x[1])    
-    return [{'player_name': row[0], 'start_time': row[1]} for row in result]
+    
+    result = execute_query(sql, params)
+        
+    result = sorted(result, key=lambda x: x['start_time'])    
+    return result
 
 def get_coach_events(coach_id, from_time, to_time):
     connection = current_app.config['db_connection'].connection
@@ -27,7 +36,7 @@ def get_coach_events(coach_id, from_time, to_time):
 
 
 @CheckOverlapsBlueprint.route('/timetable/check-overlaps', methods=['GET'])
-def check_overlaps():
+def check_overlaps_endpoint():
     
     # should be authorised and contain a from time and to time as query parameters in epoch seconds
     
@@ -49,19 +58,23 @@ def check_overlaps():
     if coach is None:
         return {'message': 'Invalid token'}, 400
     
-    overlap = False
-    
-    bookings = get_bookings(coach['coach_id'], from_time, to_time)
-    
-    if len(bookings) > 0:
-        overlap=True
-    
-    events = get_coach_events(coach['coach_id'], from_time, to_time)
-    
-    if len(events) > 0:
-        overlap=True
+    overlap, bookings, events = check_overlaps(coach['coach_id'], from_time, to_time)
         
     if overlap:
         return jsonify(overlaps=True, bookings=bookings, events=events), 200
     
     return jsonify(message='No overlaps', overlaps=False), 200
+
+def check_overlaps(coach_id, from_time, to_time):
+    overlap = False
+    bookings = get_bookings(coach_id, from_time, to_time)
+    
+    if len(bookings) > 0:
+        overlap=True
+    
+    events = get_coach_events(coach_id, from_time, to_time)
+    
+    if len(events) > 0:
+        overlap=True
+        
+    return overlap, bookings, events

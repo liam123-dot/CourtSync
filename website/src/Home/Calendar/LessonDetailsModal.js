@@ -14,8 +14,6 @@ export default function LessonDetailsModal({isOpen, onClose, booking}){
         return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
     };
 
-    console.log(booking);
-
     return (
         <ModalOverlay onClick={() => {
                 setOnCancelProcess(false)

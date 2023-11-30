@@ -16,7 +16,7 @@ export default function WeekViewRow ({data, statusView}) {
     const [year, setYear] = React.useState('');
     const [week, setWeek] = React.useState('');
 
-    console.log(data)
+    // console.log(data)
     const onRowClick = async (contactEmail) => {
 
         if (isOpen) {

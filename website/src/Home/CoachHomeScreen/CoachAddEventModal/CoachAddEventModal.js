@@ -35,43 +35,12 @@ const OptionButton = styled.button`
   color: ${props => props.selected ? 'white' : ''};
 `;
 
-  const hhmmToMinutes = (timeString) => {
-    const [hours, minutes] = timeString.split(':').map(Number);
-    return hours * 60 + minutes;
-  }
+export default function CoachAddEventModal({ isOpen, onClose}) {
 
-  const minutesToHHMM = (minutes) => {
-    if (minutes === null || minutes === undefined) {
-        return null;  // Or any other default value
-  }
+  const [selectedOption, setSelectedOption] = useState('lesson');
 
-  const hours = Math.floor(minutes / 60);
-  const remainingMinutes = minutes % 60;
-  
-  const hoursString = hours.toString().padStart(2, '0');
-  const minutesString = remainingMinutes.toString().padStart(2, '0');
-
-  return `${hoursString}:${minutesString}`;
-}
-
-export default function CoachAddEventModal({ isOpen, onClose, loadedDates, all, durations, fetchTimetableData, min, max }) {
-
-  const [selectedDate, setSelectedDate] = useState();
-  const [selectedStartTime, setSelectedStartTime] = useState(null);
-  const [selectedEndTime, setSelectedEndTime] = useState(null);
-  const [selectedOption, setSelectedOption] = useState('other');
-
-  if (!isOpen) return;
-
-  const handleStartTimeChange = (e) => {
-    const value = e.target.value;
-    setSelectedStartTime(value);
-    console.log(value)
-  }
-
-  const handleEndTimeChange = (e) => {
-    const value = e.target.value;
-    setSelectedEndTime(value);
+  if (!isOpen) {
+    return null;
   }
 
   return (

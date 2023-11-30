@@ -99,7 +99,7 @@ def create_invoice(cursor, coach, contact, bookings):
         )
         
         for booking_id in booking_ids.keys():
-            mark_invoices_sent(cursor, booking_id, booking_ids[booking_id])
+            mark_invoices_sent(cursor, booking_id, invoice['id'])
 
 def get_customer_id(cursor, coach, contact):
     sql = "SELECT stripe_customer_id FROM Contacts WHERE contact_id=%s"
@@ -130,10 +130,10 @@ def insert_customer_id(cursor, contact, customer_id):
     cursor.execute(sql, (customer_id, contact['contact_id']))
     
     
-def mark_invoices_sent(cursor, booking_id, line_item_id):
+def mark_invoices_sent(cursor, booking_id, invoice_id):
 
-    sql = "UPDATE Bookings SET invoice_sent=1, line_item_id=%s WHERE booking_id=%s"
-    cursor.execute(sql, (line_item_id, booking_id))
+    sql = "UPDATE Bookings SET invoice_sent=1, invoice_id=%s WHERE booking_id=%s"
+    cursor.execute(sql, (invoice_id, booking_id))
     
 def check_booking_sent(cursor, booking_id):
     sql = "SELECT invoice_sent FROM Bookings WHERE booking_id=%s"

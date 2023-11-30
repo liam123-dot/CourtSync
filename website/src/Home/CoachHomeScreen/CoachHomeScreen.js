@@ -2,14 +2,10 @@ import React, {useEffect, useState, useCallback} from "react";
 import { useParams } from "react-router-dom";
 /** @jsxImportSource @emotion/react */
 import {css, Global} from "@emotion/react";
-import { FaRegClock } from 'react-icons/fa';
-import axios from "axios";
 
 import Timetable from "../Calendar/Timetable";
 // import WorkingHoursModal from '../Calendar/WorkingHoursModal'
 import CoachAddEventModal from "./CoachAddEventModal/CoachAddEventModal";
-import SidePanel from "../../SidePanel/SidePanel"
-import { refreshTokens } from "../../Authentication/RefreshTokens";
 import { TitleSection, ArrowButtonGroup, Button, checkRefreshRequired, handleSetView, handleNext, handlePrevious } from "../HomescreenHelpers";
 import {fetchTimetable} from "../FetchTimetable";
 import { BookingObject } from "../Calendar/BookingObject";
@@ -320,7 +316,6 @@ export default function HomeScreen() {
                         <>
                             <TitleSection>
                                 <ArrowButtonGroup>
-                                    <Button onClick={() => setIsWorkingHoursModalOpen(true)}><FaRegClock/></Button>
                                     <Button onClick={() => setIsAddEventModalOpen(true)}>+</Button>
                                 </ArrowButtonGroup>
                                 
@@ -335,7 +330,7 @@ export default function HomeScreen() {
                                 /> */}
                                 <CoachAddEventModal
                                     isOpen={isAddEventModalOpen}
-                                    onClose={() => setIsWorkingHoursModalOpen(false)}       
+                                    onClose={() => setIsAddEventModalOpen(false)}       
                                     settings={{
                                         durations: durations
                                     }}           

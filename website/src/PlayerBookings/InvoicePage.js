@@ -66,7 +66,9 @@ export default function InvoicePage () {
 
     }, [view, statusView, playerSelected])
 
-
+    useEffect(() => {
+        setData([]);
+    }, [statusView])
 
     return invoicesInitialised ? (
         <div style={{

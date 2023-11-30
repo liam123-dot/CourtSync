@@ -77,13 +77,13 @@ def construct_new_coach_event(coach_event, authorised):
     else:
         keys = authorised_keys
 
-    new_coach_event = {key: coach_event[i] for i, key in enumerate(all_keys) if key in keys}
+    new_coach_event = {key: coach_event[key] for i, key in enumerate(all_keys) if key in keys}
     return new_coach_event
 
 def process_results_coach_events(results, authorised):
     coach_events = {}
     for coach_event in results:
-        date = epoch_to_date(coach_event[1])
+        date = epoch_to_date(coach_event['start_time'])
         if date not in coach_events.keys():
             coach_events[date] = []
         new_coach_event = construct_new_coach_event(coach_event, authorised)

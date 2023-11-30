@@ -1,6 +1,7 @@
 import React, {useEffect, useState} from "react";
 import { useParams } from "react-router-dom";
 import axios from 'axios';
+import {usePopup} from '../Notifications/PopupContext'
 
 import {Spinner} from "../Spinner";
 
@@ -30,6 +31,8 @@ export default function CancelBookingPage () {
 
     const [showMessage, setShowMessage] = useState(null)
 
+    const {showPopup} = usePopup();
+
     useEffect(() => {
 
         const fetchBooking = async () => {
@@ -50,7 +53,7 @@ export default function CancelBookingPage () {
                 console.log(error.response.data)
                 console.log(error.response.data.message)
 
-                if (error.response.data.message === 'This lesson has already been cancelled') {
+                if (error.response.data.message === 'Lesson Already Cancelled') {
                     setShowMessage('This lesson has already been cancelled')
                     setInvalidHash(false);
                 } else {
@@ -77,9 +80,12 @@ export default function CancelBookingPage () {
             })
 
             console.log(response);
+            showPopup('Success')
 
         } catch (error) {
-            console.log(error);
+    
+            console.log(error)
+
         }
         setCancellationLoading(false);
 

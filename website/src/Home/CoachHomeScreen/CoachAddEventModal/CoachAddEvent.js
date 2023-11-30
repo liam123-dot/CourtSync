@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {SaveButton} from '../../CommonAttributes/SaveButton';
 import { Spinner } from '../../../Spinner';
 import axios from 'axios';
@@ -23,6 +23,17 @@ export default function CoachAddEvent({closeModal}) {
     const [repeats, setRepeats] = useState(false);
     const [repeatType, setRepeatType] = useState('');
 
+    const [saveDisabled, setSaveDisabled] = useState(false);
+
+    useEffect(() => {
+        if (overlappingEvents && ((overlappingEvents.bookings && overlappingEvents.bookings.length > 0)
+            || (overlappingEvents.events && overlappingEvents.events.length > 0))) {
+            setSaveDisabled(true);
+        } else {
+            setSaveDisabled(false);
+        }
+    }, [overlappingEvents])
+             
     const handleRepeatTypeChange = e => {
 
 
@@ -108,7 +119,7 @@ export default function CoachAddEvent({closeModal}) {
         setSaving(true);
         try {
 
-            const response = await axios.post(`${process.env.REACT_APP_API_URL}/timetable/coach-events`,
+            const response = await axios.post(`${process.env.REACT_APP_API_URL}/coach-event`,
                 {
                     title,
                     description,
@@ -139,6 +150,7 @@ export default function CoachAddEvent({closeModal}) {
         checkValid(value, endDate, startTime, endTime);
 
         setStartDate(value)
+        setEndDate(value);
 
     }
 
@@ -190,7 +202,7 @@ export default function CoachAddEvent({closeModal}) {
                         onChange={handleStartDateChange}
                     />
                 </label>
-                <label>
+                {/* <label>
                     End Date
                     <input
                         style={{fontSize: '20px'}}
@@ -198,7 +210,7 @@ export default function CoachAddEvent({closeModal}) {
                         value={endDate}
                         onChange={handleEndDateChange}
                     />
-                </label>
+                </label> */}
                 <label>
                     Start Time
                     <input
@@ -265,7 +277,7 @@ export default function CoachAddEvent({closeModal}) {
                     )
                 }
 
-                <SaveButton onClick={handleSave}>
+                <SaveButton onClick={handleSave} disabled={saveDisabled}>
                     {saving ? 
                         <Spinner/>
                         :
