@@ -1,4 +1,4 @@
-import React, {useEffect, useState, useCallback} from "react";
+import React, {useEffect, useState} from "react";
 import { useParams } from "react-router-dom";
 /** @jsxImportSource @emotion/react */
 import {css, Global} from "@emotion/react";
@@ -17,6 +17,7 @@ import DateSelector from "./DateSelector";
 import CoachEventDetailsModal from "../Calendar/CoachEventDetailsModal";
 import {CoachEventDetailsProvider} from "../Calendar/CoachEventDetailsContext";
 import { RefreshTimetableProvider } from "./RefreshTimetableContext";
+import WorkingHoursModal from "./WorkingHoursModal";
 
 export default function HomeScreen() {
 
@@ -33,6 +34,7 @@ export default function HomeScreen() {
     const [bookings, setBookings] = useState({});
     const [all, setAll] = useState({});
     const [coachEvents, setCoachEvents] = useState({});
+    const [pricingRules, setPricingRules] = useState({});
 
     const [selected, setSelected] = useState([]);
 
@@ -49,8 +51,6 @@ export default function HomeScreen() {
     const [defaultWorkingHours, setDefaultWorkingHours] = useState({});
     const [durations, setDurations] = useState([]);
 
-    const [profilePictureUrl, setProfilePictureUrl] = useState(null);
-
     const [timetableEvents, setTimetableEvents] = useState({});
 
     const [min, setMin] = useState(null);
@@ -61,6 +61,8 @@ export default function HomeScreen() {
 
     const [isCoachEventShown, setIsCoachEventShown] = useState(false);
     const [coachEvent, setCoachEvent] = useState(null);
+
+    const [setUp, setSetUp] = useState(false);
 
     const redo = () => {
 
@@ -105,6 +107,7 @@ export default function HomeScreen() {
                 setMin(data.global_min);
                 setMax(data.global_max);
                 setDurations(data.durations);
+                setPricingRules(data.pricingRules)
 
                 setBookings(prevBookings => ({
                     ...prevBookings,
@@ -127,6 +130,19 @@ export default function HomeScreen() {
         setIsStartingUp(false);
 
     }
+
+    useEffect(() => {
+
+        // check that working hours, durations and pricing rules have all been set
+        // must be non null with a length greater than 0
+
+        if (Object.keys(workingHours).length > 0 && durations.length > 0 && Object.keys(pricingRules).length > 0) {
+            setSetUp(true);
+        } else {
+            setSetUp(false);
+        }
+
+    }, [workingHours, durations, pricingRules])
 
     useEffect(() => {
 
@@ -317,30 +333,12 @@ export default function HomeScreen() {
                             <TitleSection>
                                 <ArrowButtonGroup>
                                     <Button onClick={() => setIsAddEventModalOpen(true)}>+</Button>
+                                    <Button onClick={() => setIsWorkingHoursModalOpen(true)}>⚙</Button>
                                 </ArrowButtonGroup>
                                 
-                                {/* Modals and other components */}
-                                {/* <WorkingHoursModal 
-                                    isOpen={isWorkingHoursModalOpen} 
-                                    onClose={() => setIsWorkingHoursModalOpen(false)} 
-                                    workingHours={defaultWorkingHours} 
-                                    setWorkingHours={setDefaultWorkingHours}
-                                    redo={redo}
-                                    bookings={bookings}
-                                /> */}
-                                <CoachAddEventModal
-                                    isOpen={isAddEventModalOpen}
-                                    onClose={() => setIsAddEventModalOpen(false)}       
-                                    settings={{
-                                        durations: durations
-                                    }}           
-                                    loadedDates={loadedDates}
-                                    all={timetableEvents}
-                                    durations={durations}   
-                                    fetchTimetableData={fetchTimetableData}
-                                />
+                                <WorkingHoursModal isOpen={isWorkingHoursModalOpen} onClose={() => setIsWorkingHoursModalOpen(false)}/>
                                 
-                                <div style={{ display: 'flex', alignItems: 'center' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <ArrowNavigation
                                         handlePrevious={handlePrevious}
                                         handleNext={handleNext}
@@ -382,20 +380,49 @@ export default function HomeScreen() {
                             </TitleSection>
                             <CoachEventDetailsProvider setCoachEvent={setCoachEvent} setShown={setIsCoachEventShown}>
                                 <LessonDetailsProvider setBookings={setLessonDetailsBooking} setShown={setIsLessonDetailsShown}>
-                                    <Timetable
-                                        fromDate={fromDate}
-                                        toDate={toDate}
-                                        view={view}
-                                        timetableObjects={timetableEvents}
-                                        coachView={true}
-                                        min={min}
-                                        max={max}
-                                    />
+                                    {setUp ? (
+                                        <Timetable
+                                            fromDate={fromDate}
+                                            toDate={toDate}
+                                            view={view}
+                                            timetableObjects={timetableEvents}
+                                            coachView={true}
+                                            min={min}
+                                            max={max}
+                                        />
+                                    ): (
+                                    <>
+
+                                        <h2>
+                                            You must first set some working hours, durations and pricing rules before you can access the timetable.                                            
+                                        </h2>
+                                        <h3>
+                                            This section will allow you to manage, schedule and arrange lessons.
+                                        </h3>
+                                        <button onClick={() => {
+                                            window.location.href = `${process.env.REACT_APP_WEBSITE_URL}/#/dashboard/settings`
+                                        }}>
+                                            Settings
+                                        </button>
+
+                                    </>)
+                                 }
                                 </LessonDetailsProvider>
                             </CoachEventDetailsProvider>
                             <RefreshTimetableProvider refresh={redo}>
                                 <CoachEventDetailsModal isOpen={isCoachEventShown} onClose={() => setIsCoachEventShown(false)} coachEvent={coachEvent}/>
                                 <LessonDetailsModal isOpen={isLessonDetailsShown} onClose={() => setIsLessonDetailsShown(false)} booking={lessonDetailsBooking}/>
+                                <CoachAddEventModal
+                                    isOpen={isAddEventModalOpen}
+                                    onClose={() => setIsAddEventModalOpen(false)}       
+                                    settings={{
+                                        durations: durations
+                                    }}           
+                                    loadedDates={loadedDates}
+                                    all={timetableEvents}
+                                    durations={durations}   
+                                    fetchTimetableData={fetchTimetableData}
+                                />
                             </RefreshTimetableProvider>
                         </>
                     ) : (

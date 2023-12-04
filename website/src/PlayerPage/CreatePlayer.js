@@ -40,6 +40,7 @@ export default function CreatePlayer ({contactId, setOpen, fetchData}) {
                 </label>
                 <input type="submit" value="Submit" onClick={submitPlayer}/>
             </form>
+            <button onClick={() => setOpen(false)}>Cancel</button>
         </div>
     )
 

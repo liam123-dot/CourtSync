@@ -3,7 +3,7 @@ import ColumnTitles from "./ColumnTitles";
 import RowTitles from "./RowTitles";
 import Column from "./Column";
 
-function Timetable({fromDate, toDate, min, max, view, timetableObjects, coachView}) {
+function Timetable({fromDate, toDate, min, max, view, timetableObjects, coachView, dayView}) {
 
     // The timetableObjects is an array of dates in dd-mm-yyyy format to a list of timetableObjects for that day
     // each timetableObject has a start time being minutes from start of the day and a duration in minutes.
@@ -67,7 +67,7 @@ function Timetable({fromDate, toDate, min, max, view, timetableObjects, coachVie
             display: 'flex',
             flexDirection: 'column'
         }}>
-            <ColumnTitles titles={columnTitles} dates={dates} view={view} />
+            <ColumnTitles titles={columnTitles} dayView={view === 'day'} />
             {
                 rowTitles && (
                     <div style={{display: 'flex', flexDirection: 'row', flexGrow: 1}}>
@@ -83,6 +83,7 @@ function Timetable({fromDate, toDate, min, max, view, timetableObjects, coachVie
                                     timetableObjects={timetableObjects[date]}
                                     globalStartTime={min}
                                     globalEndTime={max}
+                                    dayView={view === 'day'}
                                 />
 
                             ))

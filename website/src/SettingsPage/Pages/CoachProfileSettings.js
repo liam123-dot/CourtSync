@@ -164,6 +164,11 @@ export default function CoachProfileSettings() {
                 <input type="file" accept=".jpg, .jpeg, .png" onChange={handleImageChange} />
                 <button onClick={handleImageUpload}>Upload</button>
             </div>
+            <p>
+                Your name and bio will be shown to players when they book lessons with you.
+                You can optionally show your email and phone number publicly so that players can contact you.
+                Note that your phone number has to be shown to players on invoices that are sent.
+            </p>w
             {coachDetails && (
                 <>
                     <div style={dividerStyle}>

@@ -17,22 +17,67 @@ def get_features():
     
     if not coach:
         return jsonify({'error': 'Invalid token'}), 400
-    
+
     coach_id = coach['coach_id']
     
-    results = execute_query('SELECT hourly_rate FROM PricingRules WHERE is_default=1 AND coach_id=%s', (coach_id,), is_get_query=True)
-    
-    if len(results) > 0:
-        hourly_rate = results[0]['hourly_rate']
-    else:
-        hourly_rate = None
+    hourly_rate = get_hourly_rate(coach_id)
         
-    results = execute_query('SELECT duration FROM Durations WHERE coach_id=%s', (coach_id,), is_get_query=True)
-    
-    durations = sorted([result['duration'] for result in results])
+    durations = get_durations(coach_id)
     
     return jsonify(
         hourly_rate=hourly_rate,
         durations=durations
     ), 200
     
+@GetFeaturesBlueprint.route('/features/hourly-rate', methods=['GET'])
+def get_hourly_rate():
+    
+    token = request.headers.get('Authorization', None)
+    
+    if not token:
+        return jsonify({'error': 'No token provided'}), 400
+    
+    coach = get_coach(token)
+    
+    if not coach:
+        return jsonify({'error': 'Invalid token'}), 400
+
+    coach_id = coach['coach_id']
+    
+    hourly_rate = get_hourly_rate(coach_id)
+    
+    return jsonify(hourly_rate=hourly_rate), 200
+
+@GetFeaturesBlueprint.route('/features/durations', methods=['GET'])
+def get_durations():
+    
+    token = request.headers.get('Authorization', None)
+    
+    if not token:
+        return jsonify({'error': 'No token provided'}), 400
+    
+    coach = get_coach(token)
+    
+    if not coach:
+        return jsonify({'error': 'Invalid token'}), 400
+
+    coach_id = coach['coach_id']
+    
+    durations = get_durations(coach_id)
+    
+    return jsonify(durations=durations), 200
+
+def get_durations(coach_id):
+    results = execute_query('SELECT duration FROM Durations WHERE coach_id=%s', (coach_id,), is_get_query=True)
+    
+    durations = sorted([result['duration'] for result in results])
+    
+    return durations
+    
+def get_hourly_rate(coach_id):
+    results = execute_query('SELECT hourly_rate FROM PricingRules WHERE is_default=1 AND coach_id=%s', (coach_id,), is_get_query=True)
+    
+    if len(results) > 0:
+        return results[0]['hourly_rate']
+    else:
+        return None

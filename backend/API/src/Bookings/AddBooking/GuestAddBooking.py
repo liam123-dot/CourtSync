@@ -9,15 +9,15 @@ import os
 
 logging.basicConfig(level=logging.DEBUG)
 
-from src.Notifications.Emails.SendEmail import send_email
-from src.Users.GetSelf.GetSelf import get_attributes, get_coach_from_slug
+from src.Bookings.AddBooking.BookingEmails import send_confirmation_emails
+from src.Bookings.AddBooking.InsertBooking import insert_booking
+from src.Users.GetSelf.GetSelf import get_coach_from_slug
 from src.Contacts.Players.AddPlayer import add_player, get_contact
 from src.Contacts.Players.GetPlayer import get_player
 
 from src.Database.ExecuteQuery import execute_query
 
 load_dotenv('.env')
-
 
 website_url = os.getenv('WEBSITE_URL')
 
@@ -104,17 +104,7 @@ def get_contact_and_player(player_name, contact_name, contact_email, contact_pho
             return contact, player
     
     add_player(player_name, contact_name, contact_email, contact_phone_number, coach_id)
-    return contact, get_player(player_name, contact['contact_id'], coach_id)
-    
-def insert_booking(player_id, contact_id, start_time, cost, rule_id, duration, coach_id, booking_time):
-    sql = "INSERT INTO Bookings(player_id, contact_id, start_time, cost, rule_id, duration, coach_id, hash) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
-
-    hashed_value = hash_booking(contact_id, start_time, booking_time)
-
-    execute_query(sql, args=(player_id, contact_id, start_time, cost, rule_id, duration, coach_id, hashed_value), is_get_query=False)
-
-    return hashed_value        
-    
+    return contact, get_player(player_name, contact['contact_id'], coach_id)    
 
 def check_start_time_within_scope(start_time, coach):
     # coach['booking_scope'] is in weeks. Marks how many weeks in advance a lesson can be booked
@@ -197,98 +187,3 @@ def validate_inputs(start_time, duration, player_name, contact_name, is_same_as_
         return False, "cost is not a positive integer"
     
     return True, None
-
-def hash_booking(contact_id, start_time, booking_time):
-    # Create a new sha256 hash object
-    hash_object = hashlib.sha256()
-
-    # Update the hash object with the bytes of the string
-    hash_object.update(f"{contact_id}-{start_time}-{booking_time}".encode())
-
-    # Get the hexadecimal representation of the digest
-    hashed_value = hash_object.hexdigest()
-
-    return hashed_value
-
-def send_player_confirmation_email(player_email, start_time, duration, cost, hash, coach_email=None, coach_phone_number=None):
-    start_time = datetime.fromtimestamp(start_time)
-    date_str = start_time.strftime('%A, %B %d, %Y')
-    time_str = start_time.strftime('%I:%M %p')
-    
-    # Start constructing the email body with the fixed content
-    bodyHTML = f"""
-    <html>
-        <body>
-            <p>Thank you for booking your lesson on {date_str} at {time_str}.</p>
-            <p>Summary:</p>
-            <p>Duration: {duration} minutes.</p>
-            <p>Cost: £{cost/100.0:.2f}.</p>
-    """
-    
-    # Add the coach's email to the body if it is provided
-    if coach_email is not None:
-        bodyHTML += f"<p>Coach contact email: {coach_email}.</p>"
-    if coach_phone_number is not None:
-        bodyHTML += f"<p>Coach contact phone number: {coach_phone_number}.</p>"
-    
-    # Complete the email body with the cancellation link
-    bodyHTML += f"""
-            <p>To cancel your lesson, <a href="{website_url}/#/bookings/{hash}/cancel">click here.</a></p>
-        </body>
-    </html>
-    """
-    
-    send_email(
-        localFrom='bookings',
-        recipients=[player_email],
-        subject='Lesson Successfully Booked!',
-        bodyText=f"Thank you for booking your lesson on {date_str} at {time_str} for {duration} minutes.",
-        bodyHTML=bodyHTML
-    )
-
-
-def send_coach_confirmation_email(coach_email, start_time, duration, player_name):
-    start_time = datetime.fromtimestamp(start_time)
-    date_str = start_time.strftime('%A, %B %d, %Y')
-    time_str = start_time.strftime('%I:%M %p')
-    send_email(
-        localFrom='bookings',
-        recipients=[coach_email],
-        subject='New Lesson Booking!',
-        bodyText=f"New booking confirmed at {time_str} on {date_str} for {duration} minutes. Player Name: {player_name}. Check website for more details",
-        bodyHTML=f"""
-        <html>
-            <body>
-                <p>New booking confirmed at {time_str} on {date_str} for {duration} minutes</p>
-                <p>Player Name: {player_name}</p>
-                <p><a href={website_url}>Check website for more details</a></p>
-            </body>
-        </html>
-        """
-    )
-
-
-def send_confirmation_emails(contact_email, start_time, duration, cost, hash, player_name, show_email_publicly, show_phone_number_publicly, coach_id):
-    
-    attributes = get_attributes(coach_id)
-    
-    if not attributes:
-        return
-    
-    coach_phone_number = attributes['phone_number']
-    coach_email = attributes['email']
-    
-    # convert coach phone number from +44 to 07
-    if coach_phone_number.startswith("+44"):
-        coach_phone_number = coach_phone_number[3:]
-        
-    try:    
-        send_coach_confirmation_email(coach_email, start_time, duration, player_name)
-    except Exception as e:
-        logging.error(f"Error sending coach confirmation email: {e}")
-    
-    try:
-        send_player_confirmation_email(contact_email, start_time, duration, cost, hash, coach_email if show_email_publicly else None, coach_phone_number if show_phone_number_publicly else None)
-    except Exception as e:
-        logging.error(f"Error sending player confirmation email: {e}")
-    

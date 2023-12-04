@@ -1,11 +1,14 @@
 from flask import request, jsonify, Blueprint
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
 
 from src.Database.ExecuteQuery import execute_query
 from src.Users.GetSelf.GetSelf import get_coach
 
 EditFeaturesBlueprint = Blueprint('EditFeaturesBlueprint', __name__)
 
-def update_pricing_rules(default_lesson_cost, username, is_update):
+def update_pricing_rules(default_lesson_cost, username):
     sql = "SELECT * FROM PricingRules WHERE coach_id=%s AND is_default=1"
     result = execute_query(sql, (username, ), is_get_query=True)
     if len (result) > 0:
@@ -40,16 +43,18 @@ def update_features():
     
     try:
         data = request.json
-        durations = data['durations']
-        default_lesson_cost = data['default_lesson_cost']
-        is_update = data['is_update']
+        durations = data.get('durations', None)
+        default_lesson_cost = data.get('default_lesson_cost', None)
     except KeyError as e:
         return jsonify(message=f"Invalid/Missing Key: {e}")
     
-    update_pricing_rules(default_lesson_cost, username, is_update)
+    if default_lesson_cost:
+        default_lesson_cost = int(default_lesson_cost)
+        update_pricing_rules(default_lesson_cost, username)
+        
+    if durations or len(durations) == 0:
+        delete_durations(username)
 
-    delete_durations(username)
-
-    insert_durations(durations, username)
+        insert_durations(durations, username)
 
     return jsonify(message="Features updated successfully"), 200

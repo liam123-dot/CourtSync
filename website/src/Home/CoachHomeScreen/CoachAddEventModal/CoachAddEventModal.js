@@ -63,7 +63,7 @@ export default function CoachAddEventModal({ isOpen, onClose}) {
 
           {
             selectedOption === 'lesson' ? (
-              <CoachAddLesson/>
+              <CoachAddLesson closeModal={onClose}/>
             ): (
               <CoachAddEvent closeModal={onClose}/>
             )

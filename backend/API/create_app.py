@@ -14,9 +14,11 @@ from src.Users.EditSelf.EditSelf import UserEditSelfBlueprint
 from src.Users.UserPublicProfile.GetProfile import GetProfileBlueprint
 from src.Users.EditSelf.UploadProfilePicture import UploadProfilePictureBlueprint
 from src.Users.StripeAccount.AddStripeAccount import AddStripeAccountBlueprint
+from src.Users.Settings.GetSettings import GetSettingsBlueprint
 
 from src.Bookings.AddBooking.GuestAddBooking import GuestAddBookingBlueprint
 from src.Bookings.AddBooking.CalculateAvailableTimes import CalculateAvailableTimesBlueprint
+from src.Bookings.AddBooking.CoachAddBooking import CoachAddBookingBlueprint
 from src.Bookings.AddBooking.CalculateLessonCost import CalculateLessonCostBlueprint
 from src.Bookings.Cancellations.PlayerCancellation import PlayerCancelBookingBlueprint
 from src.Bookings.Cancellations.CoachCancellation import CoachCancellationBlueprint
@@ -27,7 +29,10 @@ from src.CoachEvents.AddCoachEvent import AddCoachEventBlueprint
 from src.Contacts.GetContact import GetContactBlueprint
 from src.Contacts.Players.AddPlayer import CreatePlayerBlueprint
 from src.Contacts.AddContact import CreateContactBlueprint
+from src.Contacts.EditContact import EditContactBlueprint
 from src.Contacts.VerifyEmail import VerifyEmailBlueprint
+from src.Contacts.Players.GetPlayers import GetPlayersBlueprint
+from src.Contacts.Players.EditPlayer import EditPlayerBlueprint
 
 from src.Invoices.GetInvoices.GetInvoices import GetInvoicesBlueprint
 from src.Invoices.Private.InvoicePaidWebhook import InvoicePaidWebhookBlueprint
@@ -62,10 +67,12 @@ def create_app():
     app.register_blueprint(GetProfileBlueprint)
     app.register_blueprint(UploadProfilePictureBlueprint)
     app.register_blueprint(AddStripeAccountBlueprint)
+    app.register_blueprint(GetSettingsBlueprint)
     
     app.register_blueprint(GuestAddBookingBlueprint)
     app.register_blueprint(CalculateAvailableTimesBlueprint)
     app.register_blueprint(CalculateLessonCostBlueprint)
+    app.register_blueprint(CoachAddBookingBlueprint)
     app.register_blueprint(PlayerCancelBookingBlueprint)
     app.register_blueprint(CoachCancellationBlueprint)
     
@@ -74,7 +81,10 @@ def create_app():
     app.register_blueprint(GetContactBlueprint)
     app.register_blueprint(CreatePlayerBlueprint)
     app.register_blueprint(CreateContactBlueprint)
+    app.register_blueprint(EditContactBlueprint)
     app.register_blueprint(VerifyEmailBlueprint)
+    app.register_blueprint(GetPlayersBlueprint)
+    app.register_blueprint(EditPlayerBlueprint)
     
     app.register_blueprint(GetInvoicesBlueprint)
     app.register_blueprint(InvoicePaidWebhookBlueprint)

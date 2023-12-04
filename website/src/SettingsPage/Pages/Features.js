@@ -3,10 +3,7 @@ import { Spinner } from '../../Spinner';
 import axios from "axios";
 import { usePopup } from '../../Notifications/PopupContext';
 import EditWorkingHours from './EditWorkingHours';
-const convertHHMMToMinutes = (time) => {
-    const [hours, minutes] = time.split(':').map(Number);
-    return (hours * 60) + minutes;
-};
+
 const ButtonStyle = {
     padding: '10px 15px',
     border: 'none',
@@ -16,67 +13,6 @@ const ButtonStyle = {
     borderRadius: '5px',
     marginTop: '20px'
 };
-
-function DurationSelector({selectedDurations, setSelectedDurations}) {
-    const [showModal, setShowModal] = useState(false);
-    const modalRef = useRef(); // Create a ref
-
-    const durations = Array.from({ length: 8 }, (_, index) => (index + 1) * 15);
-
-    const toggleDuration = (duration) => {
-        let updatedDurations;
-        if (selectedDurations.includes(duration)) {
-            updatedDurations = selectedDurations.filter(d => d !== duration);
-        } else {
-            updatedDurations = [...selectedDurations, duration].sort((a, b) => a - b);
-        }
-        setSelectedDurations(updatedDurations);
-    };
-
-    // Add an event listener to the document
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (modalRef.current && !modalRef.current.contains(event.target)) {
-                setShowModal(false);
-            }
-        };
-
-        document.addEventListener('mousedown', handleClickOutside);
-
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, []);
-
-    return (
-        <div>
-            {showModal && (
-                <div ref={modalRef} style={{ border: '1px solid black', padding: '10px', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}>
-                    {durations.map(duration => (
-                        <div key={duration}>
-                            <label>
-                                <input 
-                                    type="checkbox" 
-                                    value={duration} 
-                                    checked={selectedDurations.includes(duration)}
-                                    onChange={() => toggleDuration(duration)}
-                                />
-                                {duration} minutes
-                            </label>
-                        </div>
-                    ))}
-                    <button onClick={() => setShowModal(false)}>Close</button>
-                </div>
-            )}
-            
-            <>
-                <p>Selected durations: {selectedDurations.join(", ")} minutes</p>
-                <button onClick={() => setShowModal(true)}>Edit</button>
-            </>
-        
-        </div>
-    );
-}
 
 function CostInput({ price = '', setPrice }) {
     const handlePriceChange = (e) => {
@@ -199,32 +135,6 @@ export default function FeaturesPage() {
 
     }, [])
 
-
-    const saveWorkingHours = async () => {
-        try {
-            const dataToSubmit = workingHours.reduce((acc, hour) => {
-                acc[hour.day_of_week] = {
-                    ...hour,
-                    start_time: convertHHMMToMinutes(hour.start_time),
-                    end_time: convertHHMMToMinutes(hour.end_time)
-                };
-                return acc;
-            }, {});
-            console.log(dataToSubmit);
-            // Send the converted data to the server
-            await axios.post(`${process.env.REACT_APP_API_URL}/timetable/working-hours`, {
-                working_hours: dataToSubmit
-            }, {
-                headers: {
-                    Authorization: localStorage.getItem('AccessToken')
-                }
-            });
-            // Handle successful update
-        } catch (error) {
-            console.log(error);
-        }
-    };
-
     return (
         isLoading ? (
             <div>
@@ -234,10 +144,6 @@ export default function FeaturesPage() {
             <div style={{ padding: '20px' }}>
                 <div style={{ marginBottom: '20px' }}>
                     <p>Duration Selection: </p>
-                    <DurationSelector 
-                        selectedDurations={selectedDurations} 
-                        setSelectedDurations={setSelectedDurations} 
-                    />
                 </div>
                 <div style={{ marginBottom: '20px' }}>
                     <CostInput
@@ -249,7 +155,6 @@ export default function FeaturesPage() {
                 <button 
                     style={ButtonStyle} 
                     onClick={() => {
-                        saveWorkingHours();
                         handleSave();
                     }}
                 >

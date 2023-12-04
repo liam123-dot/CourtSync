@@ -31,18 +31,36 @@ export default function WeekViewRow ({data, statusView}) {
 
     }
 
+    function getWeekDates() {
+        const year = data.time_group.toString().slice(0, 4);
+        const week = data.time_group.toString().slice(4, 6);
+        setYear(year);
+        setWeek(week);
+        const januaryFirst = new Date(year, 0, 1);
+        const days = 2 + (week - 1) * 7 - januaryFirst.getDay();
+        const startOfWeek = new Date(year, 0, days);
+        const endOfWeek = new Date(year, 0, days + 6);
+
+        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+        const formatDayMonth = (date, includeMonth = true) => includeMonth ? `${date.getDate().toString().padStart(2, '0')} ${monthNames[date.getMonth()]}` : date.getDate().toString().padStart(2, '0');
+
+        return `${formatDayMonth(startOfWeek, false)} - ${formatDayMonth(endOfWeek)}`;
+    }
+
     useEffect(() => {
         if (data && data.time_group) {
-            const year = data.time_group.toString().slice(0, 4);
-            const week = data.time_group.toString().slice(4, 6);
-            setYear(year);
-            setWeek(week);
-            const firstDayOfYear = new Date(year, 0, 1);
-            const startDate = new Date(firstDayOfYear.setDate(firstDayOfYear.getDate() + (week - 1) * 7));
-            const endDate = new Date(startDate);
-            endDate.setDate(startDate.getDate() + 6);
-            const formattedDate = `${startDate.getDate()} - ${endDate.getDate()} ${startDate.toLocaleString('default', { month: 'short' })}`;
-            setFormattedDate(formattedDate);
+            setFormattedDate(getWeekDates());
+  
+            // setYear(year);
+            // setWeek(week);
+            // const firstDayOfYear = new Date(year, 0, 1);
+            // const startDate = new Date(firstDayOfYear);
+            // startDate.setDate(firstDayOfYear.getDate() + (week - 1) * 7 - firstDayOfYear.getDay());
+            // const endDate = new Date(startDate);
+            // endDate.setDate(startDate.getDate() + 6);
+            // const formattedDate = `${startDate.getDate()} - ${endDate.getDate()} ${startDate.toLocaleString('default', { month: 'short' })}`;
+            // setFormattedDate(formattedDate);
         }
     }, [data.time_group]);
 

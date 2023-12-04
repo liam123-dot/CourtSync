@@ -83,3 +83,5 @@ def create_code(email):
     execute_query("INSERT INTO VerificationEmails (email, code, expiry) VALUES (%s, %s, %s) ON DUPLICATE KEY UPDATE code=%s, expiry=%s", (email, code, expiry, code, expiry), is_get_query=False)
     
     return code, expiry
+
+    

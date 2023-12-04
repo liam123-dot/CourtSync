@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React, {useEffect, useState} from "react";
 import FeaturesPage from "./Pages/Features";
 import CoachProfileSettings from "./Pages/CoachProfileSettings";
 import AdvancedSettingsWindow from "./Pages/AdvancedSettingsWindow";
@@ -6,8 +6,7 @@ import SideBar from "./Sidebar";
 
 const OPTIONS = [
     { label: 'Profile', component: CoachProfileSettings},
-    { label: 'Features', component: FeaturesPage },
-    { label: 'Advanced', component: AdvancedSettingsWindow}
+    { label: 'Settings', component: AdvancedSettingsWindow, endpointName: 'any'}
 ];
 
 const SidebarStyle = {
@@ -41,7 +40,7 @@ export default function SettingsPage({}) {
             background: '#f7f7f7'
         }}>
             <div style={SidebarStyle}>                
-                <SideBar setSelectedOption={setSelectedOption} selectedOption={selectedOption} OPTIONS={OPTIONS}/>
+                <SideBar setSelectedOption={setSelectedOption} selectedOption={selectedOption} _OPTIONS={OPTIONS}/>
             </div>
             <div style={ContentStyle}>
                 <SelectedContent />

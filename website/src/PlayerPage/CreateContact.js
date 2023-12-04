@@ -75,6 +75,7 @@ export default function CreateContact ({setOpen, fetchData}) {
                 </div>
                 <input type="submit" value="Submit" onClick={submitContact}/>
             </form>
+            <button onClick={() => setOpen(false)}>Cancel</button>
         </div>
     )
 
