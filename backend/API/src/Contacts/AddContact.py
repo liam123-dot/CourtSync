@@ -3,6 +3,8 @@ from flask import jsonify, Blueprint, request
 from src.Database.ExecuteQuery import execute_query
 
 from src.Users.GetSelf.GetSelf import get_coach
+from src.Contacts.GetContact import get_contact
+from src.Contacts.Players.InsertPlayer import insert_player
 
 def add_contact(name, email, phone_number, coach_id, email_verified=False):
     
@@ -28,6 +30,7 @@ def create_contact_endpoint():
     name = data.get('name')
     email = data.get('email')
     phone_number = data.get('phone_number')
+    is_player = data.get('is_player')
     
     if not name:
         return jsonify({'error': 'Missing name'}), 400
@@ -39,5 +42,11 @@ def create_contact_endpoint():
         return jsonify({'error': 'Missing phone_number'}), 400
     
     add_contact(name, email, phone_number, coach['coach_id'])
+    
+    if is_player:
+        contact = get_contact(email, coach['coach_id'])
+        
+        insert_player(contact['name'], contact['contact_id'], coach['coach_id'])
+        
     
     return jsonify({'success': True}), 200

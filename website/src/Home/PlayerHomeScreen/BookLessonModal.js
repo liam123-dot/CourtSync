@@ -7,6 +7,7 @@ import { SaveButton } from "../CommonAttributes/SaveButton";
 import axios from "axios";
 import { Spinner } from "../../Spinner";
 import ChooseDateTimeComponent from "../ChooseDateTimeComponent";
+import { formatPriceBreakdown } from "../FormatPriceBreakdown";
 
 const Label = styled.label`
   margin-right: 15px;
@@ -48,7 +49,7 @@ export default function BookLessonModal({ isOpen, onClose, coachSlug, redo }) {
     const [selectedStartTime, setSelectedStartTime] = useState('');
     const [selectedDuration, setSelectedDuration] = useState('');
     const [lessonCost, setLessonCost] = useState(0);
-    const [selectedRuleId, setSelectedRuleId] = useState(null);
+    const [rules, setRules] = useState([]);
     const [playerName, setPlayerName] = useState(null);
     const [contactName, setContactName] = useState(null);
     const [isSameAsPlayerName, setIsSameAsPlayerName] = useState(false);
@@ -145,7 +146,7 @@ export default function BookLessonModal({ isOpen, onClose, coachSlug, redo }) {
                     email: contactEmail,
                     phoneNumber: contactPhoneNumber,
                     cost: lessonCost,
-                    ruleId: selectedRuleId
+                    rules: rules
                 }
 
                 const url = `${process.env.REACT_APP_API_URL}/timetable/${coachSlug}/booking`
@@ -164,7 +165,7 @@ export default function BookLessonModal({ isOpen, onClose, coachSlug, redo }) {
                     setContactEmail(null);
                     setContactPhoneNumber(null);
                     setLessonCost(null);
-                    setSelectedRuleId(null);
+                    setRules(null);
                     setErrorMessage('');
                     setIsNewName(false);
                     onClose();
@@ -207,7 +208,7 @@ export default function BookLessonModal({ isOpen, onClose, coachSlug, redo }) {
                     const response = await axios.get(`${process.env.REACT_APP_API_URL}/timetable/${coachSlug}/lesson-cost?startTime=${selectedStartTime}&duration=${selectedDuration}`);
 
                     setLessonCost(response.data.cost);
-                    setSelectedRuleId(response.data.ruleID);
+                    setRules(response.data.rules);
 
                 } catch (error) {
                     console.log(error);
@@ -323,6 +324,8 @@ export default function BookLessonModal({ isOpen, onClose, coachSlug, redo }) {
                 <Label>
                     Lesson Cost : {formatPriceInPounds(lessonCost)}
                 </Label>
+
+                {formatPriceBreakdown(rules)}
 
                 <div style={{ display: 'flex', alignItems: 'center' }}>
                     {

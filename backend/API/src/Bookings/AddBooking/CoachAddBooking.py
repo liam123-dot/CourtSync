@@ -29,12 +29,14 @@ def coach_add_booking():
     data = request.json
     
     try:
+        
+        # TODO need to check attributes are not null
     
         start_time = int(data['startTime'])
         duration = int(data['duration'])
         price = data['price']
         player_id = data['playerId']
-        rule_id = data['ruleId']
+        rules = data['rules']
         
     except KeyError as e:
         return jsonify(message=f"Missing key: {e}"), 400
@@ -45,7 +47,7 @@ def coach_add_booking():
     
     contact = get_contact_by_id(player['contact_id'])
 
-    hash = insert_booking(player_id, player['contact_id'], start_time, price, rule_id, duration, coach['coach_id'], int(time.time()))
+    hash = insert_booking(player_id, player['contact_id'], start_time, price, rules, duration, coach['coach_id'], int(time.time()))
     logging.debug(f"coach add booking, hash: {hash}")
     send_confirmation_emails(
         contact['email'],

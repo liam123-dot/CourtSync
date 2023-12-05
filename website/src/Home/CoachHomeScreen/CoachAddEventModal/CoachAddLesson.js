@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import ChooseDateTimeComponent from "../../ChooseDateTimeComponent";
 import axios from "axios";
 import { useRefreshTimetable } from "../RefreshTimetableContext";
+import {formatPriceBreakdown} from "../../FormatPriceBreakdown"
 
 export default function CoachAddLesson ({closeModal}) {
 
@@ -17,7 +18,7 @@ export default function CoachAddLesson ({closeModal}) {
     const [selectedPlayerId, setSelectedPlayerId] = useState(null)
 
     const [lessonCost, setLessonCost] = useState(null);
-    const [selectedRuleId, setSelectedRuleId] = useState(null);
+    const [rules, setRules] = useState([]);
 
     useEffect(() => {
 
@@ -57,7 +58,7 @@ export default function CoachAddLesson ({closeModal}) {
                     });
 
                     setLessonCost(response.data.cost);
-                    setSelectedRuleId(response.data.ruleID);
+                    setRules(response.data.rules);
 
                 } catch (error) {
                     console.log(error);
@@ -86,7 +87,7 @@ export default function CoachAddLesson ({closeModal}) {
             const response = await axios.post(`${process.env.REACT_APP_API_URL}/booking`, {
                 startTime: selectedStartTime,
                 duration: selectedDuration,
-                ruleId: selectedRuleId,
+                rules: rules,
                 playerId: selectedPlayerId,
                 price: lessonCost
             }, {
@@ -137,6 +138,7 @@ export default function CoachAddLesson ({closeModal}) {
                 Lesson Cost:
                     {formatPriceInPounds(lessonCost)}
             </label>
+            {formatPriceBreakdown(rules)}
 
             <button onClick={handleSubmit}>Submit</button>
     

@@ -49,6 +49,10 @@ from src.Sales.ContactSales import ContactSalesBlueprint
 from src.Sales.CreateSignUpLink import CreateSignUpLinkBlueprint
 from src.Sales.VerifyHash import VerifyHashBlueprint
 
+from src.PricingRules.GetPricingRules import GetPricingRulesEndpoint
+from src.PricingRules.CreatePricingRule import CreatePricingRuleBlueprint
+from src.PricingRules.DeletePricingRule import DeletePricingRuleBlueprint
+
 def create_app():
     app = Flask(__name__)
     
@@ -100,6 +104,10 @@ def create_app():
     app.register_blueprint(ContactSalesBlueprint)
     app.register_blueprint(CreateSignUpLinkBlueprint)
     app.register_blueprint(VerifyHashBlueprint)
+    
+    app.register_blueprint(GetPricingRulesEndpoint)
+    app.register_blueprint(CreatePricingRuleBlueprint)
+    app.register_blueprint(DeletePricingRuleBlueprint)
     
     CORS(app)
     

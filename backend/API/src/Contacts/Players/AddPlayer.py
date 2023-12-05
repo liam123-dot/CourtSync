@@ -7,6 +7,7 @@ from src.Users.GetSelf.GetSelf import get_coach
 
 from src.Contacts.GetContact import get_contact, get_contact_by_id
 from src.Contacts.AddContact import add_contact
+from src.Contacts.Players.InsertPlayer import insert_player
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -26,13 +27,6 @@ def add_player(name, contact_name, contact_email, contact_phone_number, coach_id
     
     insert_player(name, contact['contact_id'], coach_id)
         
-    
-def insert_player(player_name, contact_id, coach_id):
-    sql = "INSERT INTO Players (name, contact_id, coach_id) VALUES (%s, %s, %s)"
-    
-    execute_query(sql, (player_name, contact_id, coach_id), is_get_query=False)
-    
-    
 
 CreatePlayerBlueprint = Blueprint('CreatePlayer', __name__)
 @CreatePlayerBlueprint.route('/contact/<contact_id>/player', methods=['POST'])

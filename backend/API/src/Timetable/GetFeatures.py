@@ -75,9 +75,9 @@ def get_durations(coach_id):
     return durations
     
 def get_hourly_rate(coach_id):
-    results = execute_query('SELECT hourly_rate FROM PricingRules WHERE is_default=1 AND coach_id=%s', (coach_id,), is_get_query=True)
+    results = execute_query('SELECT rate FROM PricingRules WHERE is_default=1 AND coach_id=%s', (coach_id,), is_get_query=True)
     
     if len(results) > 0:
-        return results[0]['hourly_rate']
+        return results[0]['rate']
     else:
         return None

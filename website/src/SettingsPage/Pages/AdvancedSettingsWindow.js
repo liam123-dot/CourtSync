@@ -3,7 +3,7 @@ import SideBar from "../Sidebar";
 import axios from "axios";
 import InvoicingSettings from "./AdvancedSettings/InvoicingSettings";
 import DurationSelector from "./AdvancedSettings/DurationSelection";
-import PricingSettings from "./AdvancedSettings/PricingSettings";
+import PricingSettings from "./AdvancedSettings/PricingSettings/PricingSettings";
 import WorkingHoursSettings from "./AdvancedSettings/WorkingHours";
 
 export default function AdvancedSettingsWindow({}) {

@@ -157,7 +157,7 @@ def get_default_working_hours(coach_id):
 
 def execute_pricing_rules_query(coach_id):
     
-    sql = "SELECT rule_id, hourly_rate, is_default, start_time, end_time FROM PricingRules WHERE coach_id=%s"
+    sql = "SELECT rule_id, rate, is_default, start_time, end_time FROM PricingRules WHERE coach_id=%s"
     
     results = execute_query(sql, (coach_id, ))
         

@@ -49,14 +49,22 @@ def get_bookings(coach_id,
         args += (status,)
                 
     sql = f"""
-    SELECT Bookings.*, Contacts.name AS contact_name, Contacts.email as contact_email, Contacts.phone_number as contact_phone_number, Players.name AS player_name
+    SELECT Bookings.*,
+        Contacts.name AS contact_name,
+        Contacts.email AS contact_email,
+        Contacts.phone_number AS contact_phone_number,
+        Players.name AS player_name,
+        GROUP_CONCAT(PricingRules.rule_id) AS pricing_rule_ids
     FROM Bookings
     INNER JOIN Contacts ON Bookings.contact_id = Contacts.contact_id
     INNER JOIN Players ON Bookings.player_id = Players.player_id
+    LEFT JOIN BookingsPricingJoinTable ON Bookings.booking_id = BookingsPricingJoinTable.booking_id
+    LEFT JOIN PricingRules ON BookingsPricingJoinTable.rule_id = PricingRules.rule_id
     WHERE Bookings.coach_id = %s
     {time_period}
     {invoice_sent_query}
     {invoice_paid_query}
+    GROUP BY Bookings.booking_id
     """
     
     bookings = execute_query(sql, args, is_get_query=True)

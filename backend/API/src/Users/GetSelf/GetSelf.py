@@ -83,7 +83,7 @@ def check_duration(coach_id):
 def check_pricing(coach_id):
     # check that at least one pricing rule is set in the pricing rules table
     
-    sql = "SELECT hourly_rate FROM PricingRules WHERE coach_id=%s"
+    sql = "SELECT rate FROM PricingRules WHERE coach_id=%s"
     
     results = execute_query(sql, (coach_id, ))
     

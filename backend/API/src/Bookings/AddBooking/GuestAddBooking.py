@@ -40,14 +40,14 @@ def add_booking(slug):
         contact_email = body['email']
         contact_phone_number = body['phoneNumber']
         cost = int(body['cost'])
-        rule_id = body['ruleId']
+        rules = body['rules']
         booking_time = int(time.time())
     except KeyError as e:
         return jsonify(message=f"Missing required field: {e}"), 400
     
     try:
     
-        inputs_valid, message = validate_inputs(start_time, duration, player_name, contact_name, is_same_as_player_name, contact_email, contact_phone_number, cost, rule_id)
+        inputs_valid, message = validate_inputs(start_time, duration, player_name, contact_name, is_same_as_player_name, contact_email, contact_phone_number, cost)
             
         if not inputs_valid:
             return jsonify(message=message), 400
@@ -76,7 +76,7 @@ def add_booking(slug):
         
         contact, player = get_contact_and_player(player_name, contact_name, contact_email, contact_phone_number, coach_id)
         
-        lesson_hash = insert_booking(player['player_id'], contact['contact_id'], start_time, cost, rule_id, duration, coach_id, booking_time)
+        lesson_hash = insert_booking(player['player_id'], contact['contact_id'], start_time, cost, rules, duration, coach_id, booking_time)
         
         if not lesson_hash:
             return jsonify(message="Error inserting booking"), 500
@@ -139,7 +139,7 @@ def check_for_overlap(start_time, duration, coach_id):
         return False
     
     
-def validate_inputs(start_time, duration, player_name, contact_name, is_same_as_player_name, contact_email, contact_phone_number, cost, rule_id):
+def validate_inputs(start_time, duration, player_name, contact_name, is_same_as_player_name, contact_email, contact_phone_number, cost):
     
     # if all inputs are valid then return True, None
     # otherwise return False, error message
@@ -159,8 +159,6 @@ def validate_inputs(start_time, duration, player_name, contact_name, is_same_as_
         return False, "phoneNumber is None"
     if cost is None:
         return False, "cost is None"
-    if rule_id is None:
-        return False, "ruleId is None"
     
     # booking cannot be in the past
     if start_time < int(time.time()):
