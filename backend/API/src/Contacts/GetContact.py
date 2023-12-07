@@ -71,7 +71,7 @@ def get_contacts_endpoint():
     
 
 def get_contacts(coach_id):
-    sql = "SELECT * FROM Contacts WHERE coach_id=%s"
+    sql = "SELECT * FROM Contacts WHERE coach_id=%s AND enabled=1"
     
     results = execute_query(sql, (coach_id, ), is_get_query=True)
     

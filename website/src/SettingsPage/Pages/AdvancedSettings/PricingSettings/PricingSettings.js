@@ -136,8 +136,8 @@ export default function CostInput() {
     return (
         <Container>
           <Heading>
-            Set your cost per hour for lessons as well as additional costs fixed costs that may occur. 
-            These can also be added by editing bookings
+            Set your cost per hour for lessons as well as additional costs or fixed costs that may occur. 
+            Additional costs can also be added by editing bookings
           </Heading>
     
           <InputContainer>

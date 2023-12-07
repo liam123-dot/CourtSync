@@ -1,5 +1,57 @@
 import React, {useState} from "react";
 import axios from "axios";
+import styled from "@emotion/styled";
+
+const Container = styled.div`
+    background: #f9f9f9;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    width: 300px;
+    margin: 20px auto;
+`;
+
+const StyledForm = styled.form`
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+`;
+
+const StyledLabel = styled.label`
+    font-weight: bold;
+    margin-bottom: 5px;
+`;
+
+const StyledInput = styled.input`
+    padding: 8px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    &:focus {
+        outline: none;
+        border-color: #4CAF50;
+    }
+`;
+
+const SubmitButton = styled(StyledInput)`
+    background-color: #4CAF50;
+    color: white;
+    cursor: pointer;
+    &:hover {
+        background-color: #45a049;
+    }
+`;
+
+const CancelButton = styled.button`
+    padding: 8px 16px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    background: white;
+    cursor: pointer;
+    &:hover {
+        background: #f0f0f0;
+    }
+`;
+
 
 export default function CreatePlayer ({contactId, setOpen, fetchData}) {
 
@@ -36,19 +88,22 @@ export default function CreatePlayer ({contactId, setOpen, fetchData}) {
     }
 
     return (
-        <div>
-            <form onSubmit={submitPlayer}>
-                <label>
+        <Container>
+            <StyledForm onSubmit={submitPlayer}>
+                <StyledLabel>
+                Player names are used to create lessons and ensure invoices and other important information is sent to the correct place
+                </StyledLabel>
+                <StyledLabel>
                     Player Name:
-                    <input
+                    <StyledInput
                         type="text"
                         value={playerName}
                         onChange={handleNameChange}
                     />
-                </label>
-                <input type="submit" value="Submit" />
-            </form>
-            <button onClick={() => setOpen(false)}>Cancel</button>
-        </div>
-    )
+                </StyledLabel>
+                <SubmitButton type="submit" value="Submit" />
+            </StyledForm>
+            <CancelButton onClick={() => setOpen(false)}>Cancel</CancelButton>
+        </Container>
+    );
 }

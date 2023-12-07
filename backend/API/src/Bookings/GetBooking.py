@@ -3,7 +3,13 @@ from src.Database.ExecuteQuery import execute_query
 
 def get_booking(booking_id):
         
-    sql = "SELECT * FROM Bookings WHERE booking_id = %s"
+    sql = """    
+        SELECT Bookings.*, Players.name AS player_name, Contacts.name AS contact_name , Contacts.email AS contact_email, Contacts.phone_number AS contact_phone_number
+        FROM Bookings 
+        LEFT JOIN Players ON Bookings.player_id = Players.player_id 
+        LEFT JOIN Contacts ON Bookings.contact_id = Contacts.contact_id 
+        WHERE booking_id = %s
+    """
     
     booking = execute_query(sql, (booking_id,), is_get_query=True)
 

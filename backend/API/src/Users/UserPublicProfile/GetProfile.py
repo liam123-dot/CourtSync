@@ -1,5 +1,5 @@
 from flask import request, jsonify, Blueprint
-import time
+
 from src.Users.GetSelf.GetSelf import get_coach_from_slug
 from src.Users.UserPublicProfile.GetProfilePictureUrl import get_profile_picture_url
 
@@ -28,7 +28,7 @@ def get_profile(slug):
         output['profile_picture_url'] = get_profile_picture_url(coach)
     else:
         output['profile_picture_url'] = None
-    
+            
     return jsonify(output), 200
 
     
@@ -59,4 +59,5 @@ def get_profile_attribute(slug, attribute):
     
     else:
         return jsonify({'error': 'Invalid attribute'}), 400
+    
     

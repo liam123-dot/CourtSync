@@ -11,7 +11,7 @@ from src.Sales.VerifyHash import get_hash_from_db
 logging.basicConfig(level=logging.INFO)
 
 from src.Users.Auth.CreateSlug import insert_into_table
-from src.Users.Auth.AttributeVerification import is_password_valid, is_phone_number_valid, is_email_valid
+from src.Users.Auth.AttributeVerification import is_phone_number_valid, is_email_valid
 from src.Users.Auth.GetSecretHash import get_secret_hash
 
 CoachSignUp = Blueprint('CoachSignUp', __name__)
@@ -70,8 +70,6 @@ def validate_user_data(user_data):
         raise ValueError('First name and last name must be greater than 1 character')
     if user_data['password'] != user_data['confirm_password']:
         raise ValueError('Passwords do not match')
-    if not is_password_valid(user_data['password']):
-        raise ValueError('Password not strong enough')
     if not is_phone_number_valid(user_data['phone_number']):
         raise ValueError('Invalid UK phone number')
     if not is_email_valid(user_data['email']):

@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
+import axios from 'axios';
+
 import { Spinner } from '../../../Spinner';
 import { SaveButton } from '../../../Home/CommonAttributes/SaveButton';
-import axios from 'axios';
 import { usePopup } from '../../../Notifications/PopupContext';
 
-export default function DurationSelector() {
+export default function DurationSelector({refresh}) {
 
     const [selectedDurations, setSelectedDurations] = useState([]); // [15, 30, 45, 60, 75, 90, 105, 120
     const [showModal, setShowModal] = useState(false);
@@ -73,6 +74,7 @@ export default function DurationSelector() {
             )
 
             showPopup('Success');
+            refresh();
 
         } catch (error) {
             console.error(error);

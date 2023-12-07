@@ -13,19 +13,20 @@ const Container = styled.div`
 `;
 
 const StyledLabel = styled.label`
-  display: block;
+  display: flex;
+  align-items: center;
   margin-bottom: 10px;
   color: #333;
   font-weight: 500;
 `;
 
 const StyledInput = styled.input`
-  width: 100%;
   padding: 10px;
   margin-top: 5px;
   font-size: 16px;
   border: 1px solid #ccc;
   border-radius: 4px;
+  margin-right: 10px;
 `;
 
 const StyledButton = styled.button`
@@ -56,10 +57,10 @@ const InputField = styled.input`
   border-radius: 4px;
 `;
 export default function AddNewPricingRuleComponent({setShown, refresh}) {
-    const [ruleType, setRuleType] = useState('recurring'); // 'recurring' or 'one-time'
+    const [ruleType, setRuleType] = useState(null); // 'recurring' or 'one-time'
+    const [timeSelection, setTimeSelection] = useState(null); // 'all-day' or 'specific-time' [not used yet
     const [costType, setCostType] = useState('extra'); // 'extra' or 'hourly'
     const [selectedDays, setSelectedDays] = useState([]);
-    const [allDay, setAllDay] = useState(false);
     const [selectedDate, setSelectedDate] = useState(null); // Assume this is a Date object
 
     const [label, setLabel] = useState('');
@@ -93,7 +94,7 @@ export default function AddNewPricingRuleComponent({setShown, refresh}) {
                 label: label,
                 start_time: startTime,
                 end_time: endTime,
-                all_day: allDay,
+                all_day: timeSelection === 'all-day',
                 type: costType,
                 period: ruleType,
                 days: selectedDays,
@@ -152,42 +153,63 @@ export default function AddNewPricingRuleComponent({setShown, refresh}) {
     return (
         <Container>
           {/* Rule Type Selection */}
-          <StyledLabel>
-            <StyledInput
-              type="radio"
-              name="ruleType"
-              value="recurring"
-              checked={ruleType === 'recurring'}
-              onChange={() => setRuleType('recurring')}
-            />
-            Recurring
-          </StyledLabel>
-          <StyledLabel>
-            <StyledInput
-              type="radio"
-              name="ruleType"
-              value="one-time"
-              checked={ruleType === 'one-time'}
-              onChange={() => setRuleType('one-time')}
-            />
-            One Time
-          </StyledLabel>
+          <div style={{
+            display: 'flex',          
+          }}>
+            <StyledLabel>
+              <StyledInput
+                type="radio"
+                name="ruleType"
+                value="recurring"
+                checked={ruleType === 'recurring'}
+                onChange={() => setRuleType('recurring')}
+              />
+              Recurring
+            </StyledLabel>
+            <StyledLabel>
+              <StyledInput
+                type="radio"
+                name="ruleType"
+                value="one-time"
+                checked={ruleType === 'one-time'}
+                onChange={() => setRuleType('one-time')}
+              />
+              One Time
+            </StyledLabel>
+          </div>
     
           {/* Recurring or One-Time Options */}
-          {ruleType === 'recurring' ? renderRecurringOptions() : renderOneTimeOptions()}
+          {ruleType && (ruleType === 'recurring' ? renderRecurringOptions() : renderOneTimeOptions())}
     
+          { ruleType && (<>
+
           {/* All Day Checkbox */}
-          <StyledLabel>
-            <StyledInput
-              type="checkbox"
-              checked={allDay}
-              onChange={() => setAllDay(!allDay)}
-            />
-            All Day
-          </StyledLabel>
+          <div style={{
+            display: 'flex',          
+            flexDirection: 'row',
+          }}>
+            <StyledLabel>
+              <StyledInput
+                type="radio"
+                checked={timeSelection === 'all-day'}
+                onChange={() => setTimeSelection('all-day')}
+              />
+              All Day
+            </StyledLabel>
+            <StyledLabel>
+              <StyledInput
+                type="radio"
+                checked={timeSelection === 'specific-time'}
+                onChange={() => setTimeSelection('specific-time')}
+              />
+              Specific Time
+            </StyledLabel>
+          </div>
     
+          {timeSelection && (<>
+
           {/* Time Inputs */}
-          {!allDay && (
+          {timeSelection && timeSelection !== 'all-day' && (
             <div>
               <StyledLabel>
                 Start Time
@@ -210,7 +232,6 @@ export default function AddNewPricingRuleComponent({setShown, refresh}) {
     
           {/* Cost Type Selection */}
           <StyledLabel>
-            Extra Cost - Fixed cost that is added to lessons that start in this time period
             <StyledInput
               type="radio"
               name="costType"
@@ -218,9 +239,9 @@ export default function AddNewPricingRuleComponent({setShown, refresh}) {
               checked={costType === 'extra'}
               onChange={() => setCostType('extra')}
             />
+            Extra Cost - A Fixed cost that is added to lessons that start in this time period
           </StyledLabel>
-          <StyledLabel>
-            Hourly Cost - Cost per hour for lessons that start in this time period
+          <StyledLabel>          
             <StyledInput
               type="radio"
               name="costType"
@@ -228,6 +249,7 @@ export default function AddNewPricingRuleComponent({setShown, refresh}) {
               checked={costType === 'hourly'}
               onChange={() => setCostType('hourly')}
             />
+            Hourly Cost - Cost per hour for lessons that start in this time period
           </StyledLabel>
     
           {/* Label and Price Inputs */}
@@ -253,6 +275,8 @@ export default function AddNewPricingRuleComponent({setShown, refresh}) {
             <StyledButton onClick={() => setShown(false)}>Cancel</StyledButton>
             <StyledButton onClick={submitPricingRule}>Submit</StyledButton>
           </ButtonContainer>
+            </>)}
+          </>)}
         </Container>
       );
     }

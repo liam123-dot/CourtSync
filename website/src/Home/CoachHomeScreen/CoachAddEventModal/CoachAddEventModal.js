@@ -69,6 +69,8 @@ export default function CoachAddEventModal({ isOpen, onClose}) {
             )
           }
 
+          <button onClick={onClose}>Close</button>
+
         </div>
 
       </ModalContent>

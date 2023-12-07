@@ -22,4 +22,6 @@ export const ModalContent = styled.div`
   flex-direction: column;
   align-items: flex-start;
   font-size: 18px; // Bigger font size
+  overflow: auto; // Add this line
+  max-height: 80vh; // Add this line to limit the height of the modal
 `;

@@ -3,16 +3,124 @@ import axios from "axios";
 import styled from "@emotion/styled";
 import CreatePlayer from "./CreatePlayer";
 import CreateContact from "./CreateContact";
+import ConfirmationPopup from "../Notifications/ConfirmComponent"
 import {usePopup} from '../Notifications/PopupContext'
 
+const StyledDeleteButton = styled.button`
+    display: ${props => props.show ? 'block' : 'none'};
+    background: none;
+    border: none;
+    color: red;
+    font-size: 20px;
+    cursor: pointer;
+    position: relative;
+    right: 10px;
+    &:hover {
+        color: darkred;
+    }
+`;
+const Container = styled.div`
+    margin-top: 1%;
+    font-family: Arial, sans-serif; // example font
+`;
+
+const Header = styled.div`
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    border: 1px solid #ddd;
+    padding: 10px;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+`;
+
+const Button = styled.button`
+    background-color: #4CAF50; /* Green */
+    border: none;
+    color: white;
+    padding: 10px 15px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+    border-radius: 5px;
+`;
+
+const Input = styled.input`
+    padding: 10px;
+    margin: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+`;
+
+const ContactSection = styled.div`
+    border-top: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
+    padding: 10px;
+    margin-top: 10px;
+`;
+const ContactContainer = styled.div`
+    border-top: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
+    padding: 10px;
+`;
+
+const ContactHeader = styled.div`
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    padding: 1%;
+    cursor: pointer;
+`;
+
+const ToggleIndicator = styled.div`
+    margin-right: 1%;
+`;
+
+const ContactDetails = styled.div`
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+`;
+
+const EditButton = styled(Button)` // Assuming Button is already defined
+    margin-right: 1%;
+`;
+
+const PlayerSection = styled(ContactSection)``;
+
 const StyledLabel = styled.p`
-flex: 1;
-`
+    flex: 1;
+    margin-right: 10px;
+`;
+const PlayerContainer = styled.div`
+    border-bottom: 1px solid #ddd;
+    border-top: 1px solid #ddd;
+    padding: 10px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+`;
+
+const PlayerDetails = styled.div`
+    flex-grow: 1;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+`;
 
 export default function PlayerPage () {
     
     const [contactData, setContactData] = useState([])
     const [isCreateContactOpen, setIsCreateContactOpen] = useState(false)
+    const [showConfirmationPopup, setShowConfirmationPopup] = useState(false);
+    const [itemToDelete, setItemToDelete] = useState(null);
+    const {showPopup} = usePopup();
 
     const fetchData = async () => {
 
@@ -32,6 +140,33 @@ export default function PlayerPage () {
 
     }
 
+    const confirmDelete = (item) => {
+        setShowConfirmationPopup(true);
+        setItemToDelete(item);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!itemToDelete) return;
+
+        try {
+            // Assuming the item has 'type' and 'id' properties
+            const urlSuffix = itemToDelete.type === 'contact' ? `contact/${itemToDelete.id}` : `player/${itemToDelete.id}`;
+            await axios.delete(`${process.env.REACT_APP_API_URL}/${urlSuffix}`, {
+                headers: {
+                    Authorization: `${localStorage.getItem("AccessToken")}`,
+                },
+            });
+
+            fetchData();
+            showPopup(`${itemToDelete.type} deleted successfully`);
+        } catch (error) {
+            console.log(error);
+        } finally {
+            setShowConfirmationPopup(false);
+            setItemToDelete(null);
+        }
+    };
+
     useEffect(() => {
 
         fetchData();
@@ -44,9 +179,9 @@ export default function PlayerPage () {
         const [addPlayerOpen, setAddPlayerOpen] = useState(false);
         const [isEditing, setIsEditing] = useState(false);
 
-        const [data, setData] = useState({});
+        const [showDelete, setShowDelete] = useState(false);
 
-        const {showPopup} = usePopup();
+        const [data, setData] = useState({});
 
         const handleInputChange = (event) => {
             setData({...data, [event.target.name]: event.target.value});
@@ -73,92 +208,71 @@ export default function PlayerPage () {
             setData({...data, name: contact.name, email: contact.email, phone_number: contact.phone_number})
         }, [])
 
+        const handleDelete = () => {
+            confirmDelete({ type: 'contact', id: contact.contact_id });
+        };
+
         return (
-            <div style={{
-                borderTop: "1px solid #000",
-                borderBottom: "1px solid #000",
-            }}>
+            <ContactContainer>
                 <div style={{
-                    display: "flex",
-                    flexDirection: "row",                
-                    alignItems: "center",
-                    width: "100%",
-                    borderRadius: "1px",                            
-                    
+                    display: 'flex',
+                    flexDirection: 'row',
+                    alignItems: 'center',
                 }}
+                onMouseEnter={() => setShowDelete(true)} 
+                onMouseLeave={() => setShowDelete(false)}
                 >
-                    <div
-                        onClick={() => setIsOpen(!isOpen)}
-                        style={{
-                            display: "flex",
-                            flexDirection: "row",
-                            alignItems: "center",
-                            width: "100%",
-                            borderRadius: "1px",
-                            padding: "1%",
-                        }}
-                    >
-                        <div style={{
-                            marginRight: "1%",                    
-                        }}>
+                    <ContactHeader onClick={() => setIsOpen(!isOpen)}>
+                        <ToggleIndicator>
                             {isOpen ? <span>&#x25BC;</span> : <span>&#x25B6;</span>}
-                        </div>
+                        </ToggleIndicator>
+                        <ContactDetails>
+                            {!isEditing ? (
+                                <>
+                                    <StyledLabel>{contact.name}</StyledLabel>
+                                    <StyledLabel>{contact.email}</StyledLabel>
+                                    <StyledLabel>{contact.phone_number}</StyledLabel>
+                                </>
+                            ) : (
+                                <>
+                                    <Input type="text" name="name" value={data.name} onChange={handleInputChange} />
+                                    <Input type="text" name="email" value={data.email} onChange={handleInputChange} />
+                                    <Input type="text" name="phone_number" value={data.phone_number} onChange={handleInputChange} />
+                                </>
+                            )}
+                        </ContactDetails>
                         {!isEditing ? (
-                            <>
-                                <StyledLabel>{contact.name}</StyledLabel>
-                                <StyledLabel>{contact.email}</StyledLabel>
-                                <StyledLabel>{contact.phone_number}</StyledLabel>
-                            </>
+                            <EditButton onClick={() => setIsEditing(true)}>Edit</EditButton>
                         ) : (
                             <>
-                            <input type="text" name="name" value={data.name} onChange={handleInputChange} />
-                            <input type="text" name="email" value={data.email} onChange={handleInputChange} />
-                            <input type="text" name="phone_number" value={data.phone_number} onChange={handleInputChange} />
+                                <Button onClick={() => setIsEditing(false)}>Cancel</Button>
+                                <Button onClick={handleSubmit}>Submit</Button>
                             </>
                         )}
-                    </div>  
-
-                    {!isEditing && <button onClick={() => {setIsEditing(true)}}>Edit</button>}
-                    {isEditing && (
-                    <>
-                        <button onClick={() => {setIsEditing(false)}}>Cancel</button>
-                        <button onClick={handleSubmit}>Submit</button>
-                    </>
-                    )
-                    }
-                  <button style={{
-                        marginRight: "1%",
-                    }}
-                    onClick={() => {
-                        setAddPlayerOpen(!addPlayerOpen)
-                        setIsOpen(true)
-                    }}
-                    >+ Player</button>
+                        <Button onClick={() => { setAddPlayerOpen(!addPlayerOpen); setIsOpen(true); }}>+ Player</Button>
+                    </ContactHeader>
+                    <StyledDeleteButton show={showDelete} onClick={handleDelete}>X</StyledDeleteButton>
                 </div>
-                <div>
+                <PlayerSection>
                     {isOpen && (
                         <>
-                        <h4>Players</h4>
-                        {
-                            contact.players && contact.players.map((player) => {
-                                return (<PlayerComponent player={player} />)
-                            })
-                        }
-                        {
-                            addPlayerOpen && <CreatePlayer contactId={contact.contact_id} setOpen={setAddPlayerOpen} fetchData={fetchData}/>
-                        }
+                            <h4>Players</h4>
+                            {contact.players && contact.players.map((player, index) => (
+                                <PlayerComponent key={index} player={player} />
+                            ))}
+                            {addPlayerOpen && <CreatePlayer contactId={contact.contact_id} setOpen={setAddPlayerOpen} fetchData={fetchData} />}
                         </>
-                    )}                                            
-                </div>
-            </div>
-        )
+                    )}
+                </PlayerSection>
+            </ContactContainer>
+        );
 
     }
 
     const PlayerComponent = ({player}) => {
         const [data, setData] = useState({});
         const [isEditing, setIsEditing] = useState(false);
-        const {showPopup} = usePopup();
+        const [showDelete, setShowDelete] = useState(false);
     
         const handleInputChange = (event) => {
             setData({...data, [event.target.name]: event.target.value});
@@ -183,6 +297,10 @@ export default function PlayerPage () {
             }
 
         };
+
+        const handleDelete = () => {
+            confirmDelete({ type: 'player', id: player.player_id });
+        };
     
         const toggleEdit = () => {
             setIsEditing(!isEditing);
@@ -190,51 +308,58 @@ export default function PlayerPage () {
         };
     
         return (
-            <div style={{
-                borderBottom: "1px solid #000",
-                borderTop: "1px solid #000",
-            }}>
+            <PlayerContainer onMouseEnter={() => setShowDelete(true)} onMouseLeave={() => setShowDelete(false)}>
                 {isEditing ? (
                     <>
-                        <input type="text" name="name" value={data.name} onChange={handleInputChange} />
-                        <button onClick={submitEdit}>Submit</button>
+                        <Input type="text" name="name" value={data.name} onChange={handleInputChange} />
+                        <Button onClick={submitEdit}>Submit</Button>
                     </>
                 ) : (
-                    <>
+                    <PlayerDetails>
                         <StyledLabel>{player.name}</StyledLabel>
-                        <button onClick={toggleEdit}>Edit</button>
-                    </>
+                        <EditButton onClick={toggleEdit}>Edit</EditButton>
+                    </PlayerDetails>
                 )}
-            </div>
+                <StyledDeleteButton show={showDelete} onClick={handleDelete}>X</StyledDeleteButton>
+            </PlayerContainer>
         );
     }
     
     return (
-        <div style={{
-            marginTop: "1%",
-        }}>
+        <Container>
 
-            <div style={{
-                display: "flex",
-                flexDirection: "row",
-                alignItems: "center",
-                width: "100%",
-                borderRadius: "1px",
-                border: "1px solid black",
-                padding: "1%",
-            }}>
-                <button onClick={() => {setIsCreateContactOpen(true)}}>Create new Contact</button>
+            <Header>
+                <Button onClick={() => {setIsCreateContactOpen(true)}}>Create new Contact</Button>
                 <p>Add details for an individual that you organise lessons with (the person that schedules and pays for lessons), for example the players parent or the player themselves. These details are used to send important lesson information and invoices</p>
-            </div>
+            </Header>
             
             {isCreateContactOpen && <CreateContact setOpen={setIsCreateContactOpen} fetchData={fetchData}/>}
 
-            {
-                contactData && contactData.map((contact) => {
-                    return (<ContactComponent contact={contact} />)                
-                })
-            }    
+            <ContactSection>
+            <div style={{
+                display: 'flex',
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+            }}>
+                <h4 style={{flex: 1}}>Contact Name</h4>
+                <h4 style={{flex: 1}}>Email</h4>
+                <h4 style={{flex: 1}}>Phone Number</h4>
+            </div>
+                {
+                    contactData && contactData.map((contact) => {
+                        return (<ContactComponent contact={contact} />)                
+                    })
+                }    
+            </ContactSection>
 
-        </div>
+            {showConfirmationPopup && (
+                <ConfirmationPopup
+                    message={`Are you sure you want to delete this ${itemToDelete?.type}?`}
+                    onConfirm={handleConfirmDelete}
+                    onCancel={() => setShowConfirmationPopup(false)}
+                />
+            )}
+
+        </Container>
     )
 }

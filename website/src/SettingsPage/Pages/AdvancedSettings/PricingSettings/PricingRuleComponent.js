@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import styled from '@emotion/styled';
 import axios from 'axios';
 import {usePopup} from '../../../../Notifications/PopupContext'
+import ConfirmationPopup from '../../../../Notifications/ConfirmComponent';
 
 const StyledPricingRule = styled.div`
     display: flex;
@@ -86,13 +87,16 @@ const formatDayMinutesToHHMM = (minutes) => {
 
 export default function PricingRule({pricingRule, refresh}){
     const [showDelete, setShowDelete] = useState(false);
-    const {showPopup} = usePopup();
+    const [showConfirmationPopup, setShowConfirmationPopup] = useState(false);
+    const { showPopup } = usePopup();
 
-    const handleDelete = async () => {
+    const confirmDelete = () => {
+        setShowConfirmationPopup(true);
+    };
 
+    const handleConfirmDelete = async () => {
         try {
-
-            const response = await axios.delete(`${process.env.REACT_APP_API_URL}/pricing-rules/${pricingRule.rule_id}`, {
+            await axios.delete(`${process.env.REACT_APP_API_URL}/pricing-rules/${pricingRule.rule_id}`, {
                 headers: {
                     Authorization: localStorage.getItem('AccessToken')
                 }
@@ -100,14 +104,12 @@ export default function PricingRule({pricingRule, refresh}){
 
             refresh();
             showPopup("Pricing rule deleted successfully");
-
-            console.log(response);
-
         } catch (error) {
             console.error(error);
+        } finally {
+            setShowConfirmationPopup(false);
         }
-
-    }
+    };
 
     const formatTimeComponent = () => {
         if (pricingRule.all_day) {
@@ -169,13 +171,22 @@ export default function PricingRule({pricingRule, refresh}){
     }
 
     return (
-        <StyledPricingRule onMouseEnter={() => setShowDelete(true)} onMouseLeave={() => setShowDelete(false)}>
-            <StyledParagraph>{pricingRule.label}</StyledParagraph>
-            <StyledParagraph>{formatTimeComponent()}</StyledParagraph>
-            <StyledParagraph>{formatDateComponent()}</StyledParagraph>
-            <StyledParagraph className="rate">£{(pricingRule.rate / 100).toFixed(2)}</StyledParagraph>
-            <StyledParagraph className="type">{formatType()}</StyledParagraph>
-            <StyledDeleteButton show={showDelete} onClick={handleDelete}>X</StyledDeleteButton>
-        </StyledPricingRule>
+        <>
+            <StyledPricingRule onMouseEnter={() => setShowDelete(true)} onMouseLeave={() => setShowDelete(false)}>
+                <StyledParagraph>{pricingRule.label}</StyledParagraph>
+                <StyledParagraph>{formatTimeComponent()}</StyledParagraph>
+                <StyledParagraph>{formatDateComponent()}</StyledParagraph>
+                <StyledParagraph className="rate">£{(pricingRule.rate / 100).toFixed(2)}</StyledParagraph>
+                <StyledParagraph className="type">{formatType()}</StyledParagraph>
+                <StyledDeleteButton show={showDelete} onClick={confirmDelete}>X</StyledDeleteButton>
+            </StyledPricingRule>
+            {showConfirmationPopup && (
+                <ConfirmationPopup
+                    message="Are you sure you want to delete this pricing rule?"
+                    onConfirm={handleConfirmDelete}
+                    onCancel={() => setShowConfirmationPopup(false)}
+                />
+            )}
+        </>
     )
 }

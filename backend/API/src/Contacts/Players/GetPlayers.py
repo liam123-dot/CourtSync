@@ -25,7 +25,7 @@ def get_players_blueprint():
     
     
 def get_players(coach_id):
-    sql = "SELECT Players.*, Contacts.name as contact_name, Contacts.contact_id as contact_id FROM Players JOIN Contacts ON Players.contact_id = Contacts.contact_id WHERE Players.coach_id=%s"
+    sql = "SELECT Players.*, Contacts.name as contact_name, Contacts.contact_id as contact_id FROM Players JOIN Contacts ON Players.contact_id = Contacts.contact_id WHERE Players.coach_id=%s AND Players.enabled=1"
     
     results = execute_query(sql, (coach_id,), is_get_query=True)
     

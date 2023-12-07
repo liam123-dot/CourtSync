@@ -3,8 +3,9 @@ import { useParams } from "react-router-dom";
 /** @jsxImportSource @emotion/react */
 import {css, Global} from "@emotion/react";
 
+import axios from "axios";
+
 import Timetable from "../Calendar/Timetable";
-// import WorkingHoursModal from '../Calendar/WorkingHoursModal'
 import CoachAddEventModal from "./CoachAddEventModal/CoachAddEventModal";
 import { TitleSection, ArrowButtonGroup, Button, checkRefreshRequired, handleSetView, handleNext, handlePrevious } from "../HomescreenHelpers";
 import {fetchTimetable} from "../FetchTimetable";
@@ -18,6 +19,7 @@ import CoachEventDetailsModal from "../Calendar/CoachEventDetailsModal";
 import {CoachEventDetailsProvider} from "../Calendar/CoachEventDetailsContext";
 import { RefreshTimetableProvider } from "./RefreshTimetableContext";
 import WorkingHoursModal from "./WorkingHoursModal";
+import LinkButton from "./LinkButton";
 
 export default function HomeScreen() {
 
@@ -133,19 +135,6 @@ export default function HomeScreen() {
 
     useEffect(() => {
 
-        // check that working hours, durations and pricing rules have all been set
-        // must be non null with a length greater than 0
-
-        if (Object.keys(workingHours).length > 0 && durations.length > 0 && Object.keys(pricingRules).length > 0) {
-            setSetUp(true);
-        } else {
-            setSetUp(false);
-        }
-
-    }, [workingHours, durations, pricingRules])
-
-    useEffect(() => {
-
         const convertBookingsToTimetableEvents = (events) => {
             const newTimetableEvents = { ...events };
 
@@ -251,10 +240,22 @@ export default function HomeScreen() {
             return currentDate;
 
         }
+
+        const checkSetUp = async () => {
+            const response = await axios.get(`${process.env.REACT_APP_API_URL}/user/me/settings`, {
+                headers: {
+                    Authorization: localStorage.getItem("AccessToken"),
+                },
+            });
+                        
+            setSetUp(response.data.any)
+
+        }
         
         setIsStartingUp(true);
         const startDate = calculateStartingDates();
         fetchTimetableData(startDate, startDate);
+        checkSetUp();
 
     }, []);
 
@@ -334,9 +335,11 @@ export default function HomeScreen() {
                                 <ArrowButtonGroup>
                                     <Button onClick={() => setIsAddEventModalOpen(true)}>+</Button>
                                     <Button onClick={() => setIsWorkingHoursModalOpen(true)}>⚙</Button>
+                                    <LinkButton/>
                                 </ArrowButtonGroup>
                                 
                                 <WorkingHoursModal isOpen={isWorkingHoursModalOpen} onClose={() => setIsWorkingHoursModalOpen(false)}/>
+
                                 
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <ArrowNavigation
@@ -391,13 +394,12 @@ export default function HomeScreen() {
                                             max={max}
                                         />
                                     ): (
-                                    <>
-
+                                    <>                                        
                                         <h2>
-                                            You must first set some working hours, durations and pricing rules before you can access the timetable.                                            
+                                            This section will allow you to manage, schedule and arrange lessons.
                                         </h2>
                                         <h3>
-                                            This section will allow you to manage, schedule and arrange lessons.
+                                            You must first set some working hours, durations and pricing rules before you can access the timetable.                                            
                                         </h3>
                                         <button onClick={() => {
                                             window.location.href = `${process.env.REACT_APP_WEBSITE_URL}/#/dashboard/settings`

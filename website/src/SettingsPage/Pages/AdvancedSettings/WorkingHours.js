@@ -4,7 +4,7 @@ import { SaveButton } from "../../../Home/CommonAttributes/SaveButton";
 import { Spinner } from "../../../Spinner";
 import { usePopup } from "../../../Notifications/PopupContext";
 
-export default function WorkingHoursSettings() {
+export default function WorkingHoursSettings({refresh}) {
 
     const [workingHours, setWorkingHours] = useState([]);
     const [isSaving, setIsSaving] = useState(false); // [15, 30, 45, 60, 75, 90, 105, 120
@@ -54,6 +54,10 @@ export default function WorkingHoursSettings() {
     };
 
     const handleTimeChange = (index, type, value) => {
+        console.log(value);
+        if (value.match(/^\d{2}/)) {
+          value += ':00';
+        }
         const updatedHours = [...workingHours];
         updatedHours[index][type] = value;
         setWorkingHours(updatedHours);
@@ -152,4 +156,3 @@ export default function WorkingHoursSettings() {
         </div>
     );
 }
-

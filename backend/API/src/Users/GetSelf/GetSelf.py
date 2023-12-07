@@ -1,8 +1,15 @@
 from flask import request, jsonify, Blueprint, current_app
-from src.Users.GetSelf.CheckAuthorization import get_access_token_username
+from dotenv import load_dotenv
+
+import os
 
 from src.Database.ExecuteQuery import execute_query
+from src.Users.GetSelf.CheckAuthorization import get_access_token_username
 from src.Users.UserPublicProfile.GetProfilePictureUrl import get_profile_picture_url
+
+load_dotenv('.env')
+
+WEBSITE_URL = os.getenv('WEBSITE_URL')
 
 UserGetSelfBlueprint = Blueprint('UserGetSelfBlueprint', __name__)
 
@@ -62,8 +69,12 @@ def get_attributes(coach_id):
     
     results['coach_setup'] = check_account_set_up(coach_id)
 
+    results['coach_url'] = construct_coach_url(results)
+
     return results
 
+def construct_coach_url(coach):
+    return f"{WEBSITE_URL}/#/{coach['slug']}"
 
 def check_account_set_up(coach_id):
     

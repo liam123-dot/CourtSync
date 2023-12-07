@@ -75,7 +75,6 @@ export default function InvoicingSettings({}) {
 
     return (
         <div>            
-            <h1>Invoicing Settings</h1>
             <p>Here you can configure your invoicing settings.</p>
             {!hasStripeAccount && !invoiceType &&
                 <p style={{ color: 'red' }}><b>You must have a stripe account connected and set a invoice regularity before invoicing is enabled</b></p>

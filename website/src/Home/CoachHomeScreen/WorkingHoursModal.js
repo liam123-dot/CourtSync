@@ -11,6 +11,11 @@ export default function WorkingHoursModal ({isOpen, onClose}) {
         <ModalOverlay onClick={onClose}>
             <ModalContent onClick={(e) => e.stopPropagation()}>
                 <WorkingHoursSettings />
+                <button onClick={() => {
+                    onClose();
+                }}>
+                    Cancel
+                </button>
             </ModalContent>
         </ModalOverlay>
     )

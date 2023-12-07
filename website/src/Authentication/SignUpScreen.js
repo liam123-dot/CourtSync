@@ -45,8 +45,6 @@ export default function SignUpScreen() {
         if (!formData.phone_number) tempErrors.phone_number = "Phone number is required.";
         if (!formData.password) {
             tempErrors.password = "Password is required.";
-        } else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(formData.password)) {
-            tempErrors.password = "Password must be at least 8 characters with a lower, upper case letter, number, and special character.";
         }
         if (formData.password !== formData.confirm_password) tempErrors.confirm_password = "Passwords do not match.";
 

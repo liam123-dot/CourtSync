@@ -9,6 +9,8 @@ from src.Users.Auth.SignUp import CoachSignUp
 from src.Users.Auth.ResendConfirmationCode import ResendConfirmationCodeBlueprint
 from src.Users.Auth.RefreshTokens import RefreshTokensBlueprint
 from src.Users.Auth.CheckCoachAuthorised import CheckCoachAuthorisedBlueprint
+from src.Users.Auth.ForgotPassword.ForgotPassword import ForgotPasswordBlueprint
+from src.Users.Auth.ForgotPassword.ConfirmForgotPassword import ConfirmForgotPasswordBlueprint
 from src.Users.GetSelf.GetSelf import UserGetSelfBlueprint
 from src.Users.EditSelf.EditSelf import UserEditSelfBlueprint
 from src.Users.UserPublicProfile.GetProfile import GetProfileBlueprint
@@ -27,11 +29,13 @@ from src.Bookings.GetBookings.GetBookings import GetBookingsBlueprint
 from src.CoachEvents.AddCoachEvent import AddCoachEventBlueprint
 
 from src.Contacts.GetContact import GetContactBlueprint
-from src.Contacts.Players.AddPlayer import CreatePlayerBlueprint
 from src.Contacts.AddContact import CreateContactBlueprint
+from src.Contacts.DeleteContact import DeleteContactBlueprint
 from src.Contacts.EditContact import EditContactBlueprint
 from src.Contacts.VerifyEmail import VerifyEmailBlueprint
+from src.Contacts.Players.AddPlayer import CreatePlayerBlueprint
 from src.Contacts.Players.GetPlayers import GetPlayersBlueprint
+from src.Contacts.Players.DeletePlayer import DeletePlayerBlueprint
 from src.Contacts.Players.EditPlayer import EditPlayerBlueprint
 
 from src.Invoices.GetInvoices.GetInvoices import GetInvoicesBlueprint
@@ -44,6 +48,7 @@ from src.Timetable.GetFeatures import GetFeaturesBlueprint
 from src.Timetable.EditFeatures import EditFeaturesBlueprint
 
 from src.TestBlueprint import TestBlueprint
+# from src.Repeats.CreateRepeatRule import test
 
 from src.Sales.ContactSales import ContactSalesBlueprint
 from src.Sales.CreateSignUpLink import CreateSignUpLinkBlueprint
@@ -67,6 +72,8 @@ def create_app():
     app.register_blueprint(RefreshTokensBlueprint)
     app.register_blueprint(UserGetSelfBlueprint)
     app.register_blueprint(UserEditSelfBlueprint)
+    app.register_blueprint(ForgotPasswordBlueprint)
+    app.register_blueprint(ConfirmForgotPasswordBlueprint)
     app.register_blueprint(CheckCoachAuthorisedBlueprint)
     app.register_blueprint(GetProfileBlueprint)
     app.register_blueprint(UploadProfilePictureBlueprint)
@@ -85,9 +92,11 @@ def create_app():
     app.register_blueprint(GetContactBlueprint)
     app.register_blueprint(CreatePlayerBlueprint)
     app.register_blueprint(CreateContactBlueprint)
+    app.register_blueprint(DeleteContactBlueprint)
     app.register_blueprint(EditContactBlueprint)
     app.register_blueprint(VerifyEmailBlueprint)
     app.register_blueprint(GetPlayersBlueprint)
+    app.register_blueprint(DeletePlayerBlueprint)
     app.register_blueprint(EditPlayerBlueprint)
     
     app.register_blueprint(GetInvoicesBlueprint)
@@ -100,6 +109,7 @@ def create_app():
     app.register_blueprint(EditFeaturesBlueprint)
     
     app.register_blueprint(TestBlueprint)
+    # app.register_blueprint(test)
     
     app.register_blueprint(ContactSalesBlueprint)
     app.register_blueprint(CreateSignUpLinkBlueprint)

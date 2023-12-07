@@ -8,9 +8,10 @@ export default function CoachAddLesson ({closeModal}) {
 
     const {refresh} = useRefreshTimetable();
 
-    const [selectedDate, setSelectedDate] = useState(new Date());
+    const [selectedDate, setSelectedDate] = useState(null);
     const [selectedStartTime, setSelectedStartTime] = useState(null);
     const [selectedDuration, setSelectedDuration] = useState(null);
+    const [errorMessage, setErrorMessage] = useState(null);
 
     const [players, setPlayers] = useState([])
     const [contact, setContact] = useState(null)
@@ -82,6 +83,11 @@ export default function CoachAddLesson ({closeModal}) {
 
     const handleSubmit = async (e) => {
 
+        if (!selectedDate || !selectedStartTime || !selectedDuration || !selectedPlayerId) {
+            setErrorMessage("Please select a date, start time, duration and player");
+            return;
+        }
+
         try {
 
             const response = await axios.post(`${process.env.REACT_APP_API_URL}/booking`, {
@@ -139,6 +145,8 @@ export default function CoachAddLesson ({closeModal}) {
                     {formatPriceInPounds(lessonCost)}
             </label>
             {formatPriceBreakdown(rules)}
+
+            {errorMessage && <p>{errorMessage}</p>}
 
             <button onClick={handleSubmit}>Submit</button>
     

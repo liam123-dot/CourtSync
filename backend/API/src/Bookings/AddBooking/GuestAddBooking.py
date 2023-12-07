@@ -82,7 +82,7 @@ def add_booking(slug):
             return jsonify(message="Error inserting booking"), 500
     
         try:
-            send_confirmation_emails(contact_email, start_time, duration, cost, lesson_hash, player_name, show_email_publicly, show_phone_number_publicly, coach_id)
+            send_confirmation_emails(contact_email, start_time, duration, cost, lesson_hash, player_name, coach_id)
         except Exception as e:
             logging.error(f"Error sending confirmation emails: {e}")
 

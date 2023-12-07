@@ -33,6 +33,7 @@ def execute_query(sql, args=None, is_get_query=True, retry=False):
             logging.debug(f"Results: {results}")
             return results
     except Exception as e:
+        logging.debug("Error executing query")
         logging.debug(e)
         db_connection = DatabaseConnection()
         current_app.config['db_connection'] = db_connection

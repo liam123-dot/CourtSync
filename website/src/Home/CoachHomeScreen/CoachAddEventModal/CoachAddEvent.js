@@ -22,8 +22,12 @@ export default function CoachAddEvent({closeModal}) {
 
     const [repeats, setRepeats] = useState(false);
     const [repeatType, setRepeatType] = useState('');
+    const [repeatUntil, setRepeatUntil] = useState(4);
 
     const [saveDisabled, setSaveDisabled] = useState(false);
+
+    const [checkingOverlapsLoading, setCheckingOverlapsLoading] = useState(false);
+
 
     useEffect(() => {
         if (overlappingEvents && ((overlappingEvents.bookings && overlappingEvents.bookings.length > 0)
@@ -40,8 +44,9 @@ export default function CoachAddEvent({closeModal}) {
         setRepeatType(e.target.value);
     }
     
-    const checkValid = async (newStartDate, newEndDate, newStartTime, newEndTime) => {
+    const checkValid = async (newStartDate, newEndDate, newStartTime, newEndTime, repeats, repeats_until, repeats_frequency) => {
         console.log(newStartDate, newEndDate, newStartTime, newEndTime);
+        setCheckingOverlapsLoading(true);
     
         if (newStartDate === null || newEndDate === null || newStartTime === null || newEndTime === null) {
             setTimesValid(false);
@@ -55,14 +60,29 @@ export default function CoachAddEvent({closeModal}) {
     
             const fromTimeEpoch = Math.floor(fromTime.getTime() / 1000);
             const toTimeEpoch = Math.floor(toTime.getTime() / 1000);
-    
-            const response = await axios.get(`${process.env.REACT_APP_API_URL}/timetable/check-overlaps?from=${fromTimeEpoch}&&to=${toTimeEpoch}&repeats=${repeats}&repeat_type=${repeatType}`,
-                {
-                    headers: {
-                        'Authorization': localStorage.getItem('AccessToken')
+            
+            let response;
+
+            if (repeats && repeatType && repeats_until) {
+
+                response = await axios.get(`${process.env.REACT_APP_API_URL}/timetable/check-overlaps?from=${fromTimeEpoch}&&to=${toTimeEpoch}&repeats=${repeats}&repeat_frequency=${repeats_frequency}&repeat_until=${calculateRepeatsUntil()}`,
+                    {
+                        headers: {
+                            'Authorization': localStorage.getItem('AccessToken')
+                        }
                     }
-                }
-            );
+                );
+
+            } else {
+                
+                response = await axios.get(`${process.env.REACT_APP_API_URL}/timetable/check-overlaps?from=${fromTimeEpoch}&&to=${toTimeEpoch}`,
+                    {
+                        headers: {
+                            'Authorization': localStorage.getItem('AccessToken')
+                        }
+                    }
+                );
+            }
             
             const data = response.data;
 
@@ -78,6 +98,21 @@ export default function CoachAddEvent({closeModal}) {
         } catch (error) {
             console.log(error);
         }
+        setCheckingOverlapsLoading(false);
+    }
+
+    const calculateRepeatsUntil = () => {
+
+        // using the start date, add the number of weeks to it specified by repeatUntil
+        // then convert that to a epoch time in seconds
+
+        const startDateObj = new Date(`${startDate}T${startTime}`);
+        const startDateEpoch = Math.floor(startDateObj.getTime() / 1000);
+
+        const repeatUntilEpoch = startDateEpoch + (repeatUntil * 7 * 24 * 60 * 60);
+
+        return repeatUntilEpoch;
+
     }
 
     const handleSave = async () => {
@@ -117,6 +152,7 @@ export default function CoachAddEvent({closeModal}) {
         setErrorMessage(null);
 
         setSaving(true);
+
         try {
 
             const response = await axios.post(`${process.env.REACT_APP_API_URL}/coach-event`,
@@ -125,6 +161,9 @@ export default function CoachAddEvent({closeModal}) {
                     description,
                     start_time: fromTimeEpoch,
                     end_time: toTimeEpoch,
+                    repeats: repeats,
+                    repeats_frequency: repeatType,
+                    repeats_until: repeatUntil ? calculateRepeatsUntil() : null,
                 },
                 {
                     headers: {
@@ -147,8 +186,6 @@ export default function CoachAddEvent({closeModal}) {
 
         const value = e.target.value;
 
-        checkValid(value, endDate, startTime, endTime);
-
         setStartDate(value)
         setEndDate(value);
 
@@ -158,8 +195,6 @@ export default function CoachAddEvent({closeModal}) {
 
         const value = e.target.value;
 
-        checkValid(startDate, value, startTime, endTime);
-
         setEndDate(value)
 
     }
@@ -167,8 +202,6 @@ export default function CoachAddEvent({closeModal}) {
     const handleStartTimeChange = e => {
 
         const value = e.target.value;
-
-        checkValid(startDate, endDate, value, endTime);
 
         setStartTime(value)
 
@@ -178,10 +211,24 @@ export default function CoachAddEvent({closeModal}) {
 
         const value = e.target.value;
 
-        checkValid(startDate, endDate, startTime, value);
-
         setEndTime(value)
     }
+
+    const handleRepeatUntilChange = value => {
+        if (Number(value) > 8) {
+            setRepeatUntil(8);
+        } else if (Number(value) < 0) {
+            setRepeatUntil(1);
+        } else {
+            setRepeatUntil(value);
+        }
+    }
+
+    useEffect(() => {
+
+        checkValid(startDate, endDate, startTime, endTime, repeats, repeatUntil, repeatType);
+
+    }, [startDate, endDate, startTime, endTime, repeats, repeatType, repeatUntil])
 
     return (
         <div style={{
@@ -260,16 +307,27 @@ export default function CoachAddEvent({closeModal}) {
                 </label>
 
                 {repeats && (
-                    <label>
-                        Repeat Type
-                        <select value={repeatType} onChange={handleRepeatTypeChange}>
-                            <option value="">Select Repeat Type</option>
-                            <option value="daily">Daily</option>
-                            <option value="weekly">Weekly</option>
-                            <option value="fortnightly">Fortnightly</option>
-                            <option value="monthly">Monthly</option>
-                        </select>
-                    </label>
+                    <>
+                        <label>
+                            Repeat Type
+                            <select value={repeatType} onChange={handleRepeatTypeChange}>
+                                <option value="" disabled>Select Repeat Type</option>
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="fortnightly">Fortnightly</option>
+                                <option value="monthly">Monthly</option>
+                            </select>
+                        </label>
+                        <label>
+                            Repeat for how many weeks?
+                            <input
+                                type="number"
+                                value={repeatUntil}
+                                onChange={(e) => {handleRepeatUntilChange(e.target.value)}}
+                                style={{width: '50px'}}
+                            />
+                        </label>
+                    </>
                 )}
                 {
                     errorMessage && (
@@ -278,7 +336,7 @@ export default function CoachAddEvent({closeModal}) {
                 }
 
                 <SaveButton onClick={handleSave} disabled={saveDisabled}>
-                    {saving ? 
+                    {saving || checkingOverlapsLoading ? 
                         <Spinner/>
                         :
                         <>

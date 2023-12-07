@@ -12,7 +12,6 @@ CoachCancellationBlueprint = Blueprint('CoachCancellation', __name__)
 def coach_cancel_lesson(booking_id):
     token = request.headers.get('Authorization', None)
     
-    username = None
     if token:
         coach = get_coach(token)
     else:

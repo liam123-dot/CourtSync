@@ -25,10 +25,11 @@ def contact_sales_endpoint():
         return jsonify({'error': 'Missing required field'}), 400
     
     success = insert_into_table(first_name, last_name, email, phone_number, message)
-    send_customer_email(first_name, last_name, email)
     
     if not success:
         return jsonify({'error': 'Enquiry has already been submitted!'}), 400
+    
+    send_customer_email(first_name, last_name, email)
     
     return jsonify(message='Success'), 200
 

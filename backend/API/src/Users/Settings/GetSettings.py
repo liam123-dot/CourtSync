@@ -25,7 +25,10 @@ def check_working_hours(coach_id):
     working_hours = execute_query('SELECT * FROM WorkingHours WHERE coach_id = %s', (coach_id,))
     
     if len(working_hours) > 0:
-        return True
+        for working_hour in working_hours:
+            if working_hour['start_time'] and working_hour['end_time']:
+                return True
+
     return False
     
 
