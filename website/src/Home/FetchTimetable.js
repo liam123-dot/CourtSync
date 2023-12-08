@@ -1,6 +1,6 @@
 import axios from "axios";
 
-export const fetchTimetable = async (fromDate, toDate, coachSlug, forCoachScreen) => {
+export const fetchTimetable = async (fromDate, toDate, coachSlug, forCoachScreen, showCancelled) => {
 
     // Create new Date objects based on the passed dates to avoid direct mutation
     const fromDateCopy = new Date(fromDate);
@@ -22,7 +22,7 @@ export const fetchTimetable = async (fromDate, toDate, coachSlug, forCoachScreen
         
     try {
         const response = await axios.get(
-            `${process.env.REACT_APP_API_URL}/timetable/${coachSlug}?from_time=${epochFromDate}&to_time=${epochToDate}`,
+            `${process.env.REACT_APP_API_URL}/timetable/${coachSlug}?from_time=${epochFromDate}&to_time=${epochToDate}&show_cancelled=${showCancelled}`,
             {headers: headers}  
         );
 

@@ -2,6 +2,9 @@ import React, {useEffect, useState} from 'react';
 import {SaveButton} from '../../CommonAttributes/SaveButton';
 import { Spinner } from '../../../Spinner';
 import axios from 'axios';
+import { useRefreshTimetable } from '../RefreshTimetableContext';
+import { checkValid } from './CheckValidRepeat';
+import ShowOverlappingEvents from './ShowOverlappingEvents';
 
 export default function CoachAddEvent({closeModal}) {
 
@@ -28,6 +31,8 @@ export default function CoachAddEvent({closeModal}) {
 
     const [checkingOverlapsLoading, setCheckingOverlapsLoading] = useState(false);
 
+    const {refresh} = useRefreshTimetable();
+
 
     useEffect(() => {
         if (overlappingEvents && ((overlappingEvents.bookings && overlappingEvents.bookings.length > 0)
@@ -42,77 +47,6 @@ export default function CoachAddEvent({closeModal}) {
 
 
         setRepeatType(e.target.value);
-    }
-    
-    const checkValid = async (newStartDate, newEndDate, newStartTime, newEndTime, repeats, repeats_until, repeats_frequency) => {
-        console.log(newStartDate, newEndDate, newStartTime, newEndTime);
-        setCheckingOverlapsLoading(true);
-    
-        if (newStartDate === null || newEndDate === null || newStartTime === null || newEndTime === null) {
-            setTimesValid(false);
-            return;
-        }
-    
-        try {
-            // convert the start and end times to epoch time seconds
-            const fromTime = new Date(`${newStartDate}T${newStartTime}`);
-            const toTime = new Date(`${newEndDate}T${newEndTime}`);
-    
-            const fromTimeEpoch = Math.floor(fromTime.getTime() / 1000);
-            const toTimeEpoch = Math.floor(toTime.getTime() / 1000);
-            
-            let response;
-
-            if (repeats && repeatType && repeats_until) {
-
-                response = await axios.get(`${process.env.REACT_APP_API_URL}/timetable/check-overlaps?from=${fromTimeEpoch}&&to=${toTimeEpoch}&repeats=${repeats}&repeat_frequency=${repeats_frequency}&repeat_until=${calculateRepeatsUntil()}`,
-                    {
-                        headers: {
-                            'Authorization': localStorage.getItem('AccessToken')
-                        }
-                    }
-                );
-
-            } else {
-                
-                response = await axios.get(`${process.env.REACT_APP_API_URL}/timetable/check-overlaps?from=${fromTimeEpoch}&&to=${toTimeEpoch}`,
-                    {
-                        headers: {
-                            'Authorization': localStorage.getItem('AccessToken')
-                        }
-                    }
-                );
-            }
-            
-            const data = response.data;
-
-            if (data.overlaps){
-                setOverlappingEvents({
-                    bookings: data.bookings,
-                    events: data.events,
-                });
-            } else {
-                setOverlappingEvents(null);
-            }
-    
-        } catch (error) {
-            console.log(error);
-        }
-        setCheckingOverlapsLoading(false);
-    }
-
-    const calculateRepeatsUntil = () => {
-
-        // using the start date, add the number of weeks to it specified by repeatUntil
-        // then convert that to a epoch time in seconds
-
-        const startDateObj = new Date(`${startDate}T${startTime}`);
-        const startDateEpoch = Math.floor(startDateObj.getTime() / 1000);
-
-        const repeatUntilEpoch = startDateEpoch + (repeatUntil * 7 * 24 * 60 * 60);
-
-        return repeatUntilEpoch;
-
     }
 
     const handleSave = async () => {
@@ -172,6 +106,7 @@ export default function CoachAddEvent({closeModal}) {
                 }
             );            
 
+            refresh();
             closeModal();
 
         } catch (error) {
@@ -226,7 +161,33 @@ export default function CoachAddEvent({closeModal}) {
 
     useEffect(() => {
 
-        checkValid(startDate, endDate, startTime, endTime, repeats, repeatUntil, repeatType);
+        const doCheck = async () => {
+
+            if (startDate === null || endDate === null || startTime === null || endTime === null ||
+                startDate==='' || endDate==='' || startTime==='' || endTime===''){
+                setTimesValid(false);
+                return
+            }
+            if (repeats && !repeatType && !repeatUntil) {
+                setTimesValid(false);
+                return
+            }
+
+            setCheckingOverlapsLoading(true);
+
+            const response = await checkValid(startDate, endDate, startTime, endTime, repeats, repeatUntil, repeatType);
+            
+            if (response.overlaps) {
+                setOverlappingEvents(response);
+            } else {
+                setOverlappingEvents(null);
+            }
+
+            setCheckingOverlapsLoading(false);
+
+        }
+
+        doCheck();
 
     }, [startDate, endDate, startTime, endTime, repeats, repeatType, repeatUntil])
 
@@ -329,6 +290,7 @@ export default function CoachAddEvent({closeModal}) {
                         </label>
                     </>
                 )}
+
                 {
                     errorMessage && (
                         <p style={{color: 'red'}}>{errorMessage}</p>
@@ -346,45 +308,7 @@ export default function CoachAddEvent({closeModal}) {
                 </SaveButton>
 
             </div>
-            <div>
-                {overlappingEvents && (
-                    <>
-                    {
-                        overlappingEvents.bookings.length > 0 && (
-                            <>
-                                <h2>Overlapping Bookings</h2>
-                                <ul>
-                                    {overlappingEvents.bookings.map(booking => (
-                                        <li key={booking.id}>
-                                            {booking.player_name}
-                                            <br />
-                                            {new Date(booking.start_time * 1000).toLocaleString()}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </>
-                        )
-                        
-                    }
-                    {
-                        overlappingEvents.events.length > 0 && (
-                            <>
-                                <h2>Overlapping Events</h2>
-                                <ul>
-                                    {overlappingEvents.events.map(event => (
-                                        <li key={event.id}>
-                                            {event.title}                                      
-                                            <br />
-                                            {new Date(event.start_time * 1000).toLocaleString()}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </>
-                        )
-                    }
-                    </>                    
-                )}
-            </div>
+            <ShowOverlappingEvents overlappingEvents={overlappingEvents} />
         </div>
     )
 }

@@ -27,6 +27,7 @@ from src.Bookings.Cancellations.CoachCancellation import CoachCancellationBluepr
 from src.Bookings.GetBookings.GetBookings import GetBookingsBlueprint
 
 from src.CoachEvents.AddCoachEvent import AddCoachEventBlueprint
+from src.CoachEvents.CancelCoachEvent import CancelCoachEventBlueprint
 
 from src.Contacts.GetContact import GetContactBlueprint
 from src.Contacts.AddContact import CreateContactBlueprint
@@ -88,6 +89,7 @@ def create_app():
     app.register_blueprint(CoachCancellationBlueprint)
     
     app.register_blueprint(AddCoachEventBlueprint)
+    app.register_blueprint(CancelCoachEventBlueprint)
     
     app.register_blueprint(GetContactBlueprint)
     app.register_blueprint(CreatePlayerBlueprint)

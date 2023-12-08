@@ -16,12 +16,16 @@ def hash_booking(contact_id, start_time, booking_time):
     return hashed_value
 
     
-def insert_booking(player_id, contact_id, start_time, cost, rules, duration, coach_id, booking_time):
-    sql = "INSERT INTO Bookings(player_id, contact_id, start_time, cost, duration, coach_id, hash) VALUES (%s, %s, %s, %s, %s, %s, %s)"
-
+def insert_booking(player_id, contact_id, start_time, cost, rules, duration, coach_id, booking_time, repeat_id=None):
+    
     hashed_value = hash_booking(contact_id, start_time, booking_time)
-
-    execute_query(sql, args=(player_id, contact_id, start_time, cost, duration, coach_id, hashed_value), is_get_query=False)
+    
+    if repeat_id:
+        sql = "INSERT INTO Bookings(player_id, contact_id, start_time, cost, duration, coach_id, hash, repeat_id) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
+        execute_query(sql, args=(player_id, contact_id, start_time, cost, duration, coach_id, hashed_value, repeat_id), is_get_query=False)
+    else:
+        sql = "INSERT INTO Bookings(player_id, contact_id, start_time, cost, duration, coach_id, hash) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+        execute_query(sql, args=(player_id, contact_id, start_time, cost, duration, coach_id, hashed_value), is_get_query=False)
 
     booking_id = get_booking_by_hash(hashed_value)['booking_id']
     

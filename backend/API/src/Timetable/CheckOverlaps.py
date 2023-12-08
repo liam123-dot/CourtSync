@@ -1,6 +1,10 @@
 from flask import request, jsonify, Blueprint, current_app
 from datetime import datetime, timedelta
 
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
+
 from src.Users.GetSelf.GetSelf import get_coach
 from src.Database.ExecuteQuery import execute_query
 
@@ -13,12 +17,13 @@ def get_bookings(coach_id, from_time, to_time):
         FROM Bookings 
         INNER JOIN Players ON Bookings.player_id = Players.player_id
         WHERE Bookings.coach_id = %s 
-        AND Bookings.status = 'confirmed' 
-        AND ((Bookings.start_time >= %s AND Bookings.start_time <= %s) 
-        OR (Bookings.start_time + Bookings.duration*60 >= %s AND Bookings.start_time + Bookings.duration*60 <= %s))
+        AND Bookings.status='confirmed' 
+        AND ((Bookings.start_time > %s AND Bookings.start_time < %s) 
+        OR (Bookings.start_time + Bookings.duration*60 > %s AND Bookings.start_time + Bookings.duration*60 < %s)
+        OR (Bookings.start_time <= %s AND Bookings.start_time + Bookings.duration*60 >= %s))
     """
     
-    params = (coach_id, from_time, to_time, from_time, to_time)
+    params = (coach_id, from_time, to_time, from_time, to_time, from_time, to_time)
     
     result = execute_query(sql, params)
         
@@ -27,7 +32,7 @@ def get_bookings(coach_id, from_time, to_time):
 
 def get_coach_events(coach_id, from_time, to_time):
     connection = current_app.config['db_connection'].connection
-    sql = "SELECT title, start_time FROM CoachEvents WHERE coach_id=%s AND status='confirmed' AND ((start_time >= %s AND start_time <= %s) OR (start_time + duration*60 >= %s AND start_time + duration*60 <= %s))"
+    sql = "SELECT title, start_time FROM CoachEvents WHERE coach_id=%s AND status='confirmed' AND ((start_time > %s AND start_time < %s) OR (start_time + duration*60 > %s AND start_time + duration*60 < %s))"
     params = (coach_id, from_time, to_time, from_time, to_time)
     with connection.cursor() as cursor:
         cursor.execute(sql, params)
@@ -48,8 +53,13 @@ def check_overlaps_endpoint():
     if token is None:
         return {'message': 'No token provided'}, 400
     
-    from_time = int(request.args.get('from'))
-    to_time = int(request.args.get('to'))
+    try:
+    
+        from_time = int(request.args.get('from'))
+        to_time = int(request.args.get('to'))
+        
+    except ValueError as e:
+        return jsonify(message=f"Invalid value: {e}"), 400
     
     if from_time is None or to_time is None:
         return {'message': 'from or to not provided'}, 400
@@ -71,6 +81,8 @@ def check_overlaps_endpoint():
     
     if not repeats:
         
+        logging.debug("not repeats")
+        
         overlap, bookings, events = check_overlaps(coach['coach_id'], from_time, to_time)
             
         if overlap:
@@ -80,6 +92,8 @@ def check_overlaps_endpoint():
     
     else:
         
+        logging.debug("repeats")
+        
         overlap, all_bookings, all_events = check_overlaps_repeats(coach['coach_id'], from_time, to_time, repeat_until, repeat_frequency)
         
         if overlap:
@@ -87,6 +101,7 @@ def check_overlaps_endpoint():
         return jsonify(message='No overlaps', overlaps=False), 200
             
 def check_overlaps(coach_id, from_time, to_time):
+
     overlap = False
     bookings = get_bookings(coach_id, from_time, to_time)
     

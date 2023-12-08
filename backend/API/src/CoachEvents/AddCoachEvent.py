@@ -4,7 +4,7 @@ import time
 from src.Bookings.AddBooking.InsertBooking import hash_booking
 from src.Timetable.CheckOverlaps import check_overlaps_repeats
 from src.Database.ExecuteQuery import execute_query
-from src.Repeats.CreateRepeatingCoachEvent import create_repeating_coach_event
+from src.Repeats.CreateRepeatCoachEvent import create_repeating_coach_event
 from src.Timetable.CheckOverlaps import check_overlaps
 from src.Users.GetSelf.GetSelf import get_coach
 

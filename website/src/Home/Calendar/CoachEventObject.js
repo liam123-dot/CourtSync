@@ -2,6 +2,7 @@ import React, {useState, useEffect} from 'react';
 import {TimetableEvent} from './TimetableEvent';
 import { calculateTopAndHeight } from './CalculateTopAndHeight';
 import { useCoachEventDetails } from './CoachEventDetailsContext';
+import { useShowCancelled } from '../CoachHomeScreen/ShowCancelledContext';
 
 const formatTime = (minutes) => {
     const hours = Math.floor(minutes / 60);
@@ -9,9 +10,17 @@ const formatTime = (minutes) => {
     return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
 };
 
+function convertEpochToDateString(epochSeconds) {
+    const date = new Date(epochSeconds * 1000);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear().toString();
+    return `${day}/${month}/${year}`;
+}
+
 export class CoachEventObject extends TimetableEvent {
 
-    constructor(id, startTime, duration, date, title, description, position, width){
+    constructor(id, startTime, duration, date, title, description, position, width, status, repeat_id, repeatFrequency, repeatUntil){
         super(id, startTime, duration, date);
 
         this.title = title;
@@ -22,8 +31,18 @@ export class CoachEventObject extends TimetableEvent {
         this.position = position;
         this.width = width;
 
+        this.status = status;
+
         this.formattedStartTime = formatTime(this.minutesIntoDay);
         this.formattedEndTime = formatTime(this.endTime);
+        console.log('ahaha')
+        console.log(repeat_id)
+        console.log(repeatFrequency)
+        console.log(repeatUntil)
+
+        this.repeat_id = repeat_id;
+        this.repeatFrequency = repeatFrequency;
+        this.repeatUntil = repeatUntil ? convertEpochToDateString(repeatUntil) : null;
 
     }
 
@@ -33,6 +52,7 @@ export class CoachEventObject extends TimetableEvent {
 export default function CoachEventComponent({columnStartTime, columnEndTime, coach}){
 
     const {setCoachEvent, setShown} = useCoachEventDetails();
+    const {showCancelled, setShowCancelled} = useShowCancelled();
 
     const [top, setTop] = useState(0);
     const [height, setHeight] = useState(0);
@@ -52,6 +72,8 @@ export default function CoachEventComponent({columnStartTime, columnEndTime, coa
 
     }, [columnStartTime, columnEndTime, coach.startTime, coach.endTime, coach.duration, coach])
 
+    if (coach.status === 'cancelled' && !showCancelled) return null;
+
     return (
         <div style = {{
             position: 'absolute',
@@ -61,6 +83,7 @@ export default function CoachEventComponent({columnStartTime, columnEndTime, coa
             zIndex: 2,
             width: `${coach.width}%`,        
             backgroundColor: 'lightblue',
+            backgroundImage: coach.status === 'cancelled' ? 'repeating-linear-gradient(45deg, #ffcccc, #ffcccc 2px, #ffffff 2px, #ffffff 6px)' : 'none', // Changed from backgroundColor to backgroundImage
             borderRadius: 10,
             boxSizing: 'border-box',
             border: '1px solid #0099ff',

@@ -182,8 +182,7 @@ def get_rules_for_date(start_time, pricing_rules):
             start_date = datetime.fromtimestamp(start_time)
             
             # if the dates are the same, add the rule to the applicable rules
-            logging.debug(rule_date)
-            logging.debug(start_date)
+
             if rule_date.date() == start_date.date():
                 if pricing_rule['start_time']:
                     pricing_rule['start_time'] = convert_epoch_to_minutes(pricing_rule['start_time'])

@@ -34,7 +34,7 @@ def get_bookings(coach_id, epoch_time):
     return new_array
 
 def get_coach_events(coach_id, epoch_time):
-    sql = "SELECT start_time, duration FROM CoachEvents WHERE coach_id = %s AND %s < start_time AND %s > start_time"
+    sql = "SELECT start_time, duration FROM CoachEvents WHERE coach_id = %s AND %s < start_time AND %s > start_time AND status!='cancelled'"
     current_day_start = datetime.fromtimestamp(epoch_time).replace(hour=0, minute=0, second=0).timestamp()
     current_day_end = datetime.fromtimestamp(epoch_time).replace(hour=23, minute=59, second=59).timestamp()
     
@@ -162,12 +162,6 @@ def check_start_time_leaves_space(start_time, events, duration, durations):
     before_valid = False
     after_valid = False
     
-    logging.debug(f'before: {convert_epoch_to_hh_mm(before)}, {before}')
-    logging.debug(f'after: {convert_epoch_to_hh_mm(after)}, {after}')
-    logging.debug(f'start_time: {convert_epoch_to_hh_mm(start_time)}, {start_time}')
-    logging.debug(f'duration: {duration}')
-    logging.debug(f'durations: {durations}')
-    
     if before == start_time:
         before_valid = True
     else:
@@ -181,11 +175,6 @@ def check_start_time_leaves_space(start_time, events, duration, durations):
             after_valid = True
             
     return_value = after_valid and before_valid
-
-    logging.debug(f'before_valid: {before_valid}')
-    logging.debug(f'after_valid: {after_valid}')
-    logging.debug(f'return_value: {return_value}')
-    logging.debug('-------------------------')
     
     return return_value
 

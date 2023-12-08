@@ -1,10 +1,13 @@
 from flask import Blueprint, request, jsonify, current_app
 from datetime import datetime
 
+from src.Bookings.GetBooking import get_booking
+
+from src.Database.ExecuteQuery import execute_query
+
 from src.Notifications.Emails.SendEmail import send_email
 from src.Users.GetSelf.GetSelf import get_coach
 
-from src.Bookings.GetBooking import get_booking
 
 CoachCancellationBlueprint = Blueprint('CoachCancellation', __name__)
 
@@ -34,13 +37,20 @@ def coach_cancel_lesson(booking_id):
         return jsonify(message='Unauthorised'), 400
 
     contact_email, start_time = booking['contact_email'], booking['start_time']
+    
+    cancel_repeats = request.args.get('cancel_repeats', False)
+    
+    cancel_repeats = True if cancel_repeats == 'true' else False
+    
+    cancel_booking(booking_id, message, cancel_repeats)
 
-    cancel_booking(booking_id, message)
-
-    try:
-        send_player_cancellation_by_coach_confirmation_email(contact_email, start_time, message)
-    except Exception as e:
-        send_player_cancellation_by_coach_confirmation_email(contact_email, start_time, message)
+    if cancel_repeats:
+        pass
+    else:
+        try:
+            send_player_cancellation_by_coach_confirmation_email(contact_email, start_time, message)
+        except Exception as e:
+            send_player_cancellation_by_coach_confirmation_email(contact_email, start_time, message)
 
     return jsonify(message='Booking successfully cancelled'), 200
 
@@ -58,12 +68,23 @@ def get_booking_by_id(booking_id, coach_id):
     else:
         return None
 
-def cancel_booking(booking_id, message):
-    connection = current_app.config['db_connection'].connection
-    sql = "UPDATE Bookings SET status='cancelled', message_from_coach=%s WHERE booking_id=%s"
-    with connection.cursor() as cursor:
-        cursor.execute(sql, (message, booking_id))
-    connection.commit()
+def cancel_booking(booking_id, message, cancel_repeats=False):
+    
+    if cancel_repeats:
+    
+        booking = get_booking(booking_id)
+        
+        repeat_id = booking['repeat_id']
+        
+        sql = "UPDATE Bookings SET status='cancelled', message_from_coach=%s WHERE repeat_id=%s AND start_time >= %s"
+        
+        execute_query(sql, args=(message, repeat_id, booking['start_time']), is_get_query=False)
+    
+    else:
+        sql = "UPDATE Bookings SET status='cancelled', message_from_coach=%s WHERE booking_id=%s"
+        
+        execute_query(sql, args=(message, booking_id), is_get_query=False)
+    
 
 def send_player_cancellation_by_coach_confirmation_email(contact_email, start_time, message):
     

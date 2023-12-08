@@ -20,6 +20,7 @@ import {CoachEventDetailsProvider} from "../Calendar/CoachEventDetailsContext";
 import { RefreshTimetableProvider } from "./RefreshTimetableContext";
 import WorkingHoursModal from "./WorkingHoursModal";
 import LinkButton from "./LinkButton";
+import { useShowCancelled, ShowCancelledProvider } from "./ShowCancelledContext";
 
 export default function HomeScreen() {
 
@@ -64,12 +65,14 @@ export default function HomeScreen() {
     const [isCoachEventShown, setIsCoachEventShown] = useState(false);
     const [coachEvent, setCoachEvent] = useState(null);
 
+    const [showCancelled, setShowCancelled] = useState(false);
+
     const [setUp, setSetUp] = useState(false);
 
-    const redo = () => {
+    const redo = (forceCancelled=showCancelled) => {
 
         setLoadedDates([]);
-        fetchTimetableData(fromDate, toDate);
+        fetchTimetableData(fromDate, toDate, forceCancelled);
 
     }
 
@@ -80,9 +83,9 @@ export default function HomeScreen() {
         }
     }
 
-    const fetchTimetableData = async (fromDate, toDate) => {
+    const fetchTimetableData = async (fromDate, toDate, forceCancelled) => {
 
-        const data = await fetchTimetable(fromDate, toDate, coachSlug, true);
+        const data = await fetchTimetable(fromDate, toDate, coachSlug, true, forceCancelled);
 
         if (data.exists) {
 
@@ -154,7 +157,10 @@ export default function HomeScreen() {
                             booking.player_name,
                             booking.status,
                             booking.position,
-                            booking.width
+                            booking.width,
+                            booking.repeat_id,
+                            booking.repeat_frequency,
+                            booking.repeat_until
                         );
                     });
 
@@ -200,15 +206,20 @@ export default function HomeScreen() {
             const newTimetableEvents = { ...events };
             Object.keys(coachEvents).forEach((key) => {
                 const eventArray = coachEvents[key].map((item) => {
+                    console.log(item);
                     return new CoachEventObject(
-                        item.id,
+                        item.event_id,
                         item.start_time,
                         item.duration,
                         key,
                         item.title,
                         item.description,
                         item.position,
-                        item.width
+                        item.width,
+                        item.status,
+                        item.repeat_id,
+                        item.repeat_frequency,
+                        item.repeat_until
                     );                
                 })
                 if (newTimetableEvents[key]) {
@@ -220,7 +231,7 @@ export default function HomeScreen() {
             return newTimetableEvents;
         }
 
-        setTimetableEvents(convertCoachEventsToTimetableEvents(convertBookingsToTimetableEvents(getWorkingHoursFromAll(timetableEvents))));
+        setTimetableEvents(convertCoachEventsToTimetableEvents(convertBookingsToTimetableEvents(getWorkingHoursFromAll({}))));
 
     }, [bookings, all, coachEvents]);
 
@@ -323,6 +334,12 @@ export default function HomeScreen() {
         </div>
     );
 
+    const handleSetShowCancelled = () => {
+        const newValue = !showCancelled;
+        setShowCancelled(newValue);
+        redo(newValue);
+    }
+
     // Main component
     return (
         <div style={containerStyle}>
@@ -336,6 +353,14 @@ export default function HomeScreen() {
                                     <Button onClick={() => setIsAddEventModalOpen(true)}>+</Button>
                                     <Button onClick={() => setIsWorkingHoursModalOpen(true)}>⚙</Button>
                                     <LinkButton/>
+                                    <label>
+                                        Show Cancelled:
+                                        <input
+                                            type="checkbox"
+                                            checked={showCancelled}
+                                            onChange={handleSetShowCancelled}
+                                        />
+                                    </label>
                                 </ArrowButtonGroup>
                                 
                                 <WorkingHoursModal isOpen={isWorkingHoursModalOpen} onClose={() => setIsWorkingHoursModalOpen(false)}/>
@@ -384,15 +409,17 @@ export default function HomeScreen() {
                             <CoachEventDetailsProvider setCoachEvent={setCoachEvent} setShown={setIsCoachEventShown}>
                                 <LessonDetailsProvider setBookings={setLessonDetailsBooking} setShown={setIsLessonDetailsShown}>
                                     {setUp ? (
-                                        <Timetable
-                                            fromDate={fromDate}
-                                            toDate={toDate}
-                                            view={view}
-                                            timetableObjects={timetableEvents}
-                                            coachView={true}
-                                            min={min}
-                                            max={max}
-                                        />
+                                        <ShowCancelledProvider showCancelled={showCancelled} setShowCancelled={setShowCancelled}>
+                                            <Timetable
+                                                fromDate={fromDate}
+                                                toDate={toDate}
+                                                view={view}
+                                                timetableObjects={timetableEvents}
+                                                coachView={true}
+                                                min={min}
+                                                max={max}
+                                            />
+                                        </ShowCancelledProvider>
                                     ): (
                                     <>                                        
                                         <h2>

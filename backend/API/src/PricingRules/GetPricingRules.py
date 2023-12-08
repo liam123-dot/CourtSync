@@ -50,8 +50,6 @@ def get_pricing_rules(coach_id, start_time=None, end_time=None, include_default=
     # Execute the query
     return execute_query(sql, values, True)
 
-
-
 GetPricingRulesEndpoint = Blueprint('GetPricingRulesEndpoint', __name__)
 
 @GetPricingRulesEndpoint.route('/pricing-rules', methods=['GET'])
@@ -71,7 +69,7 @@ def get_pricing_rules_endpoint():
     
     pricing_rules = get_pricing_rules(coach['coach_id'], include_default=include_default)
     
-    if not pricing_rules:
+    if pricing_rules is None:
         return jsonify({'error': 'No pricing rules found'}), 400
     
     for pricing_rule in pricing_rules:

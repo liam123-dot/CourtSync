@@ -4,10 +4,14 @@ import logging
 import asyncio
 import math
 
-from src.Users.GetSelf.GetSelf import get_coach, get_coach_from_slug
+from src.Bookings.GetBookings.GetBookings import get_bookings as perform_get_bookings
+
+from src.CoachEvents.GetCoachEvents import get_coach_events as perform_get_coach_events
+
 from src.Timetable.GetTimetable.GetTimetableHelpers import epoch_to_date, calculate_indexes_to_dates
 from src.Timetable.GetTimetable.CalculateOverlaps import calculate_overlaps, reconstructe_bookings_and_events
-from src.Bookings.GetBookings.GetBookings import get_bookings as perform_get_bookings
+
+from src.Users.GetSelf.GetSelf import get_coach, get_coach_from_slug
 
 from src.Database.ExecuteQuery import execute_query
 
@@ -16,14 +20,6 @@ logging.basicConfig(level=logging.DEBUG)
 GetTimetableBlueprint = Blueprint('GetTimetable', __name__)
 
 # ----- GET BOOKINGS -----
-
-def construct_sql_query_bookings(authorised):
-    if authorised:
-        sql = "SELECT booking_id, player_name, contact_name, contact_email, contact_phone_number, start_time, status, duration, cost, paid FROM Bookings WHERE coach_id=%s AND %s < start_time AND start_time < %s"
-    else:
-        sql = "SELECT booking_id, player_name, contact_name, contact_email, contact_phone_number, start_time, status, duration, cost, paid FROM Bookings WHERE coach_id=%s AND %s < start_time AND start_time < %s AND status!=\"cancelled\""
-        
-    return sql
 
 def process_results_bookings(results, authorised):
     bookings = {}
@@ -38,7 +34,7 @@ def process_results_bookings(results, authorised):
     return bookings
 
 def construct_new_booking(booking, authorised):
-    all_keys = ['booking_id', 'player_name', 'contact_name', 'contact_email', 'contact_phone_number', 'start_time', 'status', 'duration', 'cost', 'paid']
+    all_keys = ['booking_id', 'player_name', 'contact_name', 'contact_email', 'contact_phone_number', 'start_time', 'status', 'duration', 'cost', 'paid', 'repeat_id', 'repeat_frequency', 'repeat_until']
     authorised_keys = ['start_time', 'status', 'duration', 'booking_id']
     
     if authorised:
@@ -49,11 +45,9 @@ def construct_new_booking(booking, authorised):
     new_booking = {key: booking[key] for i, key in enumerate(all_keys) if key in keys}
     return new_booking
         
-def get_bookings(coach_id, from_time, to_time, authorised):
-    
-    sql = construct_sql_query_bookings(authorised)    
-        
-    bookings = perform_get_bookings(coach_id)
+def get_bookings(coach_id, from_time, to_time, authorised, show_cancelled=True):
+            
+    bookings = perform_get_bookings(coach_id, status=None if show_cancelled and authorised else 'confirmed', from_time=from_time, to_time=to_time)
     
     bookings = process_results_bookings(bookings, authorised)
     
@@ -61,41 +55,37 @@ def get_bookings(coach_id, from_time, to_time, authorised):
 
 # ----- GET COACH EVENTS -----
 
-def construct_sql_coach_events(authorised):
-    if authorised:
-        sql = "SELECT event_id, start_time, duration, title, description FROM CoachEvents WHERE coach_id=%s AND %s < start_time AND start_time < %s"
-    else:
-        sql = "SELECT start_time, duration FROM CoachEvents WHERE coach_id=%s AND %s < start_time AND start_time < %s "
-    return sql
-
-def construct_new_coach_event(coach_event, authorised):
-    all_keys = ['event_id', 'start_time', 'duration', 'title', 'description']
-    authorised_keys = ['start_time', 'duration']
-
-    if authorised:
-        keys = all_keys
-    else:
-        keys = authorised_keys
-
-    new_coach_event = {key: coach_event[key] for i, key in enumerate(all_keys) if key in keys}
-    return new_coach_event
-
-def process_results_coach_events(results, authorised):
-    coach_events = {}
-    for coach_event in results:
-        date = epoch_to_date(coach_event['start_time'])
-        if date not in coach_events.keys():
-            coach_events[date] = []
-        new_coach_event = construct_new_coach_event(coach_event, authorised)
-        coach_events[date].append(new_coach_event)
-    return coach_events
-
-def get_coach_events(coach_id, from_time, to_time, authorised):
-    sql = construct_sql_coach_events(authorised)
-
-    results = execute_query(sql, (coach_id, from_time, to_time))
+def format_coach_events(coach_events, authorised):
+    unauthorized_keys = ['start_time', 'duration']
+    
+    new_coach_events = {}
+    
+    for coach_event in coach_events:
         
-    coach_events = process_results_coach_events(results, authorised)
+        date = epoch_to_date(coach_event['start_time'])
+        if date not in new_coach_events.keys():
+            new_coach_events[date] = []        
+        if authorised:
+            
+            new_coach_events[date].append(coach_event)
+        else:
+            new_coach_events[date].append({
+                key: coach_event[key] for i, key in enumerate(coach_event) if key in unauthorized_keys
+            })
+        
+    return new_coach_events
+    
+
+def get_coach_events(coach_id, from_time, to_time, authorised, show_cancelled=True):
+
+    coach_events = perform_get_coach_events(coach_id, from_time=from_time, to_time=to_time, include_cancelled=authorised and show_cancelled)
+    
+    logging.debug(f"coach_events__: {coach_events}")
+    
+    coach_events = format_coach_events(coach_events, authorised)
+    
+    logging.debug(f"coach_events__: {coach_events}")
+    
     return coach_events
 
 # ----- GET WORKING HOURS -----
@@ -213,6 +203,16 @@ def get_timetable(slug):
     try:
         from_time = int(request.args.get('from_time'))
         to_time = int(request.args.get('to_time'))
+        show_cancelled = request.args.get('show_cancelled')
+        logging.debug(f"show_cancelled: {show_cancelled}")
+        logging.debug(f"show_cancelled: {type(show_cancelled)}")
+        if show_cancelled == 'true':
+            show_cancelled = True
+        else:
+            show_cancelled = False
+            
+        logging.debug(f"show_cancelled: {show_cancelled}")
+
     except KeyError as e:
         return jsonify(message=f"Invalid/Missing query string parameter: {e}")
     except (ValueError, TypeError) as e:
@@ -239,8 +239,8 @@ def get_timetable(slug):
     start_date = epoch_to_date(from_time)
     end_date = epoch_to_date(to_time)
     
-    bookings = get_bookings(coach_id, from_time, to_time, authorised)
-    coach_events = get_coach_events(coach_id, from_time, to_time, authorised)
+    bookings = get_bookings(coach_id, from_time, to_time, authorised, show_cancelled=show_cancelled)
+    coach_events = get_coach_events(coach_id, from_time, to_time, authorised, show_cancelled=show_cancelled)
     working_hours = get_working_hours(coach_id, start_date, end_date)
     default_working_hours = get_default_working_hours(coach_id)
     durations = get_durations(coach_id)

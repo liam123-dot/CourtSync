@@ -95,6 +95,8 @@ export default function ChooseDateTimeComponent({
 
         setAvailableStartTimesLoading(true);
 
+        if (!date) return;
+
         try {
 
             const epochTime = Math.floor(date.getTime() / 1000);

@@ -5,6 +5,7 @@ import CancelBooking from "./CancelBooking";
 export default function LessonDetailsModal({isOpen, onClose, booking}){
 
     const [onCancelProcess, setOnCancelProcess] = useState(false);
+    const [cancelRepeats, setCancelRepeats] = useState(false);
 
     if (!isOpen) return;
 
@@ -27,6 +28,7 @@ export default function LessonDetailsModal({isOpen, onClose, booking}){
                         close={() => setOnCancelProcess(false)}
                         onCancelProcess={onCancelProcess}
                         setOnCancelProcess={setOnCancelProcess}
+                        cancelRepeat={cancelRepeats}
                     />
                 ): 
                     <>
@@ -43,11 +45,29 @@ export default function LessonDetailsModal({isOpen, onClose, booking}){
                         <p><strong>End Time:</strong> {formatTime(booking.minutesIntoDay + booking.duration)}</p>
                         <p><strong>Status:</strong> {booking.status || 'N/A'}</p>
 
+                        {
+                            booking.repeat_id && (
+                                <div>
+                                    <p><strong>Repeat Frequency:</strong> {booking.repeatFrequency}</p>
+                                    <p><strong>Repeat Until:</strong> {booking.repeatUntil}</p>
+                                </div>
+                            )
+                        }
+
                         <button onClick={() => {
                             setOnCancelProcess(true);
+                            setCancelRepeats(false);
                         }}>
                             Cancel
                         </button>
+                        {booking.repeat_id && (
+                            <button onClick={() => {
+                                setOnCancelProcess(true);
+                                setCancelRepeats(true);
+                            }}>
+                                Cancel Repeats
+                            </button>
+                        )}
                         <button onClick={() => {
                             
                         }}>Edit</button>

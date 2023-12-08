@@ -2,16 +2,23 @@ import React, { useEffect, useState, useContext } from "react";
 import { TimetableEvent } from "./TimetableEvent";
 import { calculateTopAndHeight } from "./CalculateTopAndHeight";
 import { useLessonDetails } from "./LessonDetailsContext";
+import { useShowCancelled } from "../CoachHomeScreen/ShowCancelledContext";
 
 const formatTime = (minutes) => {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
 };
-
+function convertEpochToDateString(epochSeconds) {
+    const date = new Date(epochSeconds * 1000);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear().toString();
+    return `${day}/${month}/${year}`;
+}
 export class BookingObject extends TimetableEvent {
 
-    constructor(id, startTime, duration, date, contact_name, contact_email, contact_phone_number, cost, paid, player_name, status, position, width) {
+    constructor(id, startTime, duration, date, contact_name, contact_email, contact_phone_number, cost, paid, player_name, status, position, width, repeat_id, repeatFrequency, repeatUntil) {
         super(id, startTime, duration, date);
 
         this.contact_name = contact_name;
@@ -31,6 +38,10 @@ export class BookingObject extends TimetableEvent {
         this.formattedStartTime = formatTime(this.minutesIntoDay);
         this.formattedEndTime = formatTime(this.endTime);
 
+        this.repeat_id = repeat_id;
+        this.repeatFrequency = repeatFrequency;
+        this.repeatUntil = repeatUntil ? convertEpochToDateString(repeatUntil) : null;
+
     }
 
     // Additional methods and properties specific to BookingObject can be added here
@@ -43,6 +54,7 @@ export default function BookingComponent({columnStartTime, columnEndTime, bookin
     const [top, setTop] = useState(0);
     const [height, setHeight] = useState(0);
 
+    const {showCancelled, setShowCancelled} = useShowCancelled();
     const [isCancelled, setIsCancelled] = useState(false);
 
     useEffect(() => {
@@ -64,6 +76,8 @@ export default function BookingComponent({columnStartTime, columnEndTime, bookin
             calculatePercents();
 
     }, [columnStartTime, columnEndTime, booking.startTime, booking.endTime, booking.duration, booking])
+
+    if (booking.status === 'cancelled' && !showCancelled) return null;
 
     return booking.shown && (
     <div style = {{

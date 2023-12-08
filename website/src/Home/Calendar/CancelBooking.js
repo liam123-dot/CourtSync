@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useRefreshTimetable } from "../CoachHomeScreen/RefreshTimetableContext";
 
-export default function CancelBooking ({booking, close, onCancelProcess, setOnCancelProcess}) {
+export default function CancelBooking ({booking, close, onCancelProcess, setOnCancelProcess, cancelRepeat}) {
 
     const {refresh} = useRefreshTimetable();
     
@@ -14,7 +14,7 @@ export default function CancelBooking ({booking, close, onCancelProcess, setOnCa
         try {
 
             const response = await axios.post(
-                `${process.env.REACT_APP_API_URL}/timetable/booking/${booking.id}/cancel`,
+                `${process.env.REACT_APP_API_URL}/timetable/booking/${booking.id}/cancel?cancel_repeats=${cancelRepeat}`,
                 {
                     message_to_player: cancellationNote
                 }, {
@@ -50,7 +50,7 @@ export default function CancelBooking ({booking, close, onCancelProcess, setOnCa
             <input value={cancellationNote} onChange={(e) => {
                 setCancellationNote(e.target.value)
             }}/>
-            <button onClick={cancelLesson}>Cancel</button>
+            <button onClick={cancelLesson}>Confirm</button>
         </>
     ): (
         <div>

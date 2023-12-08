@@ -67,7 +67,7 @@ def calculate_overlaps(slots):
                 position = 0
                 while position in positions_taken:
                     position += 1
-                overlap_info[slot_id]['position'] = position * width
+                overlap_info[slot_id]['position'] = (position % (100 / width)) * width
                 positions_taken.append(position)
             else:
                 slot['width'] = 100
