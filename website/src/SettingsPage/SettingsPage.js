@@ -1,5 +1,6 @@
 import React, {useEffect, useState} from "react";
 import CoachProfileSettings from "./Pages/CoachProfileSettings";
+import CoachPersonalSettings from "./Pages/CoachPersonalSettings";
 import AdvancedSettingsWindow from "./Pages/AdvancedSettingsWindow";
 
 import SidebarHousing from "./SidebarHousing";
@@ -8,6 +9,7 @@ import SidebarHousing from "./SidebarHousing";
 export default function SettingsPage({}) {
     const [OPTIONS, setOPTIONS] = useState([
         { label: 'Profile', component: CoachProfileSettings},
+        { label: 'Personal Details', component: CoachPersonalSettings},
         { label: 'Settings', component: AdvancedSettingsWindow, endpointName: 'any'},
     ]);
     

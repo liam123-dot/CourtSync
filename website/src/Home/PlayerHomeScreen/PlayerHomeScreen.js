@@ -8,6 +8,8 @@ import { fetchTimetable } from "../FetchTimetable";
 import {css, Global} from "@emotion/react";
 import Timetable from "../Calendar/Timetable";
 import { TimetableEvent } from "../Calendar/TimetableEvent";
+import axios from "axios";
+import CoachProfileWidget from "../CoachProfile";
 
 export default function PlayerHomeScreen() {
 
@@ -34,10 +36,23 @@ export default function PlayerHomeScreen() {
 
     const [profilePictureUrl, setProfilePictureUrl] = useState('');
 
+    const [coachProfileShown, setCoachProfileShown] = useState(false);
+
     const [min, setMin] = useState(null);
     const [max, setMax] = useState(null);
 
     const [coachAccountSetUp, setCoachAccountSetUp] = useState(false);
+
+    const getCoachUrl = async () => {
+        try {
+            const response = await axios.get(`${process.env.REACT_APP_API_URL}/user/${coachSlug}/public-profile/profile_picture_url`);
+
+            setProfilePictureUrl(response.data.profile_picture_url);
+
+        } catch (error) {
+            console.log(error);
+        }
+    }
 
     const redo = () => {
 
@@ -110,6 +125,7 @@ export default function PlayerHomeScreen() {
                 
         const dates = calculateStartingDates();
         fetchTimetableData(dates.fromDate, dates.toDate);
+        getCoachUrl();
     }, [])
 
     const updateFormattedDateRange = () => {
@@ -209,7 +225,8 @@ export default function PlayerHomeScreen() {
                                     setToDate={setToDate}
                                     refresh={refresh}
                                 />
-                            <ProfileButton imageUrl={profilePictureUrl}/>                        
+                            <ProfileButton imageUrl={profilePictureUrl} onClick={() => setCoachProfileShown(true)}/>        
+                            <CoachProfileWidget coachSlug={coachSlug} shown={coachProfileShown} setShown={setCoachProfileShown}/>                
                         </TitleSection>
                         <Timetable
                             coachView={false}

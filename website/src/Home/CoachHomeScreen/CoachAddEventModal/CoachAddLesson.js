@@ -2,8 +2,6 @@ import React, { useEffect, useState } from "react";
 import ChooseDateTimeComponent from "../../ChooseDateTimeComponent";
 import axios from "axios";
 import { useRefreshTimetable } from "../RefreshTimetableContext";
-import {formatPriceBreakdown} from "../../FormatPriceBreakdown"
-import { checkValid } from "./CheckValidRepeat";
 import ShowOverlappingEvents from "./ShowOverlappingEvents";
 import { SaveButton } from "../../CommonAttributes/SaveButton";
 import { Spinner } from "../../../Spinner";

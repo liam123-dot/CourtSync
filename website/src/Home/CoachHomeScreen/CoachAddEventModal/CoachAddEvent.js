@@ -1,10 +1,46 @@
 import React, {useEffect, useState} from 'react';
+import styled from '@emotion/styled';
+
 import {SaveButton} from '../../CommonAttributes/SaveButton';
 import { Spinner } from '../../../Spinner';
 import axios from 'axios';
 import { useRefreshTimetable } from '../RefreshTimetableContext';
 import { checkValid } from './CheckValidRepeat';
 import ShowOverlappingEvents from './ShowOverlappingEvents';
+
+const Container = styled.div`
+  display: flex;
+  flex-direction: row;
+`;
+
+const FormColumn = styled.div`
+  display: flex;
+  flex-direction: column;
+`;
+
+const StyledLabel = styled.label`
+  margin-bottom: 10px;
+`;
+
+const StyledInput = styled.input`
+  font-size: 16px;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-top: 5px;
+`;
+
+const StyledSelect = styled.select`
+  font-size: 16px;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-top: 5px;
+`;
+
+const ErrorMessage = styled.p`
+  color: red;
+`;
 
 export default function CoachAddEvent({closeModal}) {
 
@@ -192,123 +228,97 @@ export default function CoachAddEvent({closeModal}) {
     }, [startDate, endDate, startTime, endTime, repeats, repeatType, repeatUntil])
 
     return (
-        <div style={{
-            display: 'flex',
-            flexDirection: 'row',
-        }}>
-            <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-            }}>
-        
-                <label>
+        <Container>
+            <FormColumn>
+                <StyledLabel>
                     Start Date
-                    <input
-                        style={{fontSize: '20px'}}
+                    <StyledInput
                         type="date"
                         value={startDate}
                         onChange={handleStartDateChange}
                     />
-                </label>
-                {/* <label>
-                    End Date
-                    <input
-                        style={{fontSize: '20px'}}
-                        type="date"
-                        value={endDate}
-                        onChange={handleEndDateChange}
-                    />
-                </label> */}
-                <label>
+                </StyledLabel>
+    
+                <StyledLabel>
                     Start Time
-                    <input
-                        style={{fontSize: '20px'}}
+                    <StyledInput
                         type="time"
                         value={startTime}
                         onChange={handleStartTimeChange}
                     />
-                </label>
-                <label>
+                </StyledLabel>
+    
+                <StyledLabel>
                     End Time
-                    <input
-                        style={{fontSize: '20px'}}
+                    <StyledInput
                         type="time"
                         value={endTime}
                         onChange={handleEndTimeChange}
                     />
-                </label>
-        
-                <label>
+                </StyledLabel>
+    
+                <StyledLabel>
                     Title
-                    <input
+                    <StyledInput
                         type="text"
                         value={title}
-                        onChange={(e) => {setTitle(e.target.value)}}
+                        onChange={(e) => setTitle(e.target.value)}
                         placeholder="Enter Title"
                     />
-                </label>
-                <label>
+                </StyledLabel>
+    
+                <StyledLabel>
                     Description
-                    <input
+                    <StyledInput
                         type="text"
                         value={description}
-                        onChange={(e) => {setDescription(e.target.value)}}
+                        onChange={(e) => setDescription(e.target.value)}
                         placeholder="Enter Description"
                     />
-                </label>
-
-
-                <label>
+                </StyledLabel>
+    
+                <StyledLabel>
                     Repeats
-                    <input
+                    <StyledInput
                         type="checkbox"
                         checked={repeats}
-                        onChange={(e) => {setRepeats(e.target.checked)}}
+                        onChange={(e) => setRepeats(e.target.checked)}
                     />
-                </label>
-
+                </StyledLabel>
+    
                 {repeats && (
                     <>
-                        <label>
+                        <StyledLabel>
                             Repeat Type
-                            <select value={repeatType} onChange={handleRepeatTypeChange}>
+                            <StyledSelect value={repeatType} onChange={handleRepeatTypeChange}>
                                 <option value="" disabled>Select Repeat Type</option>
                                 <option value="daily">Daily</option>
                                 <option value="weekly">Weekly</option>
                                 <option value="fortnightly">Fortnightly</option>
                                 <option value="monthly">Monthly</option>
-                            </select>
-                        </label>
-                        <label>
+                            </StyledSelect>
+                        </StyledLabel>
+    
+                        <StyledLabel>
                             Repeat for how many weeks?
-                            <input
+                            <StyledInput
                                 type="number"
                                 value={repeatUntil}
-                                onChange={(e) => {handleRepeatUntilChange(e.target.value)}}
-                                style={{width: '50px'}}
+                                onChange={(e) => handleRepeatUntilChange(e.target.value)}
+                                style={{ width: '50px' }}
                             />
-                        </label>
+                        </StyledLabel>
                     </>
                 )}
-
-                {
-                    errorMessage && (
-                        <p style={{color: 'red'}}>{errorMessage}</p>
-                    )
-                }
-
+    
+                {errorMessage && <ErrorMessage>{errorMessage}</ErrorMessage>}
+    
                 <SaveButton onClick={handleSave} disabled={saveDisabled}>
-                    {saving || checkingOverlapsLoading ? 
-                        <Spinner/>
-                        :
-                        <>
-                            Save Event
-                        </>
-                    }
+                    {saving || checkingOverlapsLoading ? <Spinner /> : 'Save Event'}
                 </SaveButton>
-
-            </div>
+            </FormColumn>
             <ShowOverlappingEvents overlappingEvents={overlappingEvents} />
-        </div>
-    )
+        </Container>
+    );
+    
 }

@@ -348,97 +348,98 @@ export default function HomeScreen() {
                     <GlobalStyles />
                     {authorised ? (
                         <>
-                            <TitleSection>
-                                <ArrowButtonGroup>
-                                    <Button onClick={() => setIsAddEventModalOpen(true)}>+</Button>
-                                    <Button onClick={() => setIsWorkingHoursModalOpen(true)}>⚙</Button>
-                                    <LinkButton/>
-                                    <label>
-                                        Show Cancelled:
-                                        <input
-                                            type="checkbox"
-                                            checked={showCancelled}
-                                            onChange={handleSetShowCancelled}
-                                        />
-                                    </label>
-                                </ArrowButtonGroup>
-                                
-                                <WorkingHoursModal isOpen={isWorkingHoursModalOpen} onClose={() => setIsWorkingHoursModalOpen(false)}/>
+                            <RefreshTimetableProvider refresh={redo}>
+                                <TitleSection>
+                                    <ArrowButtonGroup>
+                                        <Button onClick={() => setIsAddEventModalOpen(true)}>+</Button>
+                                        <Button onClick={() => setIsWorkingHoursModalOpen(true)}>⚙</Button>
+                                        <LinkButton/>
+                                        <label>
+                                            Show Cancelled:
+                                            <input
+                                                type="checkbox"
+                                                checked={showCancelled}
+                                                onChange={handleSetShowCancelled}
+                                            />
+                                        </label>
+                                    </ArrowButtonGroup>
+                                    
+                                    <WorkingHoursModal isOpen={isWorkingHoursModalOpen} onClose={() => setIsWorkingHoursModalOpen(false)}/>
 
-                                
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <ArrowNavigation
-                                        handlePrevious={handlePrevious}
-                                        handleNext={handleNext}
+
+                                    
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <ArrowNavigation
+                                            handlePrevious={handlePrevious}
+                                            handleNext={handleNext}
+                                            fromDate={fromDate}
+                                            toDate={toDate}
+                                            setFromDate={setFromDate}
+                                            setToDate={setToDate}
+                                            refresh={refresh}
+                                            view={view}
+                                        />
+                                        <DateSelector
+                                            fromDate={fromDate}
+                                            toDate={toDate}
+                                            setFromDate={setFromDate}
+                                            setToDate={setToDate}
+                                        />
+                                    </div>
+
+                                    <ViewButtons
+                                        view={view}
+                                        setView={setView}
+                                        handleSetView={handleSetView}
                                         fromDate={fromDate}
                                         toDate={toDate}
                                         setFromDate={setFromDate}
                                         setToDate={setToDate}
                                         refresh={refresh}
-                                        view={view}
                                     />
-                                    <DateSelector
-                                        fromDate={fromDate}
-                                        toDate={toDate}
-                                        setFromDate={setFromDate}
-                                        setToDate={setToDate}
-                                    />
-                                </div>
 
-                                <ViewButtons
-                                    view={view}
-                                    setView={setView}
-                                    handleSetView={handleSetView}
-                                    fromDate={fromDate}
-                                    toDate={toDate}
-                                    setFromDate={setFromDate}
-                                    setToDate={setToDate}
-                                    refresh={refresh}
-                                />
+                                    {/* Search and SidePanel components
+                                    <div>
+                                        <Searchbar 
+                                            timetableEvents={timetableEvents}
+                                            setTimetableEvents={setTimetableEvents}
+                                            selected={selected}
+                                            setSelected={setSelected}
+                                        />
+                                    </div> */}
+                                </TitleSection>
+                                <CoachEventDetailsProvider setCoachEvent={setCoachEvent} setShown={setIsCoachEventShown}>
+                                    <LessonDetailsProvider setBookings={setLessonDetailsBooking} setShown={setIsLessonDetailsShown}>
+                                        {setUp ? (
+                                            <ShowCancelledProvider showCancelled={showCancelled} setShowCancelled={setShowCancelled}>
+                                                <Timetable
+                                                    fromDate={fromDate}
+                                                    toDate={toDate}
+                                                    view={view}
+                                                    timetableObjects={timetableEvents}
+                                                    coachView={true}
+                                                    min={min}
+                                                    max={max}
+                                                />
+                                            </ShowCancelledProvider>
+                                        ): (
+                                        <>                                        
+                                            <h2>
+                                                This section will allow you to manage, schedule and arrange lessons.
+                                            </h2>
+                                            <h3>
+                                                You must first set some working hours, durations and pricing rules before you can access the timetable.                                            
+                                            </h3>
+                                            <button onClick={() => {
+                                                window.location.href = `${process.env.REACT_APP_WEBSITE_URL}/#/dashboard/settings`
+                                            }}>
+                                                Settings
+                                            </button>
 
-                                {/* Search and SidePanel components
-                                <div>
-                                    <Searchbar 
-                                        timetableEvents={timetableEvents}
-                                        setTimetableEvents={setTimetableEvents}
-                                        selected={selected}
-                                        setSelected={setSelected}
-                                    />
-                                </div> */}
-                            </TitleSection>
-                            <CoachEventDetailsProvider setCoachEvent={setCoachEvent} setShown={setIsCoachEventShown}>
-                                <LessonDetailsProvider setBookings={setLessonDetailsBooking} setShown={setIsLessonDetailsShown}>
-                                    {setUp ? (
-                                        <ShowCancelledProvider showCancelled={showCancelled} setShowCancelled={setShowCancelled}>
-                                            <Timetable
-                                                fromDate={fromDate}
-                                                toDate={toDate}
-                                                view={view}
-                                                timetableObjects={timetableEvents}
-                                                coachView={true}
-                                                min={min}
-                                                max={max}
-                                            />
-                                        </ShowCancelledProvider>
-                                    ): (
-                                    <>                                        
-                                        <h2>
-                                            This section will allow you to manage, schedule and arrange lessons.
-                                        </h2>
-                                        <h3>
-                                            You must first set some working hours, durations and pricing rules before you can access the timetable.                                            
-                                        </h3>
-                                        <button onClick={() => {
-                                            window.location.href = `${process.env.REACT_APP_WEBSITE_URL}/#/dashboard/settings`
-                                        }}>
-                                            Settings
-                                        </button>
-
-                                    </>)
-                                 }
-                                </LessonDetailsProvider>
-                            </CoachEventDetailsProvider>
-                            <RefreshTimetableProvider refresh={redo}>
+                                        </>)
+                                    }
+                                    </LessonDetailsProvider>
+                                </CoachEventDetailsProvider>
                                 <CoachEventDetailsModal isOpen={isCoachEventShown} onClose={() => setIsCoachEventShown(false)} coachEvent={coachEvent}/>
                                 <LessonDetailsModal isOpen={isLessonDetailsShown} onClose={() => setIsLessonDetailsShown(false)} booking={lessonDetailsBooking}/>
                                 <CoachAddEventModal

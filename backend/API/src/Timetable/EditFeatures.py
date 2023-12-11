@@ -52,7 +52,7 @@ def update_features():
         default_lesson_cost = int(default_lesson_cost)
         update_pricing_rules(default_lesson_cost, username)
         
-    if durations or len(durations) == 0:
+    if durations is not None:
         delete_durations(username)
 
         insert_durations(durations, username)

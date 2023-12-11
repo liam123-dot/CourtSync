@@ -8,6 +8,7 @@ from src.Users.Auth.SignIn import CoachSignIn
 from src.Users.Auth.SignUp import CoachSignUp
 from src.Users.Auth.ResendConfirmationCode import ResendConfirmationCodeBlueprint
 from src.Users.Auth.RefreshTokens import RefreshTokensBlueprint
+from src.Users.Auth.ChangePassword import ChangePasswordBlueprint
 from src.Users.Auth.CheckCoachAuthorised import CheckCoachAuthorisedBlueprint
 from src.Users.Auth.ForgotPassword.ForgotPassword import ForgotPasswordBlueprint
 from src.Users.Auth.ForgotPassword.ConfirmForgotPassword import ConfirmForgotPasswordBlueprint
@@ -17,6 +18,7 @@ from src.Users.UserPublicProfile.GetProfile import GetProfileBlueprint
 from src.Users.EditSelf.UploadProfilePicture import UploadProfilePictureBlueprint
 from src.Users.StripeAccount.AddStripeAccount import AddStripeAccountBlueprint
 from src.Users.Settings.GetSettings import GetSettingsBlueprint
+from src.Users.UserPublicProfile.GetCoachDurations import GetDurationsBlueprint
 
 from src.Bookings.AddBooking.GuestAddBooking import GuestAddBookingBlueprint
 from src.Bookings.AddBooking.CalculateAvailableTimes import CalculateAvailableTimesBlueprint
@@ -75,11 +77,13 @@ def create_app():
     app.register_blueprint(UserEditSelfBlueprint)
     app.register_blueprint(ForgotPasswordBlueprint)
     app.register_blueprint(ConfirmForgotPasswordBlueprint)
+    app.register_blueprint(ChangePasswordBlueprint)
     app.register_blueprint(CheckCoachAuthorisedBlueprint)
     app.register_blueprint(GetProfileBlueprint)
     app.register_blueprint(UploadProfilePictureBlueprint)
     app.register_blueprint(AddStripeAccountBlueprint)
     app.register_blueprint(GetSettingsBlueprint)
+    app.register_blueprint(GetDurationsBlueprint)
     
     app.register_blueprint(GuestAddBookingBlueprint)
     app.register_blueprint(CalculateAvailableTimesBlueprint)

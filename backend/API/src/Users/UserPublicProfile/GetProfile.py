@@ -24,10 +24,8 @@ def get_profile(slug):
     if coach['show_phone_number_publicly']:
         output['phone_number'] = coach['phone_number']
     
-    if coach['public_profile_picture']:
-        output['profile_picture_url'] = get_profile_picture_url(coach)
-    else:
-        output['profile_picture_url'] = None
+    output['profile_picture_url'] = get_profile_picture_url(coach)
+
             
     return jsonify(output), 200
 
@@ -49,7 +47,7 @@ def get_profile_attribute(slug, attribute):
         if attribute == 'phone_number' and not coach['show_phone_number_publicly']:
             return jsonify({'error': 'Phone number is not public'}), 400
         
-        if attribute == 'profile_picture_url' and not coach['public_profile_picture']:
+        if attribute == 'profile_picture_url' and not coach['profile_picture_url']:
             return jsonify({'error': 'Profile picture is not public'}), 400
         
         if attribute == 'profile_picture_url':

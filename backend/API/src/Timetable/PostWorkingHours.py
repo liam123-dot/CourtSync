@@ -96,4 +96,12 @@ def minutes_into_day(epoch_time):
 
 def check_booking_valid(start_time, duration, working_hours):
     booking_end_time = start_time + duration
-    return start_time >= working_hours['start_time'] and booking_end_time <= working_hours['end_time']
+    wh_start_time = working_hours['start_time']
+    wh_end_time = working_hours['end_time']
+    
+    if not wh_start_time:
+        wh_start_time = 0
+    if not wh_end_time:
+        wh_end_time = 0
+    
+    return start_time >= wh_start_time and booking_end_time <= wh_end_time

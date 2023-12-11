@@ -73,6 +73,10 @@ def get_and_format_other_events(coach_id, epoch_time):
     
     # all 3 are now in form [start_time, duration] where start time is epoch seconds and duration is in minutes
     # merge the lists
+    
+    if working_hours == [[0, 1440]]:
+        return None
+    
     all_events = bookings + coach_events + working_hours
     
     return all_events
@@ -80,79 +84,54 @@ def get_and_format_other_events(coach_id, epoch_time):
 
 @CalculateAvailableTimesBlueprint.route('/timetable/<slug>/booking-availability', methods=['GET'])
 def calculate_booking_availability(slug):
-    
     coach = get_coach_from_slug(slug)
-    
     if not coach:
         return jsonify({'error': 'No coach found'}), 400
     coach_id = coach['coach_id']
-    # get epoch start time from request query string, return error if not provided
+
     epoch_start_time = request.args.get('startTime', None)
-    
+    duration = request.args.get('duration', None)
+
+    if not duration:
+        return jsonify({'error': 'No duration provided'}), 400
     try:
         epoch_start_time = int(epoch_start_time)
-    except:
-        return jsonify({'error': 'Invalid start time provided'}), 400
+        duration = int(duration)
+    except ValueError:
+        return jsonify({'error': 'Invalid start time or duration provided'}), 400
 
     if not epoch_start_time:
         return jsonify({'error': 'No start time provided'}), 400
-    
-    # using the start time, loop through the coaches duration and check which start times are available
 
-    coach_durations = get_durations(coach_id)
-    
-    if not coach_durations:
-        return jsonify({'error': 'No durations found'}), 400
-    
     events = get_and_format_other_events(coach_id, epoch_start_time)
-    
-    valid_start_times = get_start_times(epoch_start_time, coach_durations, events)
+    if events is None:
+        return jsonify([]), 200
 
+    valid_start_times = get_start_times(epoch_start_time, duration, events)
     return jsonify(valid_start_times), 200
-        
 
-def get_start_times(epoch_start_time, coach_durations, events):
-    # loop each possible start time, check if it is possible for each of the durations
-    # return a list of start_times where at least one duration is valid as well as
-    # a list of durations which are valid for each start_time
-    # should do this for each 15 minute interval of the day
-    
-    # Calculate the start and end times of the day in epoch time
-
+def get_start_times(epoch_start_time, duration, events):
     day_start = datetime.fromtimestamp(epoch_start_time).replace(hour=0, minute=0, second=0).timestamp()
     day_end = datetime.fromtimestamp(epoch_start_time).replace(hour=23, minute=59, second=59).timestamp()
-    
-    # Sort the events list by the first element in ascending order
-    events.sort(key=lambda x: x[0])
-    
-    # Initialize an empty dictionary to hold the valid start times
-    valid_start_times = {}
-    
-    # Loop over each 15-minute interval of the day
-    for start_time in range(int(day_start), int(day_end), 15 * 60):
-        # For each interval, check if it's a valid start time for each of the coach's durations
-        for duration in coach_durations:
-            # Check if the duration is valid for the event
-            valid = True
-            for event in events:
-                event_start_time = event[0]
-                event_end_time = event[0] + event[1] * 60
-                if event_start_time <= start_time < event_end_time:
-                    valid = False
-                elif event_start_time < start_time + duration * 60 <= event_end_time:
-                    valid = False
-                elif start_time <= event_start_time < start_time + duration * 60:
-                    valid = False
-                elif start_time < event_end_time <= start_time + duration * 60:
-                    valid = False                
 
-            if valid and check_start_time_leaves_space(start_time, events, duration, coach_durations):
-                if start_time not in valid_start_times:
-                    valid_start_times[start_time] = []
-                valid_start_times[start_time].append(duration)
-                    
+    events.sort(key=lambda x: x[0])
+    valid_start_times = []
+
+    for start_time in range(int(day_start), int(day_end), 30 * 60):
+        if is_time_slot_available(start_time, duration, events):
+            if check_start_time_leaves_space(start_time, events, duration, [duration]):
+                valid_start_times.append(start_time)
+
     return valid_start_times
 
+def is_time_slot_available(start_time, duration, events):
+    end_time = start_time + duration * 60
+    for event in events:
+        event_start, event_duration = event
+        event_end = event_start + event_duration * 60
+        if not (end_time <= event_start or start_time >= event_end):
+            return False
+    return True
 
 def check_start_time_leaves_space(start_time, events, duration, durations):
     # Convert the events list to the desired format

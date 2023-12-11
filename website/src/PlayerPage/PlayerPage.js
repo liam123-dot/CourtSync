@@ -18,6 +18,7 @@ const StyledDeleteButton = styled.button`
     &:hover {
         color: darkred;
     }
+    margin-left: 6px;
 `;
 const Container = styled.div`
     margin-top: 1%;
@@ -241,16 +242,16 @@ export default function PlayerPage () {
                                 </>
                             )}
                         </ContactDetails>
-                        {!isEditing ? (
-                            <EditButton onClick={() => setIsEditing(true)}>Edit</EditButton>
-                        ) : (
-                            <>
-                                <Button onClick={() => setIsEditing(false)}>Cancel</Button>
-                                <Button onClick={handleSubmit}>Submit</Button>
-                            </>
-                        )}
-                        <Button onClick={() => { setAddPlayerOpen(!addPlayerOpen); setIsOpen(true); }}>+ Player</Button>
                     </ContactHeader>
+                    {!isEditing ? (
+                        <EditButton onClick={() => setIsEditing(true)}>Edit</EditButton>
+                    ) : (
+                        <>
+                            <Button onClick={() => setIsEditing(false)}>Cancel</Button>
+                            <Button onClick={handleSubmit}>Submit</Button>
+                        </>
+                    )}
+                    <Button onClick={() => { setAddPlayerOpen(!addPlayerOpen); setIsOpen(true); }}>+ Player</Button>
                     <StyledDeleteButton show={showDelete} onClick={handleDelete}>X</StyledDeleteButton>
                 </div>
                 <PlayerSection>

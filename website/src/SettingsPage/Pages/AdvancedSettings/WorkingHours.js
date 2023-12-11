@@ -4,10 +4,11 @@ import { SaveButton } from "../../../Home/CommonAttributes/SaveButton";
 import { Spinner } from "../../../Spinner";
 import { usePopup } from "../../../Notifications/PopupContext";
 
-export default function WorkingHoursSettings({refresh}) {
+export default function WorkingHoursSettings({refreshSettings}) {
 
     const [workingHours, setWorkingHours] = useState([]);
     const [isSaving, setIsSaving] = useState(false); // [15, 30, 45, 60, 75, 90, 105, 120
+    const [errorMessage, setErrorMessage] = useState(null);
 
     const { showPopup } = usePopup();
 
@@ -38,7 +39,7 @@ export default function WorkingHoursSettings({refresh}) {
             }
 
         } catch (error) {
-            console.log(error);
+            console.log(error);            
         }
     }
 
@@ -54,10 +55,7 @@ export default function WorkingHoursSettings({refresh}) {
     };
 
     const handleTimeChange = (index, type, value) => {
-        console.log(value);
-        if (value.match(/^\d{2}/)) {
-          value += ':00';
-        }
+
         const updatedHours = [...workingHours];
         updatedHours[index][type] = value;
         setWorkingHours(updatedHours);
@@ -96,6 +94,8 @@ export default function WorkingHoursSettings({refresh}) {
             showPopup('Success');
             // Handle successful update
         } catch (error) {
+                        
+            setErrorMessage(error.response.data.message)
             console.log(error);
         }
         setIsSaving(false);
@@ -122,6 +122,16 @@ export default function WorkingHoursSettings({refresh}) {
         },
     };
 
+    const handleNoWorkingChange = (index, checked) => {
+        const updatedHours = [...workingHours];
+        updatedHours[index].noWorking = checked;
+        if (checked) {
+            updatedHours[index].start_time = null;
+            updatedHours[index].end_time = null;
+        }
+        setWorkingHours(updatedHours);
+    };
+
     const convertHHMMToMinutes = (time) => {
         const [hours, minutes] = time.split(':').map(Number);
         return (hours * 60) + minutes;
@@ -140,15 +150,27 @@ export default function WorkingHoursSettings({refresh}) {
                         type="time"
                         value={hour.start_time || ''}
                         onChange={(e) => handleTimeChange(index, 'start_time', e.target.value)}
+                        disabled={hour.noWorking}
                     />
                     <input
                         style={styles.input}
                         type="time"
                         value={hour.end_time || ''}
                         onChange={(e) => handleTimeChange(index, 'end_time', e.target.value)}
+                        disabled={hour.noWorking}
                     />
+                    <label>
+                        No Working:
+                        <input
+                            type="checkbox"
+                            checked={hour.noWorking || false}
+                            onChange={(e) => handleNoWorkingChange(index, e.target.checked)}
+                        />
+                    </label>
                 </div>
             ))}
+
+            {errorMessage && <p>{errorMessage}</p>}
 
             <SaveButton onClick={saveWorkingHours}>
                 {isSaving ? <Spinner /> : 'Save'}

@@ -38,7 +38,7 @@ export const checkRefreshRequired = (loadedDates, fromDate, toDate) => {
         while (currentDate <= toDate) {
             const formattedDate = `${currentDate.getDate().toString().padStart(2, '0')}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${currentDate.getFullYear()}`;
             
-            if (!loadedDates.includes(formattedDate)) {
+            if (!loadedDates.includes(formattedDate)) { 
                 return true; // Refresh required
             }
 
