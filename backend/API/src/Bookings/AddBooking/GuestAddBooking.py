@@ -37,8 +37,8 @@ def add_booking(slug):
         player_name = body['playerName']
         contact_name = body['contactName']
         is_same_as_player_name = body['isSameAsPlayerName']
-        contact_email = body['email']
-        contact_phone_number = body['phoneNumber']
+        contact_email = body['contactEmail']
+        contact_phone_number = body['contactPhoneNumber']
         cost = int(body['cost'])
         rules = body['rules']
         booking_time = int(time.time())

@@ -50,6 +50,7 @@ def calculate_lesson_cost(slug):
     
     return jsonify(
         cost=cost,
+        duration=duration,
         rules=rules
     ), 200
     

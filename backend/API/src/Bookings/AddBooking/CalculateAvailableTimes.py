@@ -2,6 +2,7 @@ from flask import request, jsonify, Blueprint, current_app
 
 from datetime import datetime
 import logging
+import time
 
 from src.Database.ExecuteQuery import execute_query
 from src.Users.GetSelf.GetSelf import get_coach_from_slug
@@ -113,6 +114,16 @@ def calculate_booking_availability(slug):
 def get_start_times(epoch_start_time, duration, events):
     day_start = datetime.fromtimestamp(epoch_start_time).replace(hour=0, minute=0, second=0).timestamp()
     day_end = datetime.fromtimestamp(epoch_start_time).replace(hour=23, minute=59, second=59).timestamp()
+    
+    print('day start and end')
+    print(day_start, day_end)
+
+    # TODO coach can have minimum short notice time
+    
+    if day_start < time.time():
+        # round up to the next 30 minute interval
+        remainder = time.time() % (30 * 60)
+        day_start = time.time() + (30 * 60 - remainder if remainder > 0 else 0)
 
     events.sort(key=lambda x: x[0])
     valid_start_times = []
@@ -126,11 +137,14 @@ def get_start_times(epoch_start_time, duration, events):
 
 def is_time_slot_available(start_time, duration, events):
     end_time = start_time + duration * 60
+    
     for event in events:
         event_start, event_duration = event
-        event_end = event_start + event_duration * 60
-        if not (end_time <= event_start or start_time >= event_end):
+        event_end = event_start + event_duration * 60        
+        
+        if not (end_time <= event_start or start_time >= event_end):            
             return False
+        
     return True
 
 def check_start_time_leaves_space(start_time, events, duration, durations):

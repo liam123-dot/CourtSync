@@ -49,6 +49,9 @@ def get_contact_by_id(contact_id):
     
     contact = results[0]
     
+    if not contact['enabled']:
+        reenable_contact(contact_id)
+    
     contact['players'] = get_players(contact['contact_id'], contact['coach_id'])
     
     return contact
@@ -83,3 +86,7 @@ def get_contacts(coach_id):
         
     return contacts
 
+
+def reenable_contact(contact_id):
+    sql = "UPDATE Contacts SET enabled=1 WHERE contact_id=%s"
+    execute_query(sql, (contact_id, ), is_get_query=False)

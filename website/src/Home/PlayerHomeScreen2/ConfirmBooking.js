@@ -12,8 +12,18 @@ import Paper from '@mui/material/Paper';
 import Grid from '@mui/material/Grid';
 import Container from '@mui/material/Container';
 import {usePopup} from '../../Notifications/PopupContext'
+import LessonCostComponent from '../LessonCostComponent';
+import CircularProgress from '@mui/material/CircularProgress';
+import Backdrop from '@mui/material/Backdrop';
+// In SearchComponent
+import { useLocation, useParams, useNavigate } from 'react-router-dom';
+import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 
-const DisplayTime = ({startTime, duration}) => {
+function useQuery() {
+  return new URLSearchParams(useLocation().search);
+}
+
+const Header = ({startTime, duration, pricingData}) => {
 
     // using the start time in epoch seconds and the duration in minutes
     // display the start and end time HH:MM - HH:MM
@@ -29,22 +39,52 @@ const DisplayTime = ({startTime, duration}) => {
 
     const date = start.toLocaleDateString(); // Add this line
 
+    const navigate = useNavigate();
+
+    const handleBackClick = () => {
+        navigate(-1);
+    }
+
     return (
-        <Paper elevation={3} sx={{ padding: 2, marginTop: 2, width:'100%' }}>
-            <Typography variant="h6" align="center">
-                Confirm your booking for
-            </Typography>
-            <Typography variant="subtitle1" align="center">
-                {date}, {startHours}:{startMinutes} - {endHours}:{endMinutes}
-            </Typography>
+    <Container maxWidth="md">
+                <Box sx={{ flexGrow: 0, marginRight: 2 }}> {/* Adjust marginRight as needed */}
+                    <Button startIcon={<ArrowBackIosIcon />} onClick={handleBackClick}>
+                        Datetime Selection
+                    </Button>
+                </Box>
+        <Paper elevation={6} sx={{ padding: 3, marginTop: 3, marginBottom: 3, borderRadius: 2 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start' }}>
+                {/* Back Button aligned to the top */}
+    
+                {/* The rest of the content in a vertically centered column */}
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexGrow: 1 }}>
+                    <Typography variant="h5" align="center" color="primary" gutterBottom>
+                        Confirm your booking
+                    </Typography>
+                    <Typography variant="subtitle1" gutterBottom>
+                        {date}, {startHours}:{startMinutes} - {endHours}:{endMinutes}
+                    </Typography>
+                    {pricingData && (
+                        <LessonCostComponent data={pricingData} />
+                    )}
+                </Box>
+            </Box>
         </Paper>
-    )
+    </Container>
+    
+
+    );
 
 }
 
-export default function ConfirmBooking({coachSlug, startTime, duration}) {
+export default function ConfirmBooking() {
 
     const {showPopup} = usePopup();
+    const { coachSlug } = useParams()
+
+    const query = useQuery();
+    const startTime = query.get('startTime');
+    const duration = query.get('duration');
 
     const [loading, setLoading] = useState(true);
 
@@ -63,13 +103,19 @@ export default function ConfirmBooking({coachSlug, startTime, duration}) {
     const [verificationCode, setVerificationCode] = useState('');
     const [emailVerified, setEmailVerified] = useState(false);
 
+    const [pricingData, setPricingData] = useState({});
+
+    const [submitLoading, setSubmitLoading] = useState(false);
+
+    const [lessonBooked, setLessonBooked] = useState(false);
+
     const getPricing = async () => {
 
         try {
             
             const resposne = await axios.get(`${process.env.REACT_APP_API_URL}/timetable/${coachSlug}/lesson-cost?startTime=${startTime}&duration=${duration}`);
 
-            console.log(resposne)
+            setPricingData(resposne.data);
 
         } catch (error) {
             console.log(error)   
@@ -77,32 +123,39 @@ export default function ConfirmBooking({coachSlug, startTime, duration}) {
 
     }
 
+    const getContact = async contactEmail => {
+        try {
+                
+            const response = await axios.get(`${process.env.REACT_APP_API_URL}/${coachSlug}/contact/${contactEmail}`);
+            
+            const data = response.data;
+
+            console.log(data);
+
+            setContactName(data.name);
+            setContactEmail(data.email);
+            setContactEmailFound(true);                
+            setContactPhoneNumber(data.phone_number);
+            // data.players is an array objects, convert to array of strings from object['name']
+            const playerNames = data.players.map(player => player.name);
+            console.log(playerNames)
+            setPossiblePlayerNames(playerNames);
+            setPlayerName(playerNames[0])
+
+            return true
+
+        } catch (error) {
+            console.log(error);
+        }
+        return false
+    }
+
     const getContactDetails = async () => {
         setLoading(true);
         const contactEmail = localStorage.getItem('contactEmail');
                 
         if (contactEmail) {
-            try {
-                
-                const response = await axios.get(`${process.env.REACT_APP_API_URL}/${coachSlug}/contact/${contactEmail}`);
-                
-                const data = response.data;
-
-                console.log(data);
-
-                setContactName(data.name);
-                setContactEmail(data.email);
-                setContactEmailFound(true);                
-                setContactPhoneNumber(data.phone_number);
-                // data.players is an array objects, convert to array of strings from object['name']
-                const playerNames = data.players.map(player => player.name);
-                console.log(playerNames)
-                setPossiblePlayerNames(playerNames);
-                setPlayerName(playerNames[0])
-
-            } catch (error) {
-                console.log(error);
-            }
+            getContact(contactEmail);
         } else {
             setIsAddingNewPlayer(true); // No email found, add new player directly
         }
@@ -159,6 +212,15 @@ export default function ConfirmBooking({coachSlug, startTime, duration}) {
             showPopup('Success, Email verified');
             setEmailVerified(true);
 
+            const getContactSuccess = await getContact(contactEmail);
+
+            if (getContactSuccess) {
+
+                setIsAddingNewPlayer(false);
+
+            }
+            
+
         } catch (error) {
             console.log(error)
         }
@@ -167,12 +229,31 @@ export default function ConfirmBooking({coachSlug, startTime, duration}) {
 
     const handleSubmit = async () => {
 
-        console.log(playerName);
-        console.log(contactEmail);
-        console.log(contactName);
-        console.log(contactPhoneNumber);
-        console.log(startTime);
-        console.log(duration);
+        setSubmitLoading(true);
+
+        try {
+
+            const response = await axios.post(`${process.env.REACT_APP_API_URL}/timetable/${coachSlug}/booking`, {
+                playerName: isAddingNewPlayer ? newPlayerName : playerName,
+                contactName: contactName,
+                contactEmail: contactEmail,
+                contactPhoneNumber: contactPhoneNumber,
+                startTime: startTime,
+                duration: duration,
+                cost: pricingData.cost,
+                rules: pricingData.rules,
+                isSameAsPlayerName: false
+            });                
+
+            console.log(response);
+            showPopup('Success, Booking confirmed');
+            setLessonBooked(true);
+
+        } catch (error) {
+            console.log(error)
+        }
+
+        setSubmitLoading(false);
 
     }
 
@@ -180,18 +261,13 @@ export default function ConfirmBooking({coachSlug, startTime, duration}) {
 
     return (
         <Container maxWidth="md"> {/* Container for horizontal centering */}
-            <Box 
-                sx={{ 
-                    display: 'flex', 
-                    flexDirection: 'column', 
-                    // justifyContent: 'center', // Vertical centering
-                    alignItems: 'center', // Horizontal centering
-                    minHeight: '100vh', // Full viewport height
-                    padding: 2 
-                }}
-            >        <DisplayTime startTime={startTime} duration={duration} />
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: '100vh', padding: 2 }}>
+
+            <Header startTime={startTime} duration={duration} pricingData={pricingData}/>            
     
-            {!loading ? (
+            {!lessonBooked ? (
+
+            !loading ? (
                 <Box component="form" noValidate autoComplete="off">
                     <Grid container spacing={2}>
                         { !contactEmailFound && isVerifyingEmail && !emailVerified ? (
@@ -206,7 +282,7 @@ export default function ConfirmBooking({coachSlug, startTime, duration}) {
                                 />
                             </Grid>
                             ): (
-                            <Grid item xs={12} sm={emailVerified ? 12: 8}>
+                            <Grid item xs={12} sm={emailVerified || contactEmailFound ? 12: 8}>
                                 <TextField
                                     label="Contact Email"
                                     type="text"
@@ -253,7 +329,11 @@ export default function ConfirmBooking({coachSlug, startTime, duration}) {
                                     label="Player Name"
                                     type="text"
                                     value={newPlayerName}
-                                    onChange={(event) => setNewPlayerName(event.target.value)}
+                                    onChange={(event) => {
+                                        const name = event.target.value;
+                                        const capitalized = name.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+                                        setNewPlayerName(capitalized);
+                                    }}
                                     margin="normal"
                                     fullWidth
                                     disabled={waiting}
@@ -307,7 +387,11 @@ export default function ConfirmBooking({coachSlug, startTime, duration}) {
                                 label="Contact Name"
                                 type="text"
                                 value={contactName}
-                                onChange={(event) => setContactName(event.target.value)}
+                                onChange={(event) => {
+                                    const name = event.target.value;
+                                    const capitalized = name.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+                                    setContactName(capitalized);
+                                }}
                                 margin="normal"
                                 fullWidth
                                 disabled={waiting}
@@ -337,23 +421,24 @@ export default function ConfirmBooking({coachSlug, startTime, duration}) {
                             </Button>
                         </Grid>
                     </Grid>
+                    <Backdrop
+                        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+                        open={submitLoading}
+                    >
+                        <CircularProgress color="inherit" />
+                    </Backdrop>
                 </Box>
             ) : (
                 <Typography variant="h4" align="center">Loading...</Typography>
+            )): (
+                <Typography variant="h4" align="center" color="secondary">
+                    Booking Confirmed! Check your emails for confirmation.
+                </Typography>
             )}
+
+        
         </Box>
         </Container>
     );
-    
-    
-    
-    // !loading ? (
-        
-        
-    // ): (
-    //     <div>
-    //         <h1>Loading...</h1>
-    //     </div>
-    // )
 
 }

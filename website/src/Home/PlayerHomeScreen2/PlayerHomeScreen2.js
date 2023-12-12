@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { useParams } from "react-router-dom"
+import { useParams, useNavigate } from "react-router-dom"
 import axios from "axios"
 import TimeBox from "./TimeBox"
 import ConfirmBooking from "./ConfirmBooking"
@@ -17,6 +17,7 @@ import dayjs from 'dayjs';
 export default function PlayerHomeScreen2() {
 
     const { coachSlug } = useParams()
+    const navigate = useNavigate()
 
     const [selectedDate, setSelectedDate] = useState(dayjs());
     const [selectedTime, setSelectedTime] = useState(null);
@@ -110,8 +111,12 @@ export default function PlayerHomeScreen2() {
         console.log(date);
         setSelectedDate(date);
     }
+
+    const navigateToConfirmBooking = () => {
+        navigate(`/${coachSlug}/confirm?startTime=${selectedTime}&duration=${selectedDuration}`)
+    }
      
-    return !onConfirm ? (
+    return (
         <Container maxWidth="md"> {/* Container for horizontal centering */}
             <Box 
                 sx={{ 
@@ -129,6 +134,7 @@ export default function PlayerHomeScreen2() {
                         value={selectedDate}
                         onChange={handleDateChange}
                         format="DD/MM/YYYY"
+                        minDate={dayjs().startOf('day')}
                     />
                     {durations.length > 0 && (
                         <FormControl fullWidth margin="normal">
@@ -165,15 +171,13 @@ export default function PlayerHomeScreen2() {
                     variant="contained"
                     color="primary"
                     disabled={!selectedDate || !selectedTime || !selectedDuration}
-                    onClick={() => setOnConfirm(true)}
+                    onClick={() => navigateToConfirmBooking()}
                     sx={{ mt: 2, width: '100%' }}
                 >
                     Confirm
                 </Button>
             </Box>
         </Container>
-    ) : (
-        <ConfirmBooking startTime={selectedTime} duration={selectedDuration} coachSlug={coachSlug} />
     );
 
 }

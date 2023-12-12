@@ -21,10 +21,14 @@ import { RefreshTimetableProvider } from "./RefreshTimetableContext";
 import WorkingHoursModal from "./WorkingHoursModal";
 import LinkButton from "./LinkButton";
 import { useShowCancelled, ShowCancelledProvider } from "./ShowCancelledContext";
+import FullCalendar from '@fullcalendar/react'
+import timeGridPlugin from '@fullcalendar/timegrid'
+import { usePopup } from "../../Notifications/PopupContext";
 
 export default function HomeScreen() {
 
     const { coachSlug } = useParams();
+    const {showPopup} = usePopup();
 
     const [authorised, setAuthorised] = useState(false);
 
@@ -68,6 +72,7 @@ export default function HomeScreen() {
     const [showCancelled, setShowCancelled] = useState(false);
 
     const [setUp, setSetUp] = useState(false);
+    const [link, setLink] = useState(null);
 
     const redo = (forceCancelled=showCancelled) => {
 
@@ -82,6 +87,22 @@ export default function HomeScreen() {
             await fetchTimetableData(fromDate, toDate);
         }
     }
+
+    useEffect(() => {
+        const getLink = async () => {
+          const response = await axios.get(
+            `${process.env.REACT_APP_API_URL}/user/me/coach_url`,
+            {
+              headers: {
+                Authorization: localStorage.getItem("AccessToken"),
+              },
+            }
+          );
+          setLink(response.data.coach_url);
+        };
+    
+        getLink();
+      }, []);
 
     const fetchTimetableData = async (fromDate, toDate, forceCancelled) => {
 
@@ -135,7 +156,10 @@ export default function HomeScreen() {
         setIsStartingUp(false);
 
     }
-
+    const handleCopy = async () => {
+        await navigator.clipboard.writeText(link);
+        showPopup("Link copied to clipboard");
+      };
     useEffect(() => {
 
         const convertBookingsToTimetableEvents = (events) => {
@@ -173,6 +197,8 @@ export default function HomeScreen() {
             });
             return newTimetableEvents;
         };
+
+
 
         const getWorkingHoursFromAll = (events) => {
             const newTimetableEvents = { ...events };
@@ -350,77 +376,42 @@ export default function HomeScreen() {
                         <>
                             <RefreshTimetableProvider refresh={redo}>
                                 <TitleSection>
-                                    <ArrowButtonGroup>
-                                        <Button onClick={() => setIsAddEventModalOpen(true)}>+</Button>
-                                        <Button onClick={() => setIsWorkingHoursModalOpen(true)}>⚙</Button>
-                                        <LinkButton/>
-                                        <label>
-                                            Show Cancelled:
-                                            <input
-                                                type="checkbox"
-                                                checked={showCancelled}
-                                                onChange={handleSetShowCancelled}
-                                            />
-                                        </label>
-                                    </ArrowButtonGroup>
                                     
-                                    <WorkingHoursModal isOpen={isWorkingHoursModalOpen} onClose={() => setIsWorkingHoursModalOpen(false)}/>
-
-
-                                    
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <ArrowNavigation
-                                            handlePrevious={handlePrevious}
-                                            handleNext={handleNext}
-                                            fromDate={fromDate}
-                                            toDate={toDate}
-                                            setFromDate={setFromDate}
-                                            setToDate={setToDate}
-                                            refresh={refresh}
-                                            view={view}
-                                        />
-                                        <DateSelector
-                                            fromDate={fromDate}
-                                            toDate={toDate}
-                                            setFromDate={setFromDate}
-                                            setToDate={setToDate}
-                                        />
-                                    </div>
-
-                                    <ViewButtons
-                                        view={view}
-                                        setView={setView}
-                                        handleSetView={handleSetView}
-                                        fromDate={fromDate}
-                                        toDate={toDate}
-                                        setFromDate={setFromDate}
-                                        setToDate={setToDate}
-                                        refresh={refresh}
-                                    />
-
-                                    {/* Search and SidePanel components
-                                    <div>
-                                        <Searchbar 
-                                            timetableEvents={timetableEvents}
-                                            setTimetableEvents={setTimetableEvents}
-                                            selected={selected}
-                                            setSelected={setSelected}
-                                        />
-                                    </div> */}
+                                <WorkingHoursModal isOpen={isWorkingHoursModalOpen} onClose={() => setIsWorkingHoursModalOpen(false)}/>
+                            
                                 </TitleSection>
                                 <CoachEventDetailsProvider setCoachEvent={setCoachEvent} setShown={setIsCoachEventShown}>
                                     <LessonDetailsProvider setBookings={setLessonDetailsBooking} setShown={setIsLessonDetailsShown}>
                                         {setUp ? (
                                             <ShowCancelledProvider showCancelled={showCancelled} setShowCancelled={setShowCancelled}>
-                                                <Timetable
-                                                    fromDate={fromDate}
-                                                    toDate={toDate}
-                                                    view={view}
-                                                    timetableObjects={timetableEvents}
-                                                    coachView={true}
-                                                    min={min}
-                                                    max={max}
+                                                <FullCalendar
+                                                    height={'100%'}
+                                                    plugins={[timeGridPlugin]}
+                                                    initialView='timeGridWeek'
+                                                    events={[
+                                                        { title: 'event 1', date: '2023-12-12' },
+                                                    ]}
+                                                    customButtons={{
+                                                        addEvent: {
+                                                            text: '+',
+                                                            click: () => setIsAddEventModalOpen(true),
+                                                        },
+                                                        workingHours: {
+                                                            text: '⚙',
+                                                            click: () => setIsWorkingHoursModalOpen(true),
+                                                        },
+                                                        customLink: {
+                                                            text: 'Link',
+                                                            click: () => handleCopy(),
+                                                        },
+                                                    }}
+                                                    headerToolbar={{
+                                                        left: 'prev,next today',
+                                                        center: 'title',
+                                                        right: 'timeGridWeek,timeGridDay addEvent workingHours customLink',
+                                                    }}
                                                 />
+
                                             </ShowCancelledProvider>
                                         ): (
                                         <>                                        

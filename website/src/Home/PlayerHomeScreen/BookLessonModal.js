@@ -69,6 +69,8 @@ export default function BookLessonModal({ isOpen, onClose, coachSlug, redo }) {
     const [awaitingVerification, setAwaitingVerification] = useState(false);
     const [verificationCode, setVerificationCode] = useState(null);
 
+    const [lessonBooked, setLessonBooked] = useState(false);
+
     const handleBooking = async () => {
 
         setIsLoading(true);
@@ -242,7 +244,6 @@ export default function BookLessonModal({ isOpen, onClose, coachSlug, redo }) {
                     setContactPhoneNumber(data.phone_number);
                     // data.players is an array objects, convert to array of strings from object['name']
                     const playerNames = data.players.map(player => player.name);
-                    console.log(playerNames)
                     setPossiblePlayerNames(playerNames);
                     setPlayerName(playerNames[0])
 
@@ -309,7 +310,7 @@ export default function BookLessonModal({ isOpen, onClose, coachSlug, redo }) {
 
     if (!isOpen) return null;
 
-    return (
+    return !lessonBooked ? (
         <ModalOverlay onClick={onClose}>
             <ModalContent onClick={(e) => e.stopPropagation()}>
                 <h1 css={css`font-size: 24px; margin-bottom: 20px;`}>Book a Lesson</h1>
@@ -439,5 +440,8 @@ export default function BookLessonModal({ isOpen, onClose, coachSlug, redo }) {
                 </SaveButton>
             </ModalContent>
         </ModalOverlay>
-    );
+    ): (
+        <>
+        </>
+    )
 }

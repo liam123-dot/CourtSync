@@ -11,12 +11,12 @@ import EntryPage from './EntryPage/EntryPage';
 import CancelBookingPage from './PlayerBookings/CancelBookingsPage';
 import InvoicePage from './PlayerBookings/InvoicePage';
 import PlayerPage from './PlayerPage/PlayerPage';
-import PlayerHomeScreen from './Home/PlayerHomeScreen/PlayerHomeScreen';
 import PlayerHomeScreen2 from './Home/PlayerHomeScreen2/PlayerHomeScreen2';
 import NavigationBar from './NavigationBar';
 import SuccessPopup from './Notifications/SuccessPopup';
 import { PopupProvider } from './Notifications/PopupContext';
 import ContactSales from './EntryPage/ContactSales';
+import ConfirmBooking from './Home/PlayerHomeScreen2/ConfirmBooking';
 
 function Main() {
 
@@ -43,6 +43,7 @@ function Main() {
                         <Route path="/coach/signup/:hash" element={<SignUpScreen/>} />
                         <Route path="/coach/verify" element={<VerificationCodeScreen/>} />                
                         <Route path="/:coachSlug" element={<PlayerHomeScreen2/>} />
+                        <Route path="/:coachSlug/confirm" element={<ConfirmBooking/>} />
 
                         <Route path="/contact-sales" element={<ContactSales/>} />
 
