@@ -23,6 +23,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import Modal from '@mui/material/Modal';
 import { usePopup } from '../../Notifications/PopupContext';
 import { InvoiceDataContext } from './InvoicePage';
+import { Tab } from '@mui/material';
 
 function LessonCostModal({ open, handleClose, lesson }) {
   if (!lesson) return;
@@ -134,6 +135,7 @@ function InvoiceRow(props) {
             contact_email: row.contact_email,
             paid: row.paid,
             invoice_sent: row.invoice_sent,
+            invoice_id: row.invoice_id,
             // Include other parameters if needed
           }
         });
@@ -168,7 +170,7 @@ function InvoiceRow(props) {
         <TableCell align="right">{row.bookings_count}</TableCell>
         <TableCell align="right">£{(row.total_cost / 100.0).toFixed(2)}</TableCell>
         <TableCell align="right">{row.invoice_sent ? 'Yes' : 'No'}</TableCell>
-        <TableCell align="right">{row.paid ? 'Yes' : 'No'}</TableCell>
+        <TableCell align="right">{row.paid ? 'Yes' : 'No'}</TableCell>        
           {!row.paid && !row.invoice_sent && (
             <TableCell align="right" size="small">
               {/* Red Close IconButton */}
@@ -283,7 +285,7 @@ export default function InvoiceTable({data}) {
             <TableCell align="right">Lesson Count</TableCell>
             <TableCell align="right">Total Cost</TableCell>
             <TableCell align="right">Invoice Sent</TableCell>
-            <TableCell align="right">Paid</TableCell>
+            <TableCell align="right">Paid</TableCell>            
           </TableRow>
         </TableHead>
         <TableBody>

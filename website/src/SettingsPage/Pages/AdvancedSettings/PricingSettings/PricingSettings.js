@@ -156,9 +156,11 @@ export default function CostInput() {
                   ))}
                   {addingRule && <AddNewPricingRuleComponent setShown={setAddingRule} refresh={getRules}/>}
 
-                  <Button variant="contained" onClick={() => setAddingRule(!addingRule)} sx={{ mt: 2 }}>
-                      {addingRule ? 'Cancel New Rule' : 'Add New Rule'}
-                  </Button>
+                    {!addingRule && (
+                    <Button variant="contained" onClick={() => setAddingRule(!addingRule)} sx={{ mt: 2 }}>
+                        Add New Rule
+                    </Button>
+                    )}
               </>
           ) : (
               <CircularProgress/>

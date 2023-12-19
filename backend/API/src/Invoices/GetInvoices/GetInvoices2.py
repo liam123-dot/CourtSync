@@ -114,7 +114,7 @@ def get_invoicing_status_endpoint():
         invoices_initialised=invoices_initialised
     ), 200
 
-def get_invoices_between_time(coach_id, start_time, end_time, contact_email=None, paid=None, invoice_sent=None, limit=50, offset=0):
+def get_invoices_between_time(coach_id, start_time, end_time, contact_email=None, invoice_id=None, paid=None, invoice_sent=None, limit=50, offset=0):
     if not coach_id:
         raise Exception("Coach ID is required")
     if not start_time or not end_time:
@@ -151,6 +151,10 @@ def get_invoices_between_time(coach_id, start_time, end_time, contact_email=None
     if invoice_sent is not None:
         sql += " AND Bookings.invoice_sent = %s"
         args.append(invoice_sent)
+        
+    if invoice_id is not None:
+        sql += " AND Bookings.invoice_id = %s"
+        args.append(invoice_id)
 
     sql += " ORDER BY Bookings.start_time"
     sql += " LIMIT %s OFFSET %s"
@@ -182,6 +186,7 @@ def get_invoices_time_range_endpoint():
     invoice_sent = request.args.get('invoice_sent', None)
     limit = request.args.get('limit', 50, type=int)
     offset = request.args.get('offset', 0, type=int)
+    invoice_id = request.args.get('invoice_id', None)
 
     if paid is not None:
         paid = paid == 'true'
@@ -204,7 +209,7 @@ def get_invoices_time_range_endpoint():
         return jsonify({"error": "Invalid start_time or end_time. They should be epoch timestamps"}), 400
 
     try:
-        invoices = get_invoices_between_time(coach_id, start_time, end_time, contact_email, paid=paid, invoice_sent=invoice_sent, limit=limit, offset=offset)
+        invoices = get_invoices_between_time(coach_id, start_time, end_time, contact_email, paid=paid, invoice_id=invoice_id, invoice_sent=invoice_sent, limit=limit, offset=offset)
         return jsonify(invoices=invoices), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500

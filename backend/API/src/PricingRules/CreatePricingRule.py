@@ -60,9 +60,9 @@ def create_pricing_rule(
             days = days.lower()
             
             if start_time:
-                start_time = convert_HH_MM_to_minutes(start_time)
+                start_time = datetime_to_epoch(start_time)
             if end_time:
-                end_time = convert_HH_MM_to_minutes(end_time)
+                end_time = datetime_to_epoch(end_time)
                  
             insert_recurring_pricing_rule(
                 coach_id,
@@ -96,11 +96,15 @@ def create_pricing_rule(
             else:
                 if not date:
                     return jsonify(message="Missing required fields, one-time pricing must have a date if all day is true"), 400
-                
+            # ... [previous code] ...
+
             if start_time:
-                start_time = convert_HH_MM_to_minutes(start_time)
+                start_time = datetime_to_epoch(start_time)
             if end_time:
-                end_time = convert_HH_MM_to_minutes(end_time)
+                end_time = datetime_to_epoch(end_time)
+
+            # ... [rest of the code] ...
+
                 
             insert_one_time_pricing_rule(
                 coach_id,
@@ -151,15 +155,22 @@ def insert_one_time_pricing_rule(
         end_time = start_time + 86399
     else:
         if start_time:
-            start_time = date_to_epoch(date) + start_time * 60
+            start_time = datetime_to_epoch(start_time)
         if end_time:
-            end_time = date_to_epoch(date) + end_time * 60
+            end_time = datetime_to_epoch(end_time)
         
     sql = "INSERT INTO PricingRules (coach_id, rate, label, start_time, end_time, all_day, type, period, days) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
     execute_query(sql, (coach_id, rate, label, start_time, end_time, all_day, type, period, None), is_get_query=False)
     
 def date_to_epoch(date):
     return int(datetime.strptime(date, '%Y-%m-%dT%H:%M:%S.%fZ').timestamp())
+
+def datetime_to_epoch(datetime_str):
+    """
+    Converts a datetime string in ISO 8601 format to epoch seconds.
+    """
+    return int(datetime.strptime(datetime_str, '%Y-%m-%dT%H:%M:%S.%fZ').timestamp())
+
 
 CreatePricingRuleBlueprint = Blueprint('CreatePricingRuleBlueprint', __name__)
 
