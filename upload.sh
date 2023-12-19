@@ -31,11 +31,9 @@ echo "All instances are up and running"
 
 cd website
 
-# Copy the contents of test_env.txt into .env
 cp test_env.txt .env
 
 npm run build
 aws s3 sync build s3://test.courtsync.co.uk
 
 # Copy the contents of local_env.txt back into .env
-cp local_env.txt .env

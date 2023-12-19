@@ -10,7 +10,7 @@ import { Backdrop, CircularProgress } from '@mui/material';
 
 export default function InvoicePage() {
     const [view, setView] = useState('daily');
-    const [statusView, setStatusView] = useState('pending'); // ['completed', 'pending']
+    const [statusView, setStatusView] = useState('upcoming'); // ['completed', 'pending']
     const [data, setData] = useState([]);
 
     const [isInitialLoad, setIsInitialLoad] = useState(true);

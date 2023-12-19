@@ -1,0 +1,57 @@
+name: Courtsync CI/CD
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  test-build-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up AWS CLI
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: your-aws-region # Replace with your AWS region
+
+      - name: Update Secret ID in launch-script.sh
+        run: |
+          cd backend/API
+          sed -i 's/YourSecretId/env-testing/g' launch-script.sh
+
+      - name: Sync with S3
+        run: |
+          aws s3 sync ./backend/API s3://courtsync-api-test
+
+      - name: Reboot EC2 Instances
+        run: |
+          for instance_id in $(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names "test-api-auto-scale-group" --query "AutoScalingGroups[].Instances[].InstanceId" --output text); do
+              echo "Rebooting instance $instance_id"
+              instance_ip=$(aws ec2 describe-instances --instance-ids $instance_id --query 'Reservations[].Instances[].PublicIpAddress' --output text)
+              aws ec2 reboot-instances --instance-ids $instance_id
+              sleep 15
+              while true; do
+                  response=$(curl --write-out '%{http_code}' --silent --output /dev/null http://$instance_ip:8000/)
+                  if [ "$response" -eq 200 ]; then
+                      echo "Instance $instance_id is up and running"
+                      break
+                  else
+                      echo "Waiting for instance $instance_id to be up and running"
+                      sleep 5
+                  fi
+              done
+              echo "Instance $instance_id is up and running"
+          done
+          echo "All instances are up and running"
+
+      - name: Build and Deploy Website
+        run: |
+          cd website
+          cp test_env.txt .env
+          npm install
+          npm run build
+          aws s3 sync build s3://test.courtsync.co.uk
