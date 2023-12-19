@@ -3,7 +3,7 @@ name: Courtsync CI/CD
 on:
   push:
     paths:
-      - './**'
+      - '**'
 
 jobs:
   test-build-deploy:
