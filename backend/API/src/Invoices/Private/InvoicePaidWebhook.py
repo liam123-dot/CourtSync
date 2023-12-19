@@ -30,5 +30,5 @@ def invoice_paid_webhook():
         return jsonify(message='Error', error=e)
 
 def mark_booking_paid(invoice_id):
-    sql = "UPDATE Bookings SET paid=1 WHERE invoice_id=%s"
+    sql = "UPDATE Bookings SET paid=1, paid_from='stripe' WHERE invoice_id=%s"
     execute_query(sql, (invoice_id,), is_get_query=False)

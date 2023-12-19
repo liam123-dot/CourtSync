@@ -44,16 +44,38 @@ def create_stripe_account():
         
     )
     
-    insert_stripe_account(coach['coach_id'], stripe_account['id'])
+    link = generate_account_link(coach)
     
+    return jsonify({'url': link}), 200
+
+@AddStripeAccountBlueprint.route('/user/stripe-account/generate-link', methods=['POST'])
+def generate_link():
+    token = request.headers.get('Authorization', None)
+    
+    if not token:
+        return jsonify({'error': 'No token provided'}), 400
+    
+    coach = get_coach(token)
+    
+    if not coach:
+        return jsonify({'error': 'Invalid token'}), 400
+    
+    if not coach['stripe_account']:
+        return jsonify({'error': 'User does not have a stripe account'}), 400
+    
+    link = generate_account_link(coach)
+    
+    return jsonify({'url': link}), 200
+
+def generate_account_link(coach):
     account_link = stripe.AccountLink.create(
-        account=stripe_account,
-        refresh_url='https://www.courtsync.co.uk/#/' + coach['slug'],
-        return_url=f"{os.environ['WEBSITE_URL']}/#/dashboard/settings",
+        account=coach['stripe_account'],
+        refresh_url=f"{os.environ['WEBSITE_URL']}/#/{coach['slug']}",
+        return_url=f"{os.environ['WEBSITE_URL']}/#/dashboard/settings?tab=invoicing",
         type='account_onboarding'
     )
     
-    return jsonify({'url': account_link.url}), 200
+    return account_link.url
     
 def insert_stripe_account(coach_id, stripe_account_id):
     sql = "UPDATE Coaches SET stripe_account = %s WHERE coach_id = %s"

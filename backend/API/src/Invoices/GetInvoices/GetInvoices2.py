@@ -30,6 +30,7 @@ def get_invoices(coach_id, frequency="daily", status="pending", contact_email=No
         Contacts.name as contact_name,
         Bookings.invoice_sent,
         Bookings.paid,
+        Bookings.invoice_id,
         COUNT(Bookings.booking_id) as bookings_count,
         SUM(Bookings.cost) AS total_cost,
         SUM(Bookings.extra_costs) AS total_extra_costs,
@@ -56,7 +57,7 @@ def get_invoices(coach_id, frequency="daily", status="pending", contact_email=No
         sql += " AND Contacts.email = %s"
         args.append(contact_email)
 
-    sql += f" GROUP BY contact_email, {group_by}, contact_name, Bookings.invoice_sent, Bookings.paid"
+    sql += f" GROUP BY contact_email, {group_by}, contact_name, Bookings.invoice_sent, Bookings.paid, Bookings.invoice_id"
     sql += f" ORDER BY {order_by}"
     sql += " LIMIT %s OFFSET %s"
     args.extend([limit, offset])
@@ -106,12 +107,14 @@ def get_invoicing_status_endpoint():
     if coach is None:
         return jsonify({"error": "Invalid token"}), 400
     
+    invoices_initialised = coach['invoice_type'] is not None and coach['stripe_account_set_up']
+    
     return jsonify(
         invoice_type=coach['invoice_type'],
-        invoices_initialised=True
+        invoices_initialised=invoices_initialised
     ), 200
 
-def get_invoices_between_time(coach_id, start_time, end_time, contact_email=None, limit=50, offset=0):
+def get_invoices_between_time(coach_id, start_time, end_time, contact_email=None, paid=None, invoice_sent=None, limit=50, offset=0):
     if not coach_id:
         raise Exception("Coach ID is required")
     if not start_time or not end_time:
@@ -130,6 +133,7 @@ def get_invoices_between_time(coach_id, start_time, end_time, contact_email=None
     WHERE Bookings.start_time >= %s
     AND status='confirmed'
     AND (Bookings.start_time + (Bookings.duration * 60)) <= %s
+    AND Bookings.start_time < UNIX_TIMESTAMP()
     AND Bookings.coach_id = %s
     """
     
@@ -139,6 +143,14 @@ def get_invoices_between_time(coach_id, start_time, end_time, contact_email=None
     if contact_email:
         sql += " AND Contacts.email = %s"
         args.append(contact_email)
+        
+    if paid is not None:
+        sql += " AND Bookings.paid = %s"
+        args.append(paid)
+        
+    if invoice_sent is not None:
+        sql += " AND Bookings.invoice_sent = %s"
+        args.append(invoice_sent)
 
     sql += " ORDER BY Bookings.start_time"
     sql += " LIMIT %s OFFSET %s"
@@ -166,8 +178,20 @@ def get_invoices_time_range_endpoint():
     start_time = request.args.get('start_time')
     end_time = request.args.get('end_time')
     contact_email = request.args.get('contact_email')
+    paid = request.args.get('paid', None)
+    invoice_sent = request.args.get('invoice_sent', None)
     limit = request.args.get('limit', 50, type=int)
     offset = request.args.get('offset', 0, type=int)
+
+    if paid is not None:
+        paid = paid == 'true'
+        
+    if invoice_sent is not None:
+        invoice_sent = invoice_sent == 'true'
+        
+        
+    print('paid, invoice_sent')
+    print( paid, invoice_sent)
 
     # Validate time parameters
     if not start_time or not end_time:
@@ -180,7 +204,7 @@ def get_invoices_time_range_endpoint():
         return jsonify({"error": "Invalid start_time or end_time. They should be epoch timestamps"}), 400
 
     try:
-        invoices = get_invoices_between_time(coach_id, start_time, end_time, contact_email, limit, offset)
+        invoices = get_invoices_between_time(coach_id, start_time, end_time, contact_email, paid=paid, invoice_sent=invoice_sent, limit=limit, offset=offset)
         return jsonify(invoices=invoices), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500

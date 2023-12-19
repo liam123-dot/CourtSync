@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import PropTypes from 'prop-types';
 import Box from '@mui/material/Box';
 import Collapse from '@mui/material/Collapse';
@@ -18,7 +18,11 @@ import CircularProgress from '@mui/material/CircularProgress';
 import CloseIcon from '@mui/icons-material/Close';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import {LessonCost} from '../CoachHomeScreen/LessonDetailsModal2'
+import ConfirmationDialog from '../ConfirmationDialog';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import Modal from '@mui/material/Modal';
+import { usePopup } from '../../Notifications/PopupContext';
+import { InvoiceDataContext } from './InvoicePage';
 
 function LessonCostModal({ open, handleClose, lesson }) {
   if (!lesson) return;
@@ -40,6 +44,7 @@ function LessonCostModal({ open, handleClose, lesson }) {
 }
 
 const getEpochRange = (row) => {
+  console.log(row);
   let startDate, endDate;
   const year = row.year;
   
@@ -69,6 +74,13 @@ function InvoiceRow(props) {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedLesson, setSelectedLesson] = useState(null);
 
+  const [confirmMarkPaidOpen, setConfirmMarkPaidOpen] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+
+  const {fetchInvoiceData, view, statusView} = useContext(InvoiceDataContext);
+
+  const { showPopup } = usePopup();
+
   const handleModalOpen = (lesson) => {
     setSelectedLesson(lesson);
     setModalOpen(true);
@@ -78,6 +90,34 @@ function InvoiceRow(props) {
     setModalOpen(false);
     setSelectedLesson(null);
   };
+
+  const handleMarkInvoicePaid = async () => {
+    
+    try {
+
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/invoices/${row.invoice_id}/paid`,
+        {},
+        {
+          headers: {
+            Authorization: localStorage.getItem('AccessToken') // Replace with actual token retrieval method
+          }
+        }
+      )
+
+      showPopup('Invoice marked as paid');
+      fetchInvoiceData(view, statusView);
+      setConfirmMarkPaidOpen(false);
+
+    } catch (error) {
+      console.error('Error marking invoice as paid:', error);
+      // Handle error appropriately
+    }
+
+  }
+
+  const handleDeleteInvoice = async () => {
+
+  }
 
   const loadHistory = async () => {
     if (!historyLoaded) {
@@ -92,6 +132,8 @@ function InvoiceRow(props) {
             start_time: startEpoch,
             end_time: endEpoch,
             contact_email: row.contact_email,
+            paid: row.paid,
+            invoice_sent: row.invoice_sent,
             // Include other parameters if needed
           }
         });
@@ -127,7 +169,32 @@ function InvoiceRow(props) {
         <TableCell align="right">£{(row.total_cost / 100.0).toFixed(2)}</TableCell>
         <TableCell align="right">{row.invoice_sent ? 'Yes' : 'No'}</TableCell>
         <TableCell align="right">{row.paid ? 'Yes' : 'No'}</TableCell>
-      </TableRow>
+          {!row.paid && !row.invoice_sent && (
+            <TableCell align="right" size="small">
+              {/* Red Close IconButton */}
+                <IconButton
+                  aria-label="delete invoice"
+                  onClick={() => setConfirmDeleteOpen(true)}
+                  sx={{ color: 'red' }}
+                  >
+                  <CloseIcon />
+                </IconButton>
+              </TableCell>
+          )}
+          {!row.paid && row.invoice_sent && (
+            <TableCell align="right" size="small">
+              {/* Green Tick IconButton */}
+              <IconButton
+                aria-label="confirm action"
+                onClick={() => setConfirmMarkPaidOpen(true)}
+                sx={{ color: 'green' }} // Reduced margin
+              >
+                <CheckCircleIcon />
+              </IconButton>
+  
+            </TableCell>
+            )}
+        </TableRow>
       <TableRow>
         <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={7}>
           <Collapse in={open} timeout="auto" unmountOnExit>
@@ -146,7 +213,7 @@ function InvoiceRow(props) {
                   </TableHead>
                   <TableBody>
                     {row.history.map((historyRow) => (
-                      <TableRow key={historyRow.date}>
+                      <TableRow key={historyRow.date} key={historyRow.booking_id}>
                         <TableCell component="th" scope="row">
                             {new Date(historyRow.start_time * 1000).toLocaleDateString('en-GB', {
                               day: '2-digit',
@@ -172,17 +239,30 @@ function InvoiceRow(props) {
         </TableCell>
       </TableRow>
       <LessonCostModal open={modalOpen} handleClose={handleModalClose} lesson={selectedLesson} />
+      <ConfirmationDialog
+        open={confirmMarkPaidOpen}
+        onCancel={() => setConfirmMarkPaidOpen(false)}
+        onConfirm={handleMarkInvoicePaid}
+        title="Mark invoice as externally paid?"
+      />
+      <ConfirmationDialog
+        open={confirmDeleteOpen}
+        onCancel={() => setConfirmDeleteOpen(false)}
+        onConfirm={handleDeleteInvoice}
+        title="Cancel invoice?"
+      />
+
     </React.Fragment>
   );
 }
 
 InvoiceRow.propTypes = {
   row: PropTypes.shape({
-    contactName: PropTypes.string.isRequired,
-    contactEmail: PropTypes.string.isRequired,
-    bookingsCount: PropTypes.number.isRequired,
-    totalCost: PropTypes.string.isRequired,
-    invoiceSent: PropTypes.bool.isRequired,
+    contact_name: PropTypes.string.isRequired,
+    contact_email: PropTypes.string.isRequired,
+    bookings_count: PropTypes.number.isRequired,
+    total_cost: PropTypes.string.isRequired,
+    invoice_sent: PropTypes.bool.isRequired,
     paid: PropTypes.bool.isRequired,
     month: PropTypes.number.isRequired,
     year: PropTypes.number.isRequired,

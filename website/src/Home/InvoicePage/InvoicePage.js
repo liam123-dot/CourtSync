@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, createContext } from 'react';
 import axios from 'axios';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -8,6 +8,9 @@ import Button from '@mui/material/Button';
 import InvoiceTable from './InvoiceTable';
 import { Backdrop, CircularProgress } from '@mui/material';
 // 
+
+export const InvoiceDataContext = createContext(null);
+
 export default function InvoicePage() {
     const [view, setView] = useState('daily');
     const [statusView, setStatusView] = useState('upcoming'); // ['completed', 'pending']
@@ -23,6 +26,7 @@ export default function InvoicePage() {
     // Fetch invoice data
     const fetchInvoiceData = async (view, statusView, contactEmail = null, limit = 50, offset = 0) => {
         setIsInvoicesLoading(true);
+        setData([]);
         try {
             let url = `${process.env.REACT_APP_API_URL}/invoices?frequency=${view}&status=${statusView}`;
 
@@ -85,6 +89,28 @@ export default function InvoicePage() {
         setStatusView(newValue);
     };
 
+    const calculateNextInvoiceDate = () => {
+        const today = new Date();
+        const day = today.getDay();
+        const date = today.getDate();
+        const month = today.getMonth();
+        const year = today.getFullYear();
+    
+        let nextInvoiceDate = new Date(year, month, date);
+    
+        if (view === 'daily') {
+            nextInvoiceDate.setDate(date + 1);
+        } else if (view === 'weekly') {
+            const daysUntilNextMonday = (7 - day + 1) % 7;
+            nextInvoiceDate.setDate(date + daysUntilNextMonday);
+        } else if (view === 'monthly') {
+            nextInvoiceDate.setMonth(month + 1);
+            nextInvoiceDate.setDate(1);
+        }
+    
+        return nextInvoiceDate;
+    }
+
     return !isInitialLoad ? (
         invoicesInitialised ? (
             <Box sx={{ borderTop: '4px solid #000', width: '100%', height: '100%', display: 'flex' }}>
@@ -96,7 +122,18 @@ export default function InvoicePage() {
                             <Tab value="upcoming" label="Upcoming" />
                         </Tabs>
                     </Box>
-                    <InvoiceTable data={data} />
+                    {
+                        statusView === 'upcoming' && (
+                            <Box bgcolor="primary.main" color="primary.contrastText" p={2} borderRadius={3}>
+                                <Typography variant="h6" align="center">
+                                    Invoices to be sent on {calculateNextInvoiceDate().toLocaleDateString()}
+                                </Typography>
+                            </Box>
+                        )
+                    }
+                    <InvoiceDataContext.Provider value={{ fetchInvoiceData, view, statusView }}>
+                        <InvoiceTable data={data} />
+                    </InvoiceDataContext.Provider>
                 </Box>
             </Box>
         ) : (

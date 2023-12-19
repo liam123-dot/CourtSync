@@ -159,8 +159,7 @@ def insert_one_time_pricing_rule(
     execute_query(sql, (coach_id, rate, label, start_time, end_time, all_day, type, period, None), is_get_query=False)
     
 def date_to_epoch(date):
-    return int(datetime.strptime(date, '%Y-%m-%d').timestamp())
-
+    return int(datetime.strptime(date, '%Y-%m-%dT%H:%M:%S.%fZ').timestamp())
 
 CreatePricingRuleBlueprint = Blueprint('CreatePricingRuleBlueprint', __name__)
 

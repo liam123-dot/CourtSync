@@ -44,6 +44,7 @@ from src.Contacts.Players.EditPlayer import EditPlayerBlueprint
 from src.Invoices.GetInvoices.GetInvoices import GetInvoicesBlueprint
 from src.Invoices.GetInvoices.GetInvoices2 import GetInvoices2Blueprint
 from src.Invoices.Private.InvoicePaidWebhook import InvoicePaidWebhookBlueprint
+from src.Invoices.MarkInvoiceAsPaid import MarkInvoiceAsPaidBlueprint
 
 from src.Timetable.CheckOverlaps import CheckOverlapsBlueprint
 from src.Timetable.PostWorkingHours import PostWorkingHoursBlueprint
@@ -110,6 +111,7 @@ def create_app():
     app.register_blueprint(GetInvoicesBlueprint)
     app.register_blueprint(GetInvoices2Blueprint)
     app.register_blueprint(InvoicePaidWebhookBlueprint)
+    app.register_blueprint(MarkInvoiceAsPaidBlueprint)
     
     app.register_blueprint(CheckOverlapsBlueprint)
     app.register_blueprint(GetTimetable2Blueprint)

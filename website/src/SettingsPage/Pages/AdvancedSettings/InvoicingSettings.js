@@ -1,109 +1,150 @@
-import React, { useEffect, useState } from "react";
-import axios from "axios";
-import { Spinner, Button } from "../../../Authentication/styles";
-import { usePopup } from "../../../Notifications/PopupContext";
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import { Box, Typography, Button, CircularProgress, FormControl, InputLabel, Select, MenuItem, Backdrop } from '@mui/material';
+import { usePopup } from '../../../Notifications/PopupContext';
 
-export default function InvoicingSettings({}) {
-
+export default function InvoicingSettings() {
     const [hasStripeAccount, setHasStripeAccount] = useState(false);
-    const [isStripeSetupLoading, setIsStripeSetupLoading] = useState(false);
-    const [isSaveLoading, setIsSaveLoading] = useState(false);
-
-    const [invoiceType, setInvoiceType] = useState(null);
+    const [accountFullySetup, setAccountFullySetup] = useState(false);
+    const [isLoading, setIsLoading] = useState({ save: false, setup: false });
+    const [isInitialLoading, setIsInitialLoading] = useState(true); // TODO: use this to show a loading spinner
+    const [invoiceType, setInvoiceType] = useState('');
+    const [showBackdrop, setShowBackdrop] = useState(false);
 
     const { showPopup } = usePopup();
 
     useEffect(() => {
-
         const fetchData = async () => {
-
-            const resposne = await axios.get(`${process.env.REACT_APP_API_URL}/user/me`, {
-                headers: {
-                    'Authorization': localStorage.getItem("AccessToken")
-                }
-            });
-
-            const data = resposne.data;
-
-            if (data.stripe_account){
-                setHasStripeAccount(true);
+            try {
+                const response = await axios.get(`${process.env.REACT_APP_API_URL}/user/me`, {
+                    headers: { 'Authorization': localStorage.getItem('AccessToken') }
+                });
+                const data = response.data;
+                setHasStripeAccount(!!data.stripe_account);
+                setInvoiceType(data.invoice_type || '');
+                setAccountFullySetup(data.stripe_account_set_up);
+                setIsInitialLoading(false);
+            } catch (error) {
+                console.error(error);
             }
-
-            setInvoiceType(data.invoice_type)
-
-        }
+            setIsInitialLoading(false);
+        };
 
         fetchData();
-        
     }, []);
 
-    const saveButton = async () => {
+    const handleSave = async () => {
+        setIsLoading(prev => ({ ...prev, save: true }));
+        try {
+            await axios.put(`${process.env.REACT_APP_API_URL}/user/me`, { invoice_type: invoiceType }, {
+                headers: { 'Authorization': localStorage.getItem('AccessToken') }
+            });
+            showPopup('Success');
+        } catch (error) {
+            console.error(error);
+        }
+        setIsLoading(prev => ({ ...prev, save: false }));
+    };
 
-        try{
+    const handleStripeSetup = async () => {
+        setIsLoading(prev => ({ ...prev, setup: true }));
+        try {
+            const response = await axios.post(`${process.env.REACT_APP_API_URL}/user/stripe-account`, {}, {
+                headers: { 'Authorization': localStorage.getItem('AccessToken') }
+            });
+            window.location.href = response.data.url;
+        } catch (error) {
+            console.error(error);
+        }
+        setIsLoading(prev => ({ ...prev, setup: false }));
+    };
 
-            setIsSaveLoading(true);
+    const generateLink = async () => {
 
-            const response = await axios.put(`${process.env.REACT_APP_API_URL}/user/me`, {
-                invoice_type: invoiceType
-            }, {
-                headers: {
-                    'Authorization': localStorage.getItem("AccessToken")
-                }
+        try {
+
+            setShowBackdrop(true);
+
+            const response = await axios.post(`${process.env.REACT_APP_API_URL}/user/stripe-account/generate-link`, {}, {
+                headers: { 'Authorization': localStorage.getItem('AccessToken') }
             });
             
-            showPopup('Success')
+            console.log(response)
+            // window.location.href = response.data.url;
 
         } catch (error) {
-            console.log(error);
+            console.error(error);
         }
-        setIsSaveLoading(false);
 
     }
 
-    const generateOnboardingLink = async () => {
-        setIsStripeSetupLoading(true);
-        const response = await axios.post(`${process.env.REACT_APP_API_URL}/user/stripe-account`, {}, {
-            headers: {
-                'Authorization': localStorage.getItem("AccessToken")
-            }
-        });
-        setIsStripeSetupLoading(false);
-    
-        const url = response.data.url;
-        window.location.href = url;
+    if (isInitialLoading) {
+        return (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+                <CircularProgress color='inherit'/>
+            </Box>
+        );
     }
 
     return (
-        <div>            
-            <p>Here you can configure your invoicing settings.</p>
-            {!hasStripeAccount && !invoiceType &&
-                <p style={{ color: 'red' }}><b>You must have a stripe account connected and set a invoice regularity before invoicing is enabled</b></p>
-            }
+        <Box sx={{ padding: 3 }}>
+            <Typography variant="h6" gutterBottom>
+                Configure your invoicing settings.
+            </Typography>
 
-            <p>Send invoices: 
-            <select value={invoiceType} onChange={(e) => setInvoiceType(e.target.value)}>
-                <option value="" disabled>Select Option</option>
-                <option value="daily">Daily</option>
-                <option value="weekly">Weekly</option>
-                <option value="monthly">Monthly</option>
-            </select>
-            </p>
-            <Button type="submit" onClick={saveButton}>
-                {isSaveLoading ? <Spinner /> : "Save"}
-            </Button>
-            {hasStripeAccount ? (
-            <div>
-                <p><a href="https://stripe.com/gb">Click here to view your stripe account</a></p>
-            </div>
-            ):
-            <div>
-                <Button type="submit" onClick={generateOnboardingLink}>
-                    {isStripeSetupLoading ? <Spinner /> : "Click here to set up your stripe account"}
-                </Button>            
-            </div>
+            {!hasStripeAccount && !invoiceType && (
+                <Typography color="error">
+                    <strong>Connect a Stripe account and set invoice regularity to enable invoicing.</strong>
+                </Typography>
+            )}
+
+            <FormControl fullWidth margin="normal">
+                How often would you like invoices to be sent:
+                <Select value={invoiceType} onChange={(e) => setInvoiceType(e.target.value)}>
+                    <MenuItem value="" disabled>Select Option</MenuItem>
+                    <MenuItem value="daily">Daily</MenuItem>
+                    <MenuItem value="weekly">Weekly</MenuItem>
+                    <MenuItem value="monthly">Monthly</MenuItem>
+                </Select>
+            </FormControl>
+
+            <Box sx={{display: 'flex', flexDirection: 'column', mt: 2}}>
+                <Button variant="contained" onClick={handleSave} sx={{ mt: 2 }}>
+                    {isLoading.save ? <CircularProgress size={24} /> : 'Save'}
+                </Button>
+
+                {!hasStripeAccount && (
+                    <Box>
+                        <Typography sx={{ mt: 2 }}>
+                            Set up a stripe account so you can get paid
+                        </Typography>
+                        <Button variant="contained" onClick={handleStripeSetup} sx={{ mt: 2 }}>                        
+                            {isLoading.setup ? <CircularProgress color='inherit'/> : 'Set up Stripe Account'}
+                        </Button>
+                    </Box>
+                )}
+            </Box>
+
+            {hasStripeAccount && accountFullySetup && (
+                <Typography sx={{ mt: 2 }}>
+                    <a href="https://stripe.com/gb">Manage your Stripe account</a>
+                </Typography>
+            )}
+            {
+                hasStripeAccount && !accountFullySetup && (
+                    <Box>
+                        <Typography sx={{ mt: 2 }}>
+                            Attention is required to finish the setup of your Stripe account. This is required to send invoices and get paid.
+                        </Typography>
+                        <Button onClick={generateLink}>
+                            Click here to finish setting up your Stripe account
+                        </Button>
+                    </Box>
+                )
             }
-                
-        </div>
+            <Backdrop open={showBackdrop} sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
+                <CircularProgress color="inherit" />
+            </Backdrop>
+        </Box>
     );
-
 }

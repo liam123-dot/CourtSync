@@ -6,10 +6,12 @@ import os
 from src.Database.ExecuteQuery import execute_query
 from src.Users.GetSelf.CheckAuthorization import get_access_token_username
 from src.Users.UserPublicProfile.GetProfilePictureUrl import get_profile_picture_url
+import stripe
 
 load_dotenv('.env')
 
 WEBSITE_URL = os.getenv('WEBSITE_URL')
+stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
 
 UserGetSelfBlueprint = Blueprint('UserGetSelfBlueprint', __name__)
 
@@ -67,11 +69,36 @@ def get_attributes(coach_id):
     
     results['name'] = f"{results['first_name']} {results['last_name']}"
     
-    results['coach_setup'] = check_account_set_up(coach_id)
+    results['coach_setup'] = check_stripe(results)
 
     results['coach_url'] = construct_coach_url(results)
 
     return results
+
+def check_stripe(coach):
+    if coach['stripe_account'] is None:
+        return False
+    
+    if coach['stripe_account_set_up'] is False:
+        setup_complete = check_stripe_api(coach)
+        if setup_complete:
+            sql = "UPDATE Coaches SET stripe_account_set_up = TRUE WHERE coach_id = %s"
+            execute_query(sql, (coach['coach_id'],), False)
+            return True
+        return False
+    
+    else:
+        return True
+    
+def check_stripe_api(coach):
+    
+    account = stripe.Account.retrieve(
+        coach['stripe_account']
+    )
+    
+    if account['charges_enabled'] and account['details_submitted']:
+        return True
+    return False
 
 def construct_coach_url(coach):
     return f"{WEBSITE_URL}/#/{coach['slug']}"

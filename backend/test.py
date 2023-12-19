@@ -1,27 +1,10 @@
-import requests
-import threading
-import time
+import stripe
 
-url = "https://api-test.courtsync.co.uk:8000/timetable/liam-buchanan?from_time=1701043200&to_time=1701647999"
+stripe.api_key = "sk_test_51O9ZfgHr5w2HXr5R8PQcEotoZ5FacJdXCm4yrAjWwjiFI9MkOwnqQLi6P2BBwYlrO5IeOZ7LznSW1oOBFdrV1Fci002J5POU5f"
 
-response = requests.get(url)
-
-print(response)
-
-x = 80
-
-def test():
-    st = time.time()
-    response = requests.get(url)
-    print(response)
-    # print(response.json())
-    et = time.time()
+account = stripe.Account.retrieve(
+    'acct_1OCsWgQd6CaP9INW'
     
-    print(et - st)
-    
-# test how many requests can be made at once
-for i in range (600):
-    for i in range(x):
-        threading.Thread(target=test).start()
-    time.sleep(1)
-# test()
+    )
+
+print(account)

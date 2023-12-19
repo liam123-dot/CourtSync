@@ -1,52 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import styled from '@emotion/styled';
-import { SaveButton } from '../../../../Home/CommonAttributes/SaveButton';
-import { Spinner } from '../../../../Spinner';
-import { usePopup } from '../../../../Notifications/PopupContext';
+import { Button, CircularProgress, Container, Grid, TextField, Typography } from '@mui/material';
 import AddNewPricingRuleComponent from './AddNewPricingRuleComponent';
 import PricingRule from './PricingRuleComponent';
 import { useSettingsLabels } from '../../../SettingsPage2';
-import { CircularProgress } from '@mui/material';
-
-const Container = styled.div`
-  padding: 20px;
-`;
-
-const Heading = styled.h3`
-  color: #333;
-  font-weight: 500;
-  margin-bottom: 20px;
-`;
-
-const InputContainer = styled.div`
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  width: 100%;
-  margin-bottom: 20px;
-`;
-
-const StyledInput = styled.input`
-  padding: 10px;
-  margin: 0 10px;
-  font-size: 16px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  text-align: right;
-`;
-
-const StyledButton = styled.button`
-  background-color: #4CAF50;
-  color: white;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  &:hover {
-    background-color: #45a049;
-  }
-`;
+import { usePopup } from '../../../../Notifications/PopupContext';
 
 export default function CostInput() {
 
@@ -146,58 +104,65 @@ export default function CostInput() {
 
     }
     return (
-        <Container style={{
-          textAlign: 'left'
-        }}>
-          <Heading>
-            Set your cost per hour for lessons as well as additional costs or fixed costs that may occur. 
-            Additional costs can also be added by editing bookings
-          </Heading>
-    
-          <InputContainer>
-            <p>Lesson Cost per Hour:</p>
-            {
-              isDefaultPriceLoading ? <CircularProgress/> : (
-            <>
-            <span>£</span>
-            <StyledInput
-              type="text"
-              value={price}
-              onChange={handlePriceChange}
-              placeholder="0.00"
-            />
-            <SaveButton onClick={handleSave}>
-              {isSaving ? <Spinner /> : 'Save'}
-            </SaveButton>
-            </>
-              )}
-          </InputContainer>
+      <Container sx={{ textAlign: 'left', p: 2 }}>
+          <Typography variant="h5" gutterBottom>
+              Set your cost per hour for lessons as well as additional costs or fixed costs that may occur. 
+              Additional costs can also be added by editing bookings.
+          </Typography>
+  
+          <Grid container spacing={2} alignItems="center">
+              <Grid item xs={12} md={6}>
+                  <Typography>Lesson Cost per Hour:</Typography>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                  {isDefaultPriceLoading ? (
+                      <CircularProgress/>
+                  ) : (
+                      <>
+                          <TextField
+                              type="text"
+                              value={price}
+                              onChange={handlePriceChange}
+                              placeholder="0.00"
+                              InputProps={{
+                                  startAdornment: <Typography>£</Typography>,
+                              }}
+                              sx={{ marginRight: 2 }}
+                          />
+                          <Button variant="contained" color="primary" onClick={handleSave} disabled={isSaving}>
+                              {isSaving ? <CircularProgress size={24} /> : 'Save'}
+                          </Button>
+                      </>
+                  )}
+              </Grid>
+          </Grid>
 
           {!isExtraRulesLoading ? (
-            <>
-      
-            <InputContainer>
-              <Heading>Extra Rules</Heading>
-            
-            </InputContainer>
-      
-      
-            {pricingRules.map((rule, index) => (
-              <PricingRule key={index} pricingRule={rule} refresh={getRules}/>
-              ))}
-                {addingRule && 
-                  <AddNewPricingRuleComponent setShown={setAddingRule} refresh={getRules}/>
-                }
-              {addingRule ? (
-                <StyledButton onClick={() => setAddingRule(false)}>Cancel New Rule</StyledButton>
-              ): 
-              (
-                <StyledButton onClick={() => setAddingRule(true)}>Add New Rule</StyledButton>
-              )}
-          </>
-          ): (
-            <CircularProgress/>
+              <>
+                  <Typography variant="h6" sx={{ mt: 2, mb: 1 }}>Extra Rules</Typography>
+                  
+                  {/* Column Headers */}
+                  <Grid container spacing={2} alignItems="center" sx={{ mb: 1, fontWeight: 'bold' }}>
+                      <Grid item xs={2}>Label</Grid>
+                      <Grid item xs={2}>Time</Grid>
+                      <Grid item xs={2}>Date/Days</Grid>
+                      <Grid item xs={2}>Rate</Grid>
+                      <Grid item xs={3}>Type</Grid>
+                      <Grid item xs={1}>Action</Grid>
+                  </Grid>
+
+                  {pricingRules.map((rule, index) => (
+                      <PricingRule key={index} pricingRule={rule} refresh={getRules}/>
+                  ))}
+                  {addingRule && <AddNewPricingRuleComponent setShown={setAddingRule} refresh={getRules}/>}
+
+                  <Button variant="contained" onClick={() => setAddingRule(!addingRule)} sx={{ mt: 2 }}>
+                      {addingRule ? 'Cancel New Rule' : 'Add New Rule'}
+                  </Button>
+              </>
+          ) : (
+              <CircularProgress/>
           )}
-        </Container>
-      );
+      </Container>
+  );
 }

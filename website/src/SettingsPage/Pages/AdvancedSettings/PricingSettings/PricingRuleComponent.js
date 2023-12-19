@@ -1,54 +1,9 @@
 import React, { useState } from 'react';
-import styled from '@emotion/styled';
 import axios from 'axios';
-import {usePopup} from '../../../../Notifications/PopupContext'
+import { usePopup } from '../../../../Notifications/PopupContext';
 import ConfirmationPopup from '../../../../Notifications/ConfirmComponent';
-
-const StyledPricingRule = styled.div`
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    padding: 10px;
-    padding-right: 40px; // Add this line
-    border-bottom: 1px solid #e5e5e5;
-    background-color: #f8f8f8;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
-    margin-bottom: 10px;
-    position: relative;
-    &:hover {
-        background-color: #eaeaea; // Example of hover effect
-    }
-`;
-
-const StyledParagraph = styled.p`
-    margin: 0;
-    color: #333;
-    font-weight: 500;
-
-    &.rate {
-        color: #4CAF50;
-    }
-
-    &.type {
-        font-style: italic;
-    }
-`;
-
-const StyledDeleteButton = styled.button`
-    display: ${props => props.show ? 'block' : 'none'};
-    background: none;
-    border: none;
-    color: red;
-    font-size: 20px;
-    cursor: pointer;
-    position: absolute;
-    right: 10px;
-    &:hover {
-        color: darkred;
-    }
-`;
+import { Card, CardContent, Typography, IconButton, Grid } from '@mui/material';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 const formatEpochSecondsToHHMM = (time) => {
 
@@ -88,6 +43,7 @@ const formatDayMinutesToHHMM = (minutes) => {
 export default function PricingRule({pricingRule, refresh}){
     const [showDelete, setShowDelete] = useState(false);
     const [showConfirmationPopup, setShowConfirmationPopup] = useState(false);
+    const [deleteLoading, setDeleteLoading] = useState(false);
     const { showPopup } = usePopup();
 
     const confirmDelete = () => {
@@ -95,6 +51,7 @@ export default function PricingRule({pricingRule, refresh}){
     };
 
     const handleConfirmDelete = async () => {
+        setDeleteLoading(true);
         try {
             await axios.delete(`${process.env.REACT_APP_API_URL}/pricing-rules/${pricingRule.rule_id}`, {
                 headers: {
@@ -108,7 +65,9 @@ export default function PricingRule({pricingRule, refresh}){
             console.error(error);
         } finally {
             setShowConfirmationPopup(false);
+            setDeleteLoading(false);
         }
+        setDeleteLoading(false);
     };
 
     const formatTimeComponent = () => {
@@ -144,7 +103,7 @@ export default function PricingRule({pricingRule, refresh}){
             let daysString = ""
 
             for (let i = 0; i < days.length; i++) {
-                daysString += days[i].slice(0,2)
+                daysString += days[i].slice(0,2).toUpperCase()
                 if (i !== days.length - 1) {
                     daysString += ", "
                 }
@@ -172,21 +131,50 @@ export default function PricingRule({pricingRule, refresh}){
 
     return (
         <>
-            <StyledPricingRule onMouseEnter={() => setShowDelete(true)} onMouseLeave={() => setShowDelete(false)}>
-                <StyledParagraph>{pricingRule.label}</StyledParagraph>
-                <StyledParagraph>{formatTimeComponent()}</StyledParagraph>
-                <StyledParagraph>{formatDateComponent()}</StyledParagraph>
-                <StyledParagraph className="rate">£{(pricingRule.rate / 100).toFixed(2)}</StyledParagraph>
-                <StyledParagraph className="type">{formatType()}</StyledParagraph>
-                <StyledDeleteButton show={showDelete} onClick={confirmDelete}>X</StyledDeleteButton>
-            </StyledPricingRule>
+            <Card 
+                sx={{ mb: 1, boxShadow: 1, position: 'relative' }}
+                onMouseEnter={() => setShowDelete(true)} 
+                onMouseLeave={() => setShowDelete(false)}
+            >
+                <CardContent>
+                    <Grid container alignItems="center" justifyContent="space-between">
+                        <Grid item xs={2}>
+                            <Typography variant="body1">{pricingRule.label}</Typography>
+                        </Grid>
+                        <Grid item xs={2}>
+                            <Typography variant="body1">{formatTimeComponent()}</Typography>
+                        </Grid>
+                        <Grid item xs={2}>
+                            <Typography variant="body1">{formatDateComponent()}</Typography>
+                        </Grid>
+                        <Grid item xs={2}>
+                            <Typography variant="body1" sx={{ color: 'green' }}>£{(pricingRule.rate / 100).toFixed(2)}</Typography>
+                        </Grid>
+                        <Grid item xs={3}>
+                            <Typography variant="body1" sx={{ fontStyle: 'italic' }}>{formatType()}</Typography>
+                        </Grid>
+                        <Grid item xs={1}>
+                            <IconButton 
+                                onClick={confirmDelete} 
+                                sx={{ 
+                                    opacity: showDelete ? 1 : 0, 
+                                    visibility: showDelete ? 'visible' : 'hidden' 
+                                }}
+                            >
+                                <DeleteIcon color="error" />
+                            </IconButton>
+                        </Grid>
+                    </Grid>
+                </CardContent>
+            </Card>
             {showConfirmationPopup && (
                 <ConfirmationPopup
                     message="Are you sure you want to delete this pricing rule?"
                     onConfirm={handleConfirmDelete}
                     onCancel={() => setShowConfirmationPopup(false)}
+                    isConfirming={deleteLoading}
                 />
             )}
         </>
-    )
+    );
 }

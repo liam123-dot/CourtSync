@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@date-io/date-fns": "^2.17.0",
     "@date-io/dayjs": "^2.17.0",
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
@@ -14,6 +15,7 @@
     "@fullcalendar/react": "^6.1.10",
     "@fullcalendar/timegrid": "^6.1.10",
     "@mui/icons-material": "^5.14.19",
+    "@mui/lab": "^5.0.0-alpha.157",
     "@mui/material": "^5.14.20",
     "@mui/x-date-pickers": "^6.18.4",
     "@testing-library/jest-dom": "^5.17.0",

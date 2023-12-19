@@ -3,6 +3,7 @@ import logging
 
 logging.basicConfig(level=logging.DEBUG)
 
+from src.Bookings.GetBooking import get_booking
 from src.Database.ExecuteQuery import execute_query
 from src.Users.GetSelf.GetSelf import get_coach
 
@@ -92,12 +93,17 @@ def get_rules_endpoint(booking_id):
     if not coach:
         return jsonify({'error': 'unauthorized'}), 400
 
+    booking = get_booking(booking_id)
+    
+    if not booking:
+        return jsonify({'error': 'No booking found'}), 400
+
     rules = get_rules_from_booking_id(booking_id)
     
     if rules is None:
         return jsonify({'error': 'No pricing rules found'}), 400
-
-    rules, cost = format_rules_data(rules)
+    
+    rules, cost = format_rules_data(rules, booking['duration'])
 
     return jsonify(rules=rules, cost=cost), 200
 
@@ -111,7 +117,7 @@ def get_rules_from_booking_id(booking_id):
     results = execute_query(sql, (booking_id,), True)
     return results
 
-def format_rules_data (rules):
+def format_rules_data (rules, duration):
     cost = 0
     new_rules = {
         'extra': []
@@ -119,7 +125,7 @@ def format_rules_data (rules):
     for rule in rules:
         if rule['is_default'] or rule['type'] == 'hourly':
             new_rules['hourly'] = rule
-            cost += rule['rate']
+            cost += rule['rate'] * (duration / 60)
         else:
             new_rules['extra'].append(rule)
             cost += rule['rate']
