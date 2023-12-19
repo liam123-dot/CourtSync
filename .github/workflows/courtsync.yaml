@@ -23,6 +23,7 @@ jobs:
         run: |
           cd backend/API
           sed -i 's/YourSecretId/env-testing/g' launch-script.sh
+          cd ../..
 
       - name: Sync with S3
         run: |
@@ -30,24 +31,7 @@ jobs:
 
       - name: Reboot EC2 Instances
         run: |
-          for instance_id in $(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names "test-api-auto-scale-group" --query "AutoScalingGroups[].Instances[].InstanceId" --output text); do
-              echo "Rebooting instance $instance_id"
-              instance_ip=$(aws ec2 describe-instances --instance-ids $instance_id --query 'Reservations[].Instances[].PublicIpAddress' --output text)
-              aws ec2 reboot-instances --instance-ids $instance_id
-              sleep 15
-              while true; do
-                  response=$(curl --write-out '%{http_code}' --silent --output /dev/null http://$instance_ip:8000/)
-                  if [ "$response" -eq 200 ]; then
-                      echo "Instance $instance_id is up and running"
-                      break
-                  else
-                      echo "Waiting for instance $instance_id to be up and running"
-                      sleep 5
-                  fi
-              done
-              echo "Instance $instance_id is up and running"
-          done
-          echo "All instances are up and running"
+          python3 update.py
 
       - name: Build and Deploy Website
         run: |
