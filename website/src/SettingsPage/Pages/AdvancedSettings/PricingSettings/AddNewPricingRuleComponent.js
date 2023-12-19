@@ -73,6 +73,9 @@ export default function AddNewPricingRuleComponent({setShown, refresh}) {
         } catch (error) {
 
             console.log(error);
+            if (error.response) {
+                showPopup(error.response.data.message);
+            }
 
         }
 
