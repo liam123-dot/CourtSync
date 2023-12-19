@@ -1,79 +1,76 @@
 import React, { useState, useEffect } from 'react';
-import { ModalOverlay, ModalContent } from "../../Calendar/ModalStyles";
+import Modal from '@mui/material/Modal';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
 import styled from '@emotion/styled';
 import CoachAddLesson from './CoachAddLesson';
 import CoachAddEvent from './CoachAddEvent';
 
-const Label = styled.label`
-  margin-right: 15px;
-  display: block; // changed to block to display on new lines
-  margin-top: 10px; 
-`;
-
-const InputField = styled.input`
-  display: block;
-  width: 100%;
-  padding: 10px;
-  margin-top: 5px;
-  font-size: 18px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-`;
-
-const SelectField = styled.select`
-  display: block;
-  width: 100%;
-  padding: 10px;
-  margin-top: 5px;
-  font-size: 18px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-`;
-
-const OptionButton = styled.button`
-  background-color: ${props => props.selected ? 'blue' : ''};
-  color: ${props => props.selected ? 'white' : ''};
-`;
+const style = {
+  position: 'absolute',
+  top: '50%',
+  left: '50%',
+  transform: 'translate(-50%, -50%)',
+  width: '30%',
+  minWidth: '300px', // set a minimum width
+  height: '80%', // set a height
+  overflow: 'auto', // make it scrollable
+  bgcolor: 'background.paper',
+  border: '2px solid #000',
+  boxShadow: 24,
+  p: 4,
+};
 
 export default function CoachAddEventModal({ isOpen, onClose}) {
 
   const [selectedOption, setSelectedOption] = useState('lesson');
+  useEffect(() => {
+    setSelectedOption('lesson');
+  }, [isOpen]);
 
   if (!isOpen) {
     return null;
   }
 
+
+  const buttonStyle = (isSelected) => ({
+    backgroundColor: isSelected ? 'blue' : '',
+    color: isSelected ? 'white' : '',
+    margin: '5px',
+  });
+
   return (
-    <ModalOverlay onClick={onClose}>
-      <ModalContent onClick={(e) => e.stopPropagation()}>
+    <Modal
+      open={isOpen}
+      onClose={onClose}
+    >
+      <Box sx={style}>
 
-        <div style={{
-            display: 'flex',
-            flexDirection: 'column'
-        }}>
-
-          <div>
-            <OptionButton selected={selectedOption === 'lesson'} onClick={() => setSelectedOption('lesson')}>
-              Lesson
-            </OptionButton>
-            <OptionButton selected={selectedOption === 'other'} onClick={() => setSelectedOption('other')}>
-              Other
-            </OptionButton>
-          </div>
-
-          {
-            selectedOption === 'lesson' ? (
-              <CoachAddLesson closeModal={onClose}/>
-            ): (
-              <CoachAddEvent closeModal={onClose}/>
-            )
-          }
-
-          <button onClick={onClose}>Close</button>
-
+        <div>
+          <Button 
+            style={buttonStyle(selectedOption === 'lesson')} 
+            onClick={() => setSelectedOption('lesson')}
+          >
+            Lesson
+          </Button>
+          <Button 
+            style={buttonStyle(selectedOption === 'other')} 
+            onClick={() => setSelectedOption('other')}
+          >
+            Other
+          </Button>
         </div>
 
-      </ModalContent>
-    </ModalOverlay>
+        {
+          selectedOption === 'lesson' ? (
+            <CoachAddLesson closeModal={onClose} />
+          ) : (
+            <CoachAddEvent closeModal={onClose} />
+          )
+        }
+
+        <Button onClick={onClose}>Close</Button>
+      </Box>
+    </Modal>
   );
 }

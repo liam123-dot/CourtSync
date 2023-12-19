@@ -420,4 +420,10 @@ def get_working_hours_endpoint():
     results = execute_working_hours_query(coach['coach_id'])
     
     return jsonify(results), 200
+def execute_working_hours_query(coach_id):
     
+    sql = "SELECT working_hour_id, day_of_week, start_time, end_time FROM WorkingHours WHERE coach_id=%s"
+    
+    results = execute_query(sql, (coach_id, ))
+        
+    return results

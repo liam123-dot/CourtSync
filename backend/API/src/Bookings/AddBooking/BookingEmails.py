@@ -149,10 +149,10 @@ def send_player_booked_by_coach_email(player_email, start_time, duration, cost, 
     """
     
     # Add the coach's email to the body if it is provided
-    if coach_email is not None:
-        bodyHTML += f"<p>Coach contact email: {coach_email}.</p>"
-    if coach_phone_number is not None:
-        bodyHTML += f"<p>Coach contact phone number: {coach_phone_number}.</p>"
+    # if coach_email is not None:
+    #     bodyHTML += f"<p>Coach contact email: {coach_email}.</p>"
+    # if coach_phone_number is not None:
+    #     bodyHTML += f"<p>Coach contact phone number: {coach_phone_number}.</p>"
     
     # Complete the email body with the cancellation link
     bodyHTML += f"""

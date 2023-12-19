@@ -1,7 +1,7 @@
 from flask import request, jsonify, Blueprint
 
 from src.Database.ExecuteQuery import execute_query
-from src.Users.GetSelf.GetSelf import get_coach
+from src.Users.GetSelf.GetSelf import get_coach, get_coach_from_slug
 
 GetSettingsBlueprint = Blueprint('GetSettingsBlueprint', __name__)
 
@@ -53,3 +53,20 @@ def check_settings():
         working_hours=working_hours,
         any=durations and pricing_rules and working_hours
     ), 200
+    
+@GetSettingsBlueprint.route('/coach/<slug>/ready', methods=['GET'])
+def check_settings_unauthorised(slug):
+    
+    coach = get_coach_from_slug(slug)
+    
+    if not coach:
+        return jsonify(message='Invalid slug'), 401
+    
+    durations = check_durations(coach['coach_id'])
+    pricing_rules = check_pricing_rules(coach['coach_id'])
+    working_hours = check_working_hours(coach['coach_id'])
+    
+    return jsonify(
+        durations and pricing_rules and working_hours
+    ), 200
+    

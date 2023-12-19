@@ -42,11 +42,13 @@ from src.Contacts.Players.DeletePlayer import DeletePlayerBlueprint
 from src.Contacts.Players.EditPlayer import EditPlayerBlueprint
 
 from src.Invoices.GetInvoices.GetInvoices import GetInvoicesBlueprint
+from src.Invoices.GetInvoices.GetInvoices2 import GetInvoices2Blueprint
 from src.Invoices.Private.InvoicePaidWebhook import InvoicePaidWebhookBlueprint
 
 from src.Timetable.CheckOverlaps import CheckOverlapsBlueprint
 from src.Timetable.PostWorkingHours import PostWorkingHoursBlueprint
 from src.Timetable.GetTimetable.GetTimetable import GetTimetableBlueprint
+from src.Timetable.GetTimetable.GetTimetable2 import GetTimetable2Blueprint
 from src.Timetable.GetFeatures import GetFeaturesBlueprint
 from src.Timetable.EditFeatures import EditFeaturesBlueprint
 
@@ -106,10 +108,11 @@ def create_app():
     app.register_blueprint(EditPlayerBlueprint)
     
     app.register_blueprint(GetInvoicesBlueprint)
+    app.register_blueprint(GetInvoices2Blueprint)
     app.register_blueprint(InvoicePaidWebhookBlueprint)
     
     app.register_blueprint(CheckOverlapsBlueprint)
-    app.register_blueprint(GetTimetableBlueprint)
+    app.register_blueprint(GetTimetable2Blueprint)
     app.register_blueprint(PostWorkingHoursBlueprint)
     app.register_blueprint(GetFeaturesBlueprint)
     app.register_blueprint(EditFeaturesBlueprint)

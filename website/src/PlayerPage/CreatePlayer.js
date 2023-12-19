@@ -1,60 +1,8 @@
-import React, {useState} from "react";
+import React, { useState } from "react";
 import axios from "axios";
-import styled from "@emotion/styled";
+import { Box, Button, TextField, Typography, FormControl } from '@mui/material';
 
-const Container = styled.div`
-    background: #f9f9f9;
-    padding: 20px;
-    border-radius: 5px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    width: 300px;
-    margin: 20px auto;
-`;
-
-const StyledForm = styled.form`
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-`;
-
-const StyledLabel = styled.label`
-    font-weight: bold;
-    margin-bottom: 5px;
-`;
-
-const StyledInput = styled.input`
-    padding: 8px;
-    border-radius: 4px;
-    border: 1px solid #ddd;
-    &:focus {
-        outline: none;
-        border-color: #4CAF50;
-    }
-`;
-
-const SubmitButton = styled(StyledInput)`
-    background-color: #4CAF50;
-    color: white;
-    cursor: pointer;
-    &:hover {
-        background-color: #45a049;
-    }
-`;
-
-const CancelButton = styled.button`
-    padding: 8px 16px;
-    border-radius: 4px;
-    border: 1px solid #ccc;
-    background: white;
-    cursor: pointer;
-    &:hover {
-        background: #f0f0f0;
-    }
-`;
-
-
-export default function CreatePlayer ({contactId, setOpen, fetchData}) {
-
+export default function CreatePlayer({ contactId, setOpen, fetchData }) {
     const [playerName, setPlayerName] = useState("");
 
     const submitPlayer = async (e) => {
@@ -88,22 +36,30 @@ export default function CreatePlayer ({contactId, setOpen, fetchData}) {
     }
 
     return (
-        <Container>
-            <StyledForm onSubmit={submitPlayer}>
-                <StyledLabel>
-                Player names are used to create lessons and ensure invoices and other important information is sent to the correct place
-                </StyledLabel>
-                <StyledLabel>
-                    Player Name:
-                    <StyledInput
-                        type="text"
-                        value={playerName}
-                        onChange={handleNameChange}
-                    />
-                </StyledLabel>
-                <SubmitButton type="submit" value="Submit" />
-            </StyledForm>
-            <CancelButton onClick={() => setOpen(false)}>Cancel</CancelButton>
-        </Container>
+        <Box sx={{
+            background: '#f9f9f9',
+            padding: 2,
+            borderRadius: 2,
+            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+            width: 300,
+            margin: '20px auto'
+        }}>
+            <FormControl component="form" onSubmit={submitPlayer} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <Typography variant="body1">
+                    Player names are used to create lessons and ensure invoices and other important information is sent to the correct place
+                </Typography>
+                <TextField
+                    label="Player Name"
+                    type="text"
+                    value={playerName}
+                    onChange={handleNameChange}
+                    variant="outlined"
+                />
+                <Button type="submit" variant="contained" color="primary">
+                    Submit
+                </Button>
+            </FormControl>
+            <Button onClick={() => setOpen(false)} sx={{ mt: 1 }}>Cancel</Button>
+        </Box>
     );
 }

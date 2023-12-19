@@ -1,4 +1,5 @@
-from flask import request, jsonify, Blueprint, current_app
+from flask import request, jsonify, Blueprint
+from dateutil.relativedelta import relativedelta
 from datetime import datetime, timedelta
 
 import logging
@@ -31,14 +32,21 @@ def get_bookings(coach_id, from_time, to_time):
     return result
 
 def get_coach_events(coach_id, from_time, to_time):
-    connection = current_app.config['db_connection'].connection
-    sql = "SELECT title, start_time FROM CoachEvents WHERE coach_id=%s AND status='confirmed' AND ((start_time > %s AND start_time < %s) OR (start_time + duration*60 > %s AND start_time + duration*60 < %s))"
-    params = (coach_id, from_time, to_time, from_time, to_time)
-    with connection.cursor() as cursor:
-        cursor.execute(sql, params)
-        result = cursor.fetchall()
-    result = sorted(result, key=lambda x: x[1])    
-    return [{'title': row[0], 'start_time': row[1]} for row in result]
+    sql = """
+        SELECT title, start_time 
+        FROM CoachEvents 
+        WHERE coach_id=%s 
+        AND status='confirmed' 
+        AND ((start_time > %s AND start_time < %s) 
+        OR (start_time + duration*60 > %s AND start_time + duration*60 < %s)
+        OR (start_time <= %s AND start_time + duration*60 >= %s))
+    """
+    params = (coach_id, from_time, to_time, from_time, to_time, from_time, to_time)
+
+    results = execute_query(sql, params)
+        
+    results = sorted(results, key=lambda x: x['start_time'])    
+    return results
 
 
 @CheckOverlapsBlueprint.route('/timetable/check-overlaps', methods=['GET'])
@@ -139,8 +147,10 @@ def check_overlaps_repeats(coach_id, from_time, to_time, repeat_until, repeat_fr
             start_date = start_date + timedelta(weeks=2)
             end_date = end_date + timedelta(weeks=2)
         elif repeat_frequency == 'monthly':
-            start_date = start_date + timedelta(weeks=4)
-            end_date = end_date + timedelta(weeks=4)
+            start_date = start_date + relativedelta(months=1)
+            end_date = end_date + relativedelta(months=1)
+        else:
+            raise ValueError(f"Invalid repeat frequency: {repeat_frequency}")
             
     if len(all_bookings) > 0 or len(all_events) > 0:
         overlap=True

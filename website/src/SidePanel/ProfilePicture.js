@@ -1,47 +1,54 @@
 import React, { useState } from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUser } from '@fortawesome/free-solid-svg-icons';
+import Avatar from '@mui/material/Avatar';
+import IconButton from '@mui/material/IconButton';
+import PersonIcon from '@mui/icons-material/Person';
+import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
 
 function ProfileButton({ imageUrl, size = 50, onClick }) {
     const [imageFailed, setImageFailed] = useState(false);
-    
+
     const renderImageContent = () => {
         if (imageUrl && !imageFailed) {
             return (
-                <img
+                <Avatar
                     src={imageUrl}
                     alt="Profile"
                     onError={() => setImageFailed(true)}
-                    style={{ width: '100%', height: '100%', borderRadius: '10%' }}
+                    sx={{ width: size, height: size }}
                 />
             );
         }
 
         return (
-            <FontAwesomeIcon 
-                icon={faUser} 
-                style={{ fontSize: `${size}px`, width: '100%', height: 'auto' }}
-            />
+            <PersonIcon sx={{ fontSize: size }} />
         );
     };
 
     return (
-        <button
-            style={{
-                border: 'none',
-                background: 'transparent',
-                padding: 0,
-                cursor: 'pointer',
-                width: `${size}px`,
-                height: `${size}px`,
-                display: 'flex',
-                alignItems: 'center',
-                // justifyContent: 'center',
-            }}
-            onClick={onClick}
-        >
-            {renderImageContent()}
-        </button>
+        <Box sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center'
+        }}>
+            <IconButton
+                onClick={onClick}
+                sx={{
+                    padding: 0,
+                    width: size,
+                    height: size,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                }}
+            >
+                {renderImageContent()}
+            </IconButton>
+            <Typography variant="caption" color="textSecondary" sx={{ mt: 1 }}>
+                Click to change
+            </Typography>
+        </Box>
     );
 }
 

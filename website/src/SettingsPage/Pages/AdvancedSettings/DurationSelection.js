@@ -1,120 +1,89 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import Box from '@mui/material/Box';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import Checkbox from '@mui/material/Checkbox';
+import Button from '@mui/material/Button';
+import CircularProgress from '@mui/material/CircularProgress';
 
-import { Spinner } from '../../../Spinner';
-import { SaveButton } from '../../../Home/CommonAttributes/SaveButton';
 import { usePopup } from '../../../Notifications/PopupContext';
+import { useSettingsLabels } from '../../SettingsPage2';
 
-export default function DurationSelector({refresh}) {
-
-    const [selectedDurations, setSelectedDurations] = useState([]); // [15, 30, 45, 60, 75, 90, 105, 120
-    const [showModal, setShowModal] = useState(false);
+export default function DurationSelector() {
+    const [selectedDurations, setSelectedDurations] = useState([]);
     const [isSaving, setIsSaving] = useState(false);
-    const modalRef = useRef(); // Create a ref
+    const [isLoading, setIsLoading] = useState(false);
     const { showPopup } = usePopup();
+    const { refreshLabels } = useSettingsLabels();
 
-    const durations = Array.from({ length: 8 }, (_, index) => (index + 1) * 15);
+    const durations = [30, 60, 90, 120]
 
     const toggleDuration = (duration) => {
-        let updatedDurations;
-        if (selectedDurations.includes(duration)) {
-            updatedDurations = selectedDurations.filter(d => d !== duration);
-        } else {
-            updatedDurations = [...selectedDurations, duration].sort((a, b) => a - b);
-        }
+        const updatedDurations = selectedDurations.includes(duration)
+            ? selectedDurations.filter(d => d !== duration)
+            : [...selectedDurations, duration].sort((a, b) => a - b);
         setSelectedDurations(updatedDurations);
     };
 
     const getDurations = async () => {
+        setIsLoading(true);
         try {
-            const response = await axios.get(`${process.env.REACT_APP_API_URL}/features/durations`,
-                {
-                    headers: {
-                        Authorization: localStorage.getItem('AccessToken')
-                    }
-                });
-            console.log(response.data);
+            const response = await axios.get(`${process.env.REACT_APP_API_URL}/features/durations`, {
+                headers: {
+                    Authorization: localStorage.getItem('AccessToken')
+                }
+            });
             setSelectedDurations(response.data.durations);
         } catch (error) {
             console.error(error);
         }
+        setIsLoading(false);
     };
 
-    // Add an event listener to the document
     useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (modalRef.current && !modalRef.current.contains(event.target)) {
-                setShowModal(false);
-            }
-        };
-
-        document.addEventListener('mousedown', handleClickOutside);
         getDurations();
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
     }, []);
 
     const handleSave = async () => {
-
         setIsSaving(true);
-
         try {
-
-            const response = await axios.put(
+            await axios.put(
                 `${process.env.REACT_APP_API_URL}/features`,
-                {
-                    durations: selectedDurations
-                },
-                {
-                    headers: {
-                        Authorization: localStorage.getItem('AccessToken')
-                    }
-                }
-            )
-
+                { durations: selectedDurations },
+                { headers: { Authorization: localStorage.getItem('AccessToken') } }
+            );
             showPopup('Success');
-            refresh();
-
+            refreshLabels();
         } catch (error) {
             console.error(error);
         }
-
         setIsSaving(false);
-
     }
 
     return (
-        <div>
+        <Box>
             <p>Lessons can only last the durations you select</p>
-            {showModal && (
-                <div ref={modalRef} style={{ border: '1px solid black', padding: '10px', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}>
-                    {durations.map(duration => (
-                        <div key={duration}>
-                            <label>
-                                <input 
-                                    type="checkbox" 
-                                    value={duration} 
-                                    checked={selectedDurations.includes(duration)}
-                                    onChange={() => toggleDuration(duration)}
-                                />
-                                {duration} minutes
-                            </label>
-                        </div>
-                    ))}
-                    <button onClick={() => setShowModal(false)}>Close</button>
-                </div>
-            )}
-            
-            <>
-                <p>Selected durations: {selectedDurations.join(", ")} minutes</p>
-                <button onClick={() => setShowModal(true)}>Edit</button>
-            </>
-
-            <SaveButton onClick={handleSave}>
-                {isSaving ? <Spinner /> : 'Save'}
-            </SaveButton>
-        
-        </div>
+            <Box>
+                {!isLoading && durations.map(duration => (
+                    <FormControlLabel
+                        key={duration}
+                        control={
+                            <Checkbox
+                                checked={selectedDurations.includes(duration)}
+                                onChange={() => toggleDuration(duration)}
+                            />
+                        }
+                        label={`${duration} minutes`}
+                    />
+                ))}
+                {
+                    isLoading && <CircularProgress />
+                }
+            </Box>
+    
+            <Button onClick={handleSave} variant="contained" color="primary">
+                {isSaving ? <CircularProgress size={24} /> : 'Save'}
+            </Button>
+        </Box>
     );
 }

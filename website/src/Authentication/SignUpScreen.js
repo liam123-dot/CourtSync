@@ -98,6 +98,17 @@ export default function SignUpScreen() {
                     hash: hash
                 });
                 setValidHash(true);
+                const data = response.data;
+
+                console.log(data);
+
+                setFormData({
+                    ...formData,
+                    first_name: data.first_name,
+                    last_name: data.last_name,
+                    email: data.email,
+                    phone_number: data.phone_number                   
+                });
             
             } catch(error) {
                 setValidHash(false);
@@ -111,13 +122,13 @@ export default function SignUpScreen() {
             <h1 css={titleStyle}>Coach Sign Up</h1>
             {signUpErrorMessage && <div style={{ color: 'red', marginBottom: '10px' }}>{signUpErrorMessage}</div>}
             <Form onSubmit={handleSubmit}>
-                <Input name="first_name" value={formData.first_name} placeholder="First Name" onChange={handleInputChange} />
+                <Input name="first_name" value={formData.first_name} placeholder="First Name" onChange={handleInputChange} disabled/>
                 {errors.first_name && <div style={{ color: 'red' }}>{errors.first_name}</div>}
-                <Input name="last_name" value={formData.last_name} placeholder="Last Name" onChange={handleInputChange} />
+                <Input name="last_name" value={formData.last_name} placeholder="Last Name" onChange={handleInputChange} disabled/>
                 {errors.last_name && <div style={{ color: 'red' }}>{errors.last_name}</div>}
-                <Input name="email" placeholder="Email" onChange={handleInputChange} />
+                <Input name="email" value={formData.email} placeholder="Email" onChange={handleInputChange} disabled/>
                 {errors.email && <div style={{ color: 'red' }}>{errors.email}</div>}
-                <Input name="phone_number" placeholder="Phone Number" onChange={handleInputChange} />
+                <Input name="phone_number" value={formData.phone_number} placeholder="Phone Number" onChange={handleInputChange} disabled/>
                 {errors.phone_number && <div style={{ color: 'red' }}>{errors.phone_number}</div>}
                 <Input type="password" name="password" placeholder="Password" onChange={handleInputChange} />
                 {errors.password && <div style={{ color: 'red' }}>{errors.password}</div>}

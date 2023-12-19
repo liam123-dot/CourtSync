@@ -19,7 +19,17 @@ def get_hash(hash):
     if info['used']:
         return jsonify({'error': 'Code already used'}), 400
     
-    return jsonify(info), 200
+    user_info = get_user_details(info['email'])
+    
+    return jsonify(user_info), 200
+
+
+def get_user_details(email):
+    sql = "SELECT * FROM SalesRequests WHERE email = %s"
+    
+    result = execute_query(sql, (email,))[0]
+    
+    return result
 
 
 def get_hash_from_db(hash):

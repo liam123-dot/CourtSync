@@ -30,5 +30,5 @@ done
 overall_lines=$((overall_lines + total_lines))
 
 # Print the total number of lines
-echo "Total lines in JS files: $total_lines"
+echo "Total lines in JavaScript files: $total_lines"
 echo "Total lines written by you: $overall_lines"

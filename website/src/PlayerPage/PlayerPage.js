@@ -1,119 +1,11 @@
-import React, {useEffect, useState} from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
-import styled from "@emotion/styled";
+import { Button, Box, Typography, TextField, IconButton } from '@mui/material';
+import { Edit as EditIcon, Close as CloseIcon, Add as AddIcon } from '@mui/icons-material';
 import CreatePlayer from "./CreatePlayer";
 import CreateContact from "./CreateContact";
-import ConfirmationPopup from "../Notifications/ConfirmComponent"
-import {usePopup} from '../Notifications/PopupContext'
-
-const StyledDeleteButton = styled.button`
-    display: ${props => props.show ? 'block' : 'none'};
-    background: none;
-    border: none;
-    color: red;
-    font-size: 20px;
-    cursor: pointer;
-    position: relative;
-    right: 10px;
-    &:hover {
-        color: darkred;
-    }
-    margin-left: 6px;
-`;
-const Container = styled.div`
-    margin-top: 1%;
-    font-family: Arial, sans-serif; // example font
-`;
-
-const Header = styled.div`
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    width: 100%;
-    border: 1px solid #ddd;
-    padding: 10px;
-    border-radius: 5px;
-    background-color: #f9f9f9;
-`;
-
-const Button = styled.button`
-    background-color: #4CAF50; /* Green */
-    border: none;
-    color: white;
-    padding: 10px 15px;
-    text-align: center;
-    text-decoration: none;
-    display: inline-block;
-    font-size: 16px;
-    margin: 4px 2px;
-    cursor: pointer;
-    border-radius: 5px;
-`;
-
-const Input = styled.input`
-    padding: 10px;
-    margin: 10px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-`;
-
-const ContactSection = styled.div`
-    border-top: 1px solid #ddd;
-    border-bottom: 1px solid #ddd;
-    padding: 10px;
-    margin-top: 10px;
-`;
-const ContactContainer = styled.div`
-    border-top: 1px solid #ddd;
-    border-bottom: 1px solid #ddd;
-    padding: 10px;
-`;
-
-const ContactHeader = styled.div`
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    width: 100%;
-    padding: 1%;
-    cursor: pointer;
-`;
-
-const ToggleIndicator = styled.div`
-    margin-right: 1%;
-`;
-
-const ContactDetails = styled.div`
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    width: 100%;
-`;
-
-const EditButton = styled(Button)` // Assuming Button is already defined
-    margin-right: 1%;
-`;
-
-const PlayerSection = styled(ContactSection)``;
-
-const StyledLabel = styled.p`
-    flex: 1;
-    margin-right: 10px;
-`;
-const PlayerContainer = styled.div`
-    border-bottom: 1px solid #ddd;
-    border-top: 1px solid #ddd;
-    padding: 10px;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-`;
-
-const PlayerDetails = styled.div`
-    flex-grow: 1;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-`;
+import ConfirmationPopup from "../Notifications/ConfirmComponent";
+import { usePopup } from '../Notifications/PopupContext';
 
 export default function PlayerPage () {
     
@@ -213,60 +105,51 @@ export default function PlayerPage () {
             confirmDelete({ type: 'contact', id: contact.contact_id });
         };
 
+        // Removed the IconButton for deleting a contact
         return (
-            <ContactContainer>
-                <div style={{
-                    display: 'flex',
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                }}
-                onMouseEnter={() => setShowDelete(true)} 
-                onMouseLeave={() => setShowDelete(false)}
-                >
-                    <ContactHeader onClick={() => setIsOpen(!isOpen)}>
-                        <ToggleIndicator>
-                            {isOpen ? <span>&#x25BC;</span> : <span>&#x25B6;</span>}
-                        </ToggleIndicator>
-                        <ContactDetails>
-                            {!isEditing ? (
-                                <>
-                                    <StyledLabel>{contact.name}</StyledLabel>
-                                    <StyledLabel>{contact.email}</StyledLabel>
-                                    <StyledLabel>{contact.phone_number}</StyledLabel>
-                                </>
-                            ) : (
-                                <>
-                                    <Input type="text" name="name" value={data.name} onChange={handleInputChange} />
-                                    <Input type="text" name="email" value={data.email} onChange={handleInputChange} />
-                                    <Input type="text" name="phone_number" value={data.phone_number} onChange={handleInputChange} />
-                                </>
-                            )}
-                        </ContactDetails>
-                    </ContactHeader>
+            <Box sx={{ borderBottom: '1px solid #ddd', padding: 2 }}>
+                <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}
+                    onMouseEnter={() => setShowDelete(true)} 
+                    onMouseLeave={() => setShowDelete(false)}>
+                    <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'row', alignItems: 'center', cursor: 'pointer' }} onClick={() => setIsOpen(!isOpen)}>
+                        {/* Toggle Indicator */}
+                        <Typography variant="body1" sx={{ marginRight: 2 }}>{isOpen ? <span>&#x25BC;</span> : <span>&#x25B6;</span>}</Typography>
+                        {/* Contact Details */}
+                        {!isEditing ? (
+                            <>
+                                <Typography variant="body1" sx={{ marginRight: 2 }}>{contact.name}</Typography>
+                                <Typography variant="body1" sx={{ marginRight: 2 }}>{contact.email}</Typography>
+                                <Typography variant="body1">{contact.phone_number}</Typography>
+                            </>
+                        ) : (
+                            <>
+                                <TextField name="name" value={data.name} onChange={handleInputChange} />
+                                <TextField name="email" value={data.email} onChange={handleInputChange} />
+                                <TextField name="phone_number" value={data.phone_number} onChange={handleInputChange} />
+                            </>
+                        )}
+                    </Box>
                     {!isEditing ? (
-                        <EditButton onClick={() => setIsEditing(true)}>Edit</EditButton>
+                        <IconButton onClick={() => setIsEditing(true)}><EditIcon /></IconButton>
                     ) : (
                         <>
                             <Button onClick={() => setIsEditing(false)}>Cancel</Button>
                             <Button onClick={handleSubmit}>Submit</Button>
                         </>
                     )}
-                    <Button onClick={() => { setAddPlayerOpen(!addPlayerOpen); setIsOpen(true); }}>+ Player</Button>
-                    <StyledDeleteButton show={showDelete} onClick={handleDelete}>X</StyledDeleteButton>
-                </div>
-                <PlayerSection>
-                    {isOpen && (
-                        <>
-                            <h4>Players</h4>
-                            {contact.players && contact.players.map((player, index) => (
-                                <PlayerComponent key={index} player={player} />
-                            ))}
-                            {addPlayerOpen && <CreatePlayer contactId={contact.contact_id} setOpen={setAddPlayerOpen} fetchData={fetchData} />}
-                        </>
-                    )}
-                </PlayerSection>
-            </ContactContainer>
-        );
+                    <Button onClick={() => { setAddPlayerOpen(!addPlayerOpen); setIsOpen(true); }}><AddIcon /></Button>
+                </Box>
+                {isOpen && (
+                    <>
+                        <Typography variant="h4">Players</Typography>
+                        {contact.players && contact.players.map((player, index) => (
+                            <PlayerComponent key={index} player={player} />
+                        ))}
+                        {addPlayerOpen && <CreatePlayer contactId={contact.contact_id} setOpen={setAddPlayerOpen} fetchData={fetchData} />}
+                    </>
+                )}
+            </Box>
+);
 
     }
 
@@ -308,50 +191,58 @@ export default function PlayerPage () {
             setData({...data, name: player.name});
         };
     
+        // Removed the IconButton for deleting a player
         return (
-            <PlayerContainer onMouseEnter={() => setShowDelete(true)} onMouseLeave={() => setShowDelete(false)}>
+            <Box sx={{ borderBottom: '1px solid #ddd', display: 'flex', alignItems: 'center', padding: 2 }}>
                 {isEditing ? (
                     <>
-                        <Input type="text" name="name" value={data.name} onChange={handleInputChange} />
+                        <TextField type="text" name="name" value={data.name} onChange={handleInputChange} />
                         <Button onClick={submitEdit}>Submit</Button>
+                        <Button onClick={toggleEdit}>Cancel</Button>
                     </>
                 ) : (
-                    <PlayerDetails>
-                        <StyledLabel>{player.name}</StyledLabel>
-                        <EditButton onClick={toggleEdit}>Edit</EditButton>
-                    </PlayerDetails>
+                    <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}>
+                        <Typography variant="body1" sx={{ marginRight: 2 }}>{player.name}</Typography>
+                    </Box>
                 )}
-                <StyledDeleteButton show={showDelete} onClick={handleDelete}>X</StyledDeleteButton>
-            </PlayerContainer>
+                {
+                    !isEditing &&
+                    <IconButton onClick={toggleEdit}>
+                        <EditIcon />                   
+                    </IconButton>
+                }
+            </Box>
         );
     }
     
     return (
-        <Container>
-
-            <Header>
-                <Button onClick={() => {setIsCreateContactOpen(true)}}>Create new Contact</Button>
-                <p>Add details for an individual that you organise lessons with (the person that schedules and pays for lessons), for example the players parent or the player themselves. These details are used to send important lesson information and invoices</p>
-            </Header>
+        <Box sx={{ marginTop: 2, fontFamily: 'Arial, sans-serif' }}>
+            <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', width: '100%', border: 1, borderColor: '#ddd', padding: 1, borderRadius: 1, backgroundColor: '#f9f9f9', marginBottom: 2 }}>
+                <Button onClick={() => setIsCreateContactOpen(true)} variant="contained" color="primary" sx={{ marginRight: 2 }}>Create new Contact</Button>
+                <Typography>Add details for an individual that you organise lessons with...</Typography>
+            </Box>
             
             {isCreateContactOpen && <CreateContact setOpen={setIsCreateContactOpen} fetchData={fetchData}/>}
 
-            <ContactSection>
-            <div style={{
-                display: 'flex',
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-            }}>
-                <h4 style={{flex: 1}}>Contact Name</h4>
-                <h4 style={{flex: 1}}>Email</h4>
-                <h4 style={{flex: 1}}>Phone Number</h4>
-            </div>
-                {
-                    contactData && contactData.map((contact) => {
-                        return (<ContactComponent contact={contact} />)                
-                    })
-                }    
-            </ContactSection>
+            {contactData && contactData.length > 0 && (
+                <>
+                    <div style={{
+                        display: 'flex',
+                        flexDirection: 'row',
+                    }}>
+                        <Typography variant="h4" sx={{ flex: 1 }}>Contact Name</Typography>
+                        <Typography variant="h4" sx={{ flex: 1 }}>Email</Typography>
+                        <Typography variant="h4" sx={{ flex: 1 }}>Phone Number</Typography>
+                    </div>
+
+                    <Box sx={{ borderTop: '1px solid #ddd', borderBottom: '1px solid #ddd', padding: 2, marginTop: 2 }}>
+                        {
+                            contactData.map((contact) => <ContactComponent key={contact.contact_id} contact={contact} />)
+                        }
+                    </Box>
+                </>
+            )}
+            {!contactData || contactData.length === 0 && <Typography variant="body1">No contacts found</Typography>}
 
             {showConfirmationPopup && (
                 <ConfirmationPopup
@@ -360,7 +251,6 @@ export default function PlayerPage () {
                     onCancel={() => setShowConfirmationPopup(false)}
                 />
             )}
-
-        </Container>
-    )
+        </Box>
+    );
 }

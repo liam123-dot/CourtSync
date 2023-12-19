@@ -13,7 +13,7 @@ def cancel_coach_event(coach_event, cancel_repeats=False):
 
     if not cancel_repeats:
 
-        sql = "UPDATE CoachEvents SET status='cancelled' WHERE coach_event_id=%s"
+        sql = "UPDATE CoachEvents SET status='cancelled' WHERE event_id=%s"
         
         execute_query(sql, args=(coach_event['event_id'],), is_get_query=False)
         

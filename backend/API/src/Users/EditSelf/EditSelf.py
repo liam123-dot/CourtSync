@@ -37,7 +37,7 @@ def edit_self():
     
     return jsonify({'success': True}), 200
 
-editable_attributes = ['bio', 'slug', 'show_email_publicly', 'invoice_type', 'bio', 'booking_scope']
+editable_attributes = ['bio', 'slug', 'show_email_publicly', 'show_phone_number_publicly', 'invoice_type', 'bio', 'booking_scope']
 boto3_attributes = ['name', 'first_name', 'last_name', 'phone_number']
 
 @UserEditSelfBlueprint.route('/user/me/<attribute>', methods=['PUT'])

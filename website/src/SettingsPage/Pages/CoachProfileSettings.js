@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
+import { Button, Card, CardContent, CardActions, Grid, TextField, Typography, CircularProgress, Divider, Box, IconButton, TextareaAutosize, Switch, FormControlLabel } from '@mui/material';
+import { Save as SaveIcon, Edit as EditIcon, Cancel as CancelIcon, Logout as LogoutIcon } from '@mui/icons-material';
 import ProfileButton from "../../SidePanel/ProfilePicture";
-import {Spinner} from "../../Spinner"
-import {SaveButton} from '../../Home/CommonAttributes/SaveButton'
 import { usePopup } from "../../Notifications/PopupContext";
-import {useNavigate} from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 export default function CoachProfileSettings() {
     const [initialCoachDetails, setInitialCoachDetails] = useState(null);
@@ -17,6 +17,9 @@ export default function CoachProfileSettings() {
 
     const [coachLink, setCoachLink] = useState('');
     const [coachSetUp, setCoachSetUp] = useState(false);
+    
+    const [showEmailPublicly, setShowEmailPublicly] = useState(false);
+    const [showPhoneNumberPublicly, setShowPhoneNumberPublicly] = useState(false);
 
     const [isSaving, setIsSaving] = useState(false);
     const navigate = useNavigate();
@@ -33,14 +36,18 @@ export default function CoachProfileSettings() {
         setIsSaving(true);
 
         try {
-            const changes = Object.keys(coachDetails).reduce((result, key) => {
+            const detailsChanges = Object.keys(coachDetails).reduce((result, key) => {
                 if (coachDetails[key] !== initialCoachDetails[key]) {
                     result[key] = coachDetails[key];
                 }
                 return result;
             }, {});
 
-            console.log(changes);
+            const changes = {
+                ...detailsChanges,
+                show_email_publicly: showEmailPublicly,
+                show_phone_number_publicly: showPhoneNumberPublicly
+            };
 
             const response = await axios.put(`${process.env.REACT_APP_API_URL}/user/me`, 
                 changes,
@@ -76,6 +83,9 @@ export default function CoachProfileSettings() {
             
             setCoachLink(`${process.env.REACT_APP_WEBSITE_URL}/#${data.slug}`);
             setCoachSetUp(data.coach_setup);
+
+            setShowEmailPublicly(data.show_email_publicly);
+            setShowPhoneNumberPublicly(data.show_phone_number_publicly);
 
         } catch (error) {
             console.error("Error fetching coach details", error);
@@ -162,75 +172,98 @@ export default function CoachProfileSettings() {
     };
 
     return !isLoading ? (
-        <div>
-            <div style={dividerStyle}>
-                <p>Your Profile Picture, (click to change/upload):</p>
-                {/* Trigger file input on ProfileButton click */}
-                <ProfileButton imageUrl={coachDetails?.profile_picture_url} size={200} onClick={triggerFileInput}/>
-                {/* Hidden file input */}
-                <input type="file" ref={fileInputRef} accept=".jpg, .jpeg, .png" style={{ display: 'none' }} onChange={handleImageChange} />
-            </div>
-            <p>
-                Your name and bio will be shown to players when they book lessons with you.
-                You can optionally show your email and phone number publicly so that players can contact you.
-                Note that your phone number has to be shown to players on invoices that are sent.
-            </p>
-            {coachDetails && (
-                <>
-                    <div style={dividerStyle}>
-                        <p><strong>Name:</strong> 
-                            {coachDetails.first_name} {coachDetails.last_name}
-                        </p>
-                    </div>
-                    <div style={{
-                        display: 'flex',
-                        flexDirection: 'row',
-                    }}>
-                        <p><strong>Bio:</strong> 
-                            {isEditing ? (
-                                <textarea name="bio" value={coachDetails.bio} onChange={handleInputChange} />
-                            ) : (
-                                coachDetails.bio
-                            )}
-                        </p>
-                        
-                        <SaveButton onClick={() => setIsEditing(!isEditing)}>
+        <Box sx={{ maxWidth: 800, mx: 'auto', my: 4 }}>
+            <Card variant="outlined">
+                <CardContent>
+                    <Typography variant="h6" gutterBottom>Your Profile</Typography>
+                    <Box sx={{ my: 2, textAlign: 'center' }}>
+                        <ProfileButton imageUrl={coachDetails?.profile_picture_url} size={200} onClick={triggerFileInput}/>
+                        <input type="file" ref={fileInputRef} accept=".jpg, .jpeg, .png" style={{ display: 'none' }} onChange={handleImageChange} />
+                    </Box>
+                    <Divider />
+                    <Box sx={{ mt: 2 }}>
+                        <Typography variant="body1">All information on your profile is shown to players when they book lessons with you.</Typography>
+                        {coachDetails && (
+                            <>
+                                <Typography variant="subtitle1"><strong>Name:</strong> {coachDetails.first_name} {coachDetails.last_name}</Typography>
+                                <Box sx={{ display: 'flex', alignItems: 'center', mt: 2 }}>
+                                    <Typography variant="subtitle1" sx={{ flexGrow: 1 }}>
+                                        <strong>Bio:</strong>
+                                        {isEditing ? (
+                                            <TextareaAutosize 
+                                                minRows={3}
+                                                name="bio" 
+                                                value={coachDetails.bio} 
+                                                onChange={handleInputChange}
+                                                style={{ width: '100%' }}
+                                            />
+                                        ) : (
+                                            coachDetails.bio
+                                        )}
+                                    </Typography>
+                                </Box>
+                                {isEditing ? (
+                                    <Box>
+                                        <FormControlLabel
+                                            control={
+                                                <Switch 
+                                                    checked={showEmailPublicly} 
+                                                    onChange={e => setShowEmailPublicly(e.target.checked)}
+                                                />
+                                            }
+                                            label="Show email publicly"
+                                        />
+                                        <FormControlLabel
+                                            control={
+                                                <Switch 
+                                                    checked={showPhoneNumberPublicly} 
+                                                    onChange={e => setShowPhoneNumberPublicly(e.target.checked)}
+                                                />
+                                            }
+                                            label="Show phone number publicly"
+                                        />
+                                    </Box>
+                                ) : (
+                                    <Box>
+                                        {showEmailPublicly && <Typography variant="body2"><strong>Email:</strong> {coachDetails.email}</Typography>}
+                                        {showPhoneNumberPublicly && <Typography variant="body2"><strong>Phone:</strong> {coachDetails.phone_number}</Typography>}
+                                    </Box>
+                                )}
+                                <Box sx={{ mt: 2 }}>
+                                    {coachSetUp ? (
+                                        <Typography variant="body1">
+                                            Players can book lessons with this link: <a href={coachLink}>{coachLink}</a>
+                                        </Typography>
+                                    ) : (
+                                        <Typography variant="body1">
+                                            {/* First you must set some working hours, durations, and prices... */}
+                                        </Typography>
+                                    )}
+                                </Box>
+                            </>
+                        )}
+                    </Box>
+                </CardContent>
+                <CardActions style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <div>
+                        <Button startIcon={isEditing ? <CancelIcon /> : <EditIcon />} onClick={() => setIsEditing(!isEditing)}>
                             {isEditing ? 'Cancel' : 'Edit'}
-                        </SaveButton>
+                        </Button>
+                        {isEditing && (
+                            <Button startIcon={isSaving ? <CircularProgress size={20} /> : <SaveIcon />} onClick={saveDetails}>
+                                Save
+                            </Button>
+                        )}
                     </div>
-
-                    <div style={dividerStyle}>
-                        {coachSetUp ? (
-                            <p>
-                                Share this link with your players to allow them to book lessons with you: <br/>
-                                <a href={coachLink}>{coachLink}</a>
-                            </p>
-                        ): (
-                            <p>
-
-                                First you must set some working hours, durations and prices for your lessons. <br/>
-
-                            </p>
-                        )
-                        }
-                    </div>
-                </>
-            )}
-            <SaveButton onClick={() => setIsEditing(!isEditing)}>
-                {isEditing ? 'Cancel' : 'Edit'}
-            </SaveButton>
-            <SaveButton onClick={saveDetails}>
-                {isSaving ? <Spinner/>: 'Save'}
-            </SaveButton>
-            <SaveButton onClick={handleSignOut}>
-                Sign Out
-            </SaveButton>
-        </div>
-    ): (
-        <>
-            <div>
-                loading
-            </div>
-        </>
-    )
+                    <Button startIcon={<LogoutIcon />} onClick={handleSignOut} color="error">
+                        Sign Out
+                    </Button>
+                </CardActions>
+            </Card>
+        </Box>
+    ) : (
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+            <CircularProgress />
+        </Box>
+    );
 }

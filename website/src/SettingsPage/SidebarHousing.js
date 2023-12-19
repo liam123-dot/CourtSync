@@ -1,19 +1,44 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const SidebarItem = ({ title, onSelect }) => (
-    <div onClick={() => onSelect(title)} style={{ padding: '10px', cursor: 'pointer' }}>
-        {title}
-    </div>
-);
+import PropTypes from 'prop-types';
+import Tabs from '@mui/material/Tabs';
+import Tab from '@mui/material/Tab';
+import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
 
-    const Sidebar = ({ items, onSelect }) => (
-    <div style={{ width: '150px', background: '#f0f0f0', padding: '10px' }}>
-        {items.map((item) => (
-        <SidebarItem key={item} title={item} onSelect={onSelect} />
-        ))}
-    </div>
-);
+function TabPanel(props) {
+    const { children, value, index, ...other } = props;
+
+    return (
+        <div
+            role="tabpanel"
+            hidden={value !== index}
+            id={`vertical-tabpanel-${index}`}
+            aria-labelledby={`vertical-tab-${index}`}
+            {...other}
+        >
+            {value === index && (
+                <Box sx={{ p: 3 }}>
+                    <Typography>{children}</Typography>
+                </Box>
+            )}
+        </div>
+    );
+}
+
+TabPanel.propTypes = {
+    children: PropTypes.node,
+    index: PropTypes.number.isRequired,
+    value: PropTypes.number.isRequired,
+};
+
+function a11yProps(index) {
+    return {
+        id: `vertical-tab-${index}`,
+        'aria-controls': `vertical-tabpanel-${index}`,
+    };
+}
 
 export default function SidebarHousing ({firstSelected, _titles, _components, _endpoints}) {
     const [selected, setSelected] = useState(firstSelected);
@@ -74,6 +99,11 @@ export default function SidebarHousing ({firstSelected, _titles, _components, _e
         }
 
     }
+
+    const handleChange = (event, newValue) => {
+        setSelected(titles[newValue]);
+        setSelectedIndex(newValue);
+    };
     
     useEffect(() => {
         const index = titles.indexOf(selected);
@@ -84,11 +114,24 @@ export default function SidebarHousing ({firstSelected, _titles, _components, _e
     const SelectedContent = selectedIndex !== null && components[selectedIndex];  
 
     return (
-      <div style={{ display: 'flex' }}>
-        <Sidebar items={titles} onSelect={setSelected} />
-        <div style={{ flex: 1, padding: '10px' }}>
-            {SelectedContent && <SelectedContent refresh={checkEndpoint}/>}
-        </div>
-      </div>
+        <Box sx={{ display: 'flex', width: '2000px' }}>
+            <Tabs
+                orientation="vertical"
+                variant="scrollable"
+                value={selectedIndex}
+                onChange={handleChange}
+                aria-label="Vertical tabs example"
+                sx={{ borderRight: 1, borderColor: 'divider', width: '200px' }} // Add width here
+            >
+                {titles.map((title, index) => (
+                    <Tab key={title} label={title} {...a11yProps(index)} sx={{ width: '200px' }} /> // Add width here
+                ))}
+            </Tabs>
+            {titles.map((title, index) => (
+                <TabPanel key={title} value={selectedIndex} index={index}>
+                    {selectedIndex === index && _components[index] && <SelectedContent refresh={checkEndpoint} />}
+                </TabPanel>
+            ))}
+        </Box>
     );
-};
+}

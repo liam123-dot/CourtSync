@@ -1,67 +1,60 @@
-import React, { useEffect, useState } from "react";
-import axios from "axios";
-import { useRefreshTimetable } from "../CoachHomeScreen/RefreshTimetableContext";
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import { Button, TextField, Typography, Dialog, DialogActions, DialogContent, DialogTitle, Box } from '@mui/material';
+import { usePopup } from '../../Notifications/PopupContext';
+import { useRefreshTimetable } from '../CoachHomeScreen/RefreshTimetableContext';
 
-export default function CancelBooking ({booking, close, onCancelProcess, setOnCancelProcess, cancelRepeat}) {
-
-    const {refresh} = useRefreshTimetable();
-    
-    const [passedConfirmation, setPassedConfirmation] = useState(false);
+export default function CancelBooking({ booking, close, onCancelProcess, setOnCancelProcess, cancelRepeat }) {
     const [cancellationNote, setCancellationNote] = useState('');
+    const { refresh } = useRefreshTimetable();
+    const {showPopup} = usePopup();
 
     const cancelLesson = async () => {
-
         try {
-
             const response = await axios.post(
-                `${process.env.REACT_APP_API_URL}/timetable/booking/${booking.id}/cancel?cancel_repeats=${cancelRepeat}`,
-                {
-                    message_to_player: cancellationNote
-                }, {
-                    headers: {
-                        'Authorization': localStorage.getItem('AccessToken')
-                    }
-                }
-            )
+                `${process.env.REACT_APP_API_URL}/timetable/booking/${booking.booking_id}/cancel?cancel_repeats=${cancelRepeat}`,
+                { message_to_player: cancellationNote },
+                { headers: { 'Authorization': localStorage.getItem('AccessToken') } }
+            );
             console.log(response);
+            setOnCancelProcess(false);
+            showPopup('Booking cancelled successfully');
             refresh();
-
-            setPassedConfirmation(false);
             close();
-
-            // console.log(response);
-
-        } catch (error){
+        } catch (error) {
             console.log(error);
         }
-
-    }
+    };
 
     useEffect(() => {
-
-        setPassedConfirmation(false);
         setCancellationNote('');
-
     }, [onCancelProcess]);
 
-    return passedConfirmation ? (
-        <>
-            <h2>Note to player: </h2>
-            <input value={cancellationNote} onChange={(e) => {
-                setCancellationNote(e.target.value)
-            }}/>
-            <button onClick={cancelLesson}>Confirm</button>
-        </>
-    ): (
-        <div>
-                                
-            <h2>Are you sure you want to cancel</h2>
-            <div>
-                <button onClick={() => setPassedConfirmation(true)}>Yes</button>
-                <button onClick={() => setOnCancelProcess(false)}>No</button>
-            </div>
-
-        </div>
-    )
-
+    return (
+        <Dialog open={onCancelProcess} onClose={close} aria-labelledby="form-dialog-title">
+            <DialogTitle id="form-dialog-title">Cancel Booking</DialogTitle>
+            <DialogContent>
+                <Box pb={2}>
+                    <Typography variant="subtitle1">Note to player:</Typography>
+                    <TextField
+                        fullWidth
+                        multiline
+                        rows={4}
+                        value={cancellationNote}
+                        onChange={(e) => setCancellationNote(e.target.value)}
+                        margin="normal"
+                        variant="outlined"
+                    />
+                </Box>
+            </DialogContent>
+            <DialogActions>
+                <Button onClick={close} color="secondary">
+                    Cancel
+                </Button>
+                <Button onClick={cancelLesson} variant="contained" color="primary">
+                    Confirm
+                </Button>
+            </DialogActions>
+        </Dialog>
+    );
 }

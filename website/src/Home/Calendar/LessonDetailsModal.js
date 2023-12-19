@@ -58,7 +58,7 @@ export default function LessonDetailsModal({isOpen, onClose, booking}){
                             setOnCancelProcess(true);
                             setCancelRepeats(false);
                         }}>
-                            Cancel
+                            Cancel Lesson
                         </button>
                         {booking.repeat_id && (
                             <button onClick={() => {

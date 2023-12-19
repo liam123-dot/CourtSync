@@ -5,21 +5,15 @@ import {css, Global} from "@emotion/react";
 
 import axios from "axios";
 
-import Timetable from "../Calendar/Timetable";
 import CoachAddEventModal from "./CoachAddEventModal/CoachAddEventModal";
-import { TitleSection, ArrowButtonGroup, Button, checkRefreshRequired, handleSetView, handleNext, handlePrevious } from "../HomescreenHelpers";
+import { TitleSection, ArrowButtonGroup, Button, checkRefreshRequired } from "../HomescreenHelpers";
 import {fetchTimetable} from "../FetchTimetable";
-import { BookingObject } from "../Calendar/BookingObject";
-import { CoachEventObject } from "../Calendar/CoachEventObject";
-import { WorkingHoursObject } from "../Calendar/WorkingHoursObject";
 import { LessonDetailsProvider } from "../Calendar/LessonDetailsContext";
 import LessonDetailsModal from "../Calendar/LessonDetailsModal";
-import DateSelector from "./DateSelector";
 import CoachEventDetailsModal from "../Calendar/CoachEventDetailsModal";
 import {CoachEventDetailsProvider} from "../Calendar/CoachEventDetailsContext";
 import { RefreshTimetableProvider } from "./RefreshTimetableContext";
 import WorkingHoursModal from "./WorkingHoursModal";
-import LinkButton from "./LinkButton";
 import { useShowCancelled, ShowCancelledProvider } from "./ShowCancelledContext";
 import FullCalendar from '@fullcalendar/react'
 import timeGridPlugin from '@fullcalendar/timegrid'
@@ -160,106 +154,6 @@ export default function HomeScreen() {
         await navigator.clipboard.writeText(link);
         showPopup("Link copied to clipboard");
       };
-    useEffect(() => {
-
-        const convertBookingsToTimetableEvents = (events) => {
-            const newTimetableEvents = { ...events };
-
-            Object.keys(bookings).forEach((key) => {
-                if (Array.isArray(bookings[key])) {
-                    const eventArray = bookings[key].map((booking) => {
-                        return new BookingObject(
-                            booking.booking_id,
-                            booking.start_time,
-                            booking.duration,
-                            key,
-                            booking.contact_name,
-                            booking.contact_email,
-                            booking.contact_phone_number,
-                            booking.cost,
-                            booking.paid,
-                            booking.player_name,
-                            booking.status,
-                            booking.position,
-                            booking.width,
-                            booking.repeat_id,
-                            booking.repeat_frequency,
-                            booking.repeat_until
-                        );
-                    });
-
-                    if (newTimetableEvents[key]) {
-                        newTimetableEvents[key] = [...newTimetableEvents[key], ...eventArray];
-                    } else {
-                        newTimetableEvents[key] = eventArray;
-                    }
-                }
-            });
-            return newTimetableEvents;
-        };
-
-
-
-        const getWorkingHoursFromAll = (events) => {
-            const newTimetableEvents = { ...events };
-            console.log(newTimetableEvents)
-            Object.keys(all).forEach((key) => {
-                const eventArray = all[key].map((item) => {                    
-                    if (item.type === "working_hour") {
-                        // console.log(item)
-                        return new WorkingHoursObject(
-                            0,
-                            item.start_time,
-                            item.duration,
-                            key,
-                            item.start_time_without_global,
-                            item.duration_without_global                                
-                        );                        
-                    }
-                    return null; // Add this line to handle cases where item.type is not "working_hours"
-                }).filter(item => item !== null); // Add this line to remove null items from eventArray
-    
-                if (newTimetableEvents[key]) {
-                    newTimetableEvents[key] = [...newTimetableEvents[key], ...eventArray];
-                } else {
-                    newTimetableEvents[key] = eventArray;
-                }
-            });
-            return newTimetableEvents; // Change this line to return newTimetableEvents instead of workingHours
-        }
-
-        const convertCoachEventsToTimetableEvents = (events) => {
-            const newTimetableEvents = { ...events };
-            Object.keys(coachEvents).forEach((key) => {
-                const eventArray = coachEvents[key].map((item) => {
-                    console.log(item);
-                    return new CoachEventObject(
-                        item.event_id,
-                        item.start_time,
-                        item.duration,
-                        key,
-                        item.title,
-                        item.description,
-                        item.position,
-                        item.width,
-                        item.status,
-                        item.repeat_id,
-                        item.repeat_frequency,
-                        item.repeat_until
-                    );                
-                })
-                if (newTimetableEvents[key]) {
-                    newTimetableEvents[key] = [...newTimetableEvents[key], ...eventArray];
-                } else {
-                    newTimetableEvents[key] = eventArray;
-                }                
-            })
-            return newTimetableEvents;
-        }
-
-        setTimetableEvents(convertCoachEventsToTimetableEvents(convertBookingsToTimetableEvents(getWorkingHoursFromAll({}))));
-
-    }, [bookings, all, coachEvents]);
 
     useEffect(() => {
         console.log(timetableEvents);
@@ -267,16 +161,6 @@ export default function HomeScreen() {
 
     useEffect(() => {
 
-        const calculateStartingDates = () => {
-
-            const currentDate = new Date();                
-
-            setFromDate(currentDate);
-            setToDate(currentDate);
-
-            return currentDate;
-
-        }
 
         const checkSetUp = async () => {
             const response = await axios.get(`${process.env.REACT_APP_API_URL}/user/me/settings`, {
@@ -290,40 +174,11 @@ export default function HomeScreen() {
         }
         
         setIsStartingUp(true);
-        const startDate = calculateStartingDates();
         fetchTimetableData(startDate, startDate);
         checkSetUp();
 
     }, []);
 
-    
-      useEffect(() => {
-
-        const filtersApplied = selected && selected.length > 0;
-        if (bookings) {
-            setBookings((currentBookings) => {
-                // Create a new object to hold the updated bookings
-                const updatedBookings = {};
-            
-                // Iterate over each key in the currentBookings object
-                Object.keys(currentBookings).forEach((key) => {
-                // Check if the current key has a list of bookings
-                if (Array.isArray(currentBookings[key])) {
-                    // If so, map over that list to update the 'filtered' property
-                    updatedBookings[key] = currentBookings[key].map((booking) => {
-                    
-                        return { ...booking, filtersApplied: filtersApplied };                                                   
-                    
-                    });
-                }
-                });
-            
-                // Return the updated bookings object
-                return updatedBookings;
-            });
-        }
-
-      }, [selected])
 
 
     // Define the styles separately for better readability
@@ -344,20 +199,6 @@ export default function HomeScreen() {
                 }
             `}
         />
-    );
-
-    const ArrowNavigation = ({ handlePrevious, handleNext, fromDate, toDate, setFromDate, setToDate, refresh, view }) => (
-        <ArrowButtonGroup>
-            <Button onClick={() => handlePrevious(fromDate, toDate, setFromDate, setToDate, refresh, view)}>←</Button>
-            <Button onClick={() => handleNext(fromDate, toDate, setFromDate, setToDate, refresh, view)}>→</Button>
-        </ArrowButtonGroup>
-    );
-
-    const ViewButtons = ({ view, setView, handleSetView, fromDate, toDate, setFromDate, setToDate, refresh }) => (
-        <div>
-            <Button selected={view === "day"} onClick={() => handleSetView("day", setView, fromDate, toDate, setFromDate, setToDate, refresh)}>Day</Button>
-            <Button selected={view === "week"} onClick={() => handleSetView("week", setView, fromDate, toDate, setFromDate, setToDate, refresh)}>Week</Button>
-        </div>
     );
 
     const handleSetShowCancelled = () => {

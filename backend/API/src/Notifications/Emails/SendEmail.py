@@ -74,7 +74,7 @@ def send_email(localFrom, recipients, subject, bodyText, bodyHTML):
                 'bodyHTML': bodyHTML            
             })
         )
-        print(response)
+        print(f"email response: {response}")
     except Exception as e:
         # Log any errors
         logging.debug(f"Error sending email: {e}, response: {response}")

@@ -23,6 +23,7 @@ export default function ContactSales() {
             console.log(response.data);
             setErrorMessage(null);
             showPopup('Success');
+            window.location.href = process.env.REACT_APP_WEBSITE_URL; // Navigate to the website URL
         } catch (error) {
             console.error("Error submitting enquiry", error);
             setErrorMessage(error.response.data.error);

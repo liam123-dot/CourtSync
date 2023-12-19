@@ -5,7 +5,7 @@ import logging
 import time
 
 from src.Database.ExecuteQuery import execute_query
-from src.Users.GetSelf.GetSelf import get_coach_from_slug
+from src.Users.GetSelf.GetSelf import get_coach_from_slug, get_coach
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -108,6 +108,39 @@ def calculate_booking_availability(slug):
     if events is None:
         return jsonify([]), 200
 
+    valid_start_times = get_start_times(epoch_start_time, duration, events)
+    return jsonify(valid_start_times), 200
+
+@CalculateAvailableTimesBlueprint.route('/timetable/booking-availability', methods=['GET'])
+def calculate_booking_availability_token():
+    token = request.headers.get('Authorization')
+    if not token:
+        return jsonify({'error': 'Missing token'}), 400
+    
+    coach = get_coach(token)
+    if not coach:
+        return jsonify({'error': 'Invalid token'}), 400
+    
+    coach_id = coach['coach_id']
+    
+    epoch_start_time = request.args.get('startTime', None)
+    duration = request.args.get('duration', None)
+    
+    if not duration:
+        return jsonify({'error': 'No duration provided'}), 400
+    try:
+        epoch_start_time = int(epoch_start_time)
+        duration = int(duration)
+    except ValueError:
+        return jsonify({'error': 'Invalid start time or duration provided'}), 400
+    
+    if not epoch_start_time:
+        return jsonify({'error': 'No start time provided'}), 400
+    
+    events = get_and_format_other_events(coach_id, epoch_start_time)
+    if events is None:
+        return jsonify([]), 200
+    
     valid_start_times = get_start_times(epoch_start_time, duration, events)
     return jsonify(valid_start_times), 200
 

@@ -129,6 +129,7 @@ export default function AddNewPricingRuleComponent({setShown, refresh}) {
         const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
         return (
             <div>
+                Recurs Every:
                 {daysOfWeek.map(day => (
                     <DaySelector
                         key={day}
@@ -164,7 +165,7 @@ export default function AddNewPricingRuleComponent({setShown, refresh}) {
                 checked={ruleType === 'recurring'}
                 onChange={() => setRuleType('recurring')}
               />
-              Recurring
+              Recurring Rule
             </StyledLabel>
             <StyledLabel>
               <StyledInput
@@ -174,7 +175,7 @@ export default function AddNewPricingRuleComponent({setShown, refresh}) {
                 checked={ruleType === 'one-time'}
                 onChange={() => setRuleType('one-time')}
               />
-              One Time
+              One Time Rule
             </StyledLabel>
           </div>
     

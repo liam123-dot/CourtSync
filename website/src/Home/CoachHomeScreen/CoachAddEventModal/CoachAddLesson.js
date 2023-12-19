@@ -3,8 +3,20 @@ import ChooseDateTimeComponent from "../../ChooseDateTimeComponent";
 import axios from "axios";
 import { useRefreshTimetable } from "../RefreshTimetableContext";
 import ShowOverlappingEvents from "./ShowOverlappingEvents";
-import { SaveButton } from "../../CommonAttributes/SaveButton";
 import { Spinner } from "../../../Spinner";
+import {
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  TextField,
+  Checkbox,
+  FormGroup,
+  FormControlLabel,
+  Button,
+  Typography
+} from '@mui/material';
+import DateTimeDurationSelector from "../../ChooseDateTimeDuration";
 
 export default function CoachAddLesson ({closeModal}) {
 
@@ -32,6 +44,39 @@ export default function CoachAddLesson ({closeModal}) {
     const [timesValid, setTimesValid] = useState(false);
 
     const [overlappingEvents, setOverlappingEvents] = useState(null);
+
+    const [repeatTypeLabel, setRepeatTypeLabel] = useState('weeks');
+
+    const [saveDisabled, setSaveDisabled] = useState(false);
+
+    useEffect(() => {
+        if (overlappingEvents && ((overlappingEvents.bookings && overlappingEvents.bookings.length > 0)
+            || (overlappingEvents.events && overlappingEvents.events.length > 0))) {
+            setSaveDisabled(true);
+        } else {
+            setSaveDisabled(false);
+        }
+    }, [overlappingEvents]);
+
+    const handleRepeatTypeChange = (e) => {
+        setRepeatType(e.target.value);
+        switch (e.target.value) {
+            case 'daily':
+                setRepeatTypeLabel('days');
+                break;
+            case 'weekly':
+                setRepeatTypeLabel('weeks');
+                break;
+            case 'fortnightly':
+                setRepeatTypeLabel('fortnights');
+                break;
+            case 'monthly':
+                setRepeatTypeLabel('months');
+                break;
+            default:
+                setRepeatTypeLabel('weeks');
+        }
+    }
 
     useEffect(() => {
 
@@ -64,10 +109,6 @@ export default function CoachAddLesson ({closeModal}) {
             setContact(player.contact_name);
             setSelectedPlayerId(player.player_id);
         }
-    }
-
-    const handleRepeatTypeChange = (e) => {
-        setRepeatType(e.target.value);
     }
 
     const handleRepeatUntilChange = value => {
@@ -111,12 +152,6 @@ export default function CoachAddLesson ({closeModal}) {
             console.log(error)   
         }
 
-    }
-
-    const dateToString = (date) => {
-        if (date){
-            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-        }
     }
 
     useEffect(() => {
@@ -181,105 +216,110 @@ export default function CoachAddLesson ({closeModal}) {
     
     
     return (
-        <div style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-        }}>
-            <ChooseDateTimeComponent
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+            <DateTimeDurationSelector
                 selectedDate={selectedDate}
+                selectedTime={selectedStartTime}
+                selectedDuration={selectedDuration}
                 setSelectedDate={setSelectedDate}
-                setStartTime={setSelectedStartTime}                
-                setDuration={setSelectedDuration}
+                setSelectedTime={setSelectedStartTime}
+                setSelectedDuration={setSelectedDuration}
             />
-    
-            <label>
-                Player Name:
-                <select onChange={handlePlayerChange}>
-                    <option value="" disabled>Select</option>
+            <FormControl fullWidth margin="normal">
+                <InputLabel>Player Name</InputLabel>
+                <Select
+                    value={selectedPlayerId || ''}
+                    label="Player Name"
+                    onChange={handlePlayerChange}
+                >
+                    <MenuItem value="" disabled>Select</MenuItem>
                     {players.map((player) => (
-                        <option value={player.player_id}>{player.name}</option>
+                        <MenuItem key={player.player_id} value={player.player_id}>{player.name}</MenuItem>
                     ))}
-                </select>
-            </label>            
-    
-            <label>
-                Contact Name:
-                    {contact}
-            </label>
+                </Select>
+            </FormControl>
 
-            <label>
-                Use Predefined Rules:
-                <input
-                    type="checkbox"
-                    checked={usePredefinedRules}
-                    onChange={() => setUsePredefinedRules(!usePredefinedRules)}
+            <Typography variant="body1" gutterBottom>
+                Contact Name: {contact}
+            </Typography>
+
+            <FormGroup>
+                <FormControlLabel
+                    control={
+                        <Checkbox
+                            checked={usePredefinedRules}
+                            onChange={() => setUsePredefinedRules(!usePredefinedRules)}
+                        />
+                    }
+                    label="Use Predefined Cost Rules"
                 />
-            </label>
+            </FormGroup>
 
             {!usePredefinedRules && (
-                <>
-                    {/* lesson price input */}
-                    <label>
-                        Lesson Cost:
-                        <input
-                            type="number"
-                            value={lessonCost}
-                            onChange={(e) => {setLessonCost(e.target.value)}}
-                        />
-                    </label>
-                </>
-                )}
-
-            <label>
-                Repeats
-                <input
-                    type="checkbox"
-                    checked={repeats}
-                    onChange={(e) => {setRepeats(e.target.checked)}}
+                <TextField
+                    label="Lesson Cost"
+                    type="number"
+                    value={lessonCost}
+                    onChange={(e) => setLessonCost(e.target.value)}
+                    margin="normal"
+                    fullWidth
                 />
-            </label>
+            )}
+
+            <FormGroup>
+                <FormControlLabel
+                    control={
+                        <Checkbox
+                            checked={repeats}
+                            onChange={(e) => setRepeats(e.target.checked)}
+                        />
+                    }
+                    label="Repeats"
+                />
+            </FormGroup>
 
             {repeats && (
                 <>
-                    <label>
-                        Repeat Type
-                        <select value={repeatType} onChange={handleRepeatTypeChange}>
-                            <option value="" disabled>Select Repeat Type</option>
-                            <option value="daily">Daily</option>
-                            <option value="weekly">Weekly</option>
-                            <option value="fortnightly">Fortnightly</option>
-                            <option value="monthly">Monthly</option>
-                        </select>
-                    </label>
-                    <label>
-                        Repeat for how many weeks?
-                        <input
-                            type="number"
-                            value={repeatUntil}
-                            onChange={(e) => {handleRepeatUntilChange(e.target.value)}}
-                            style={{width: '50px'}}
-                        />
-                    </label>
+                    <FormControl fullWidth margin="normal">
+                        <InputLabel>Repeat Type</InputLabel>
+                        <Select
+                            value={repeatType || ''}
+                            label="Repeat Type"
+                            onChange={handleRepeatTypeChange}
+                        >
+                            <MenuItem value="" disabled>Select Repeat Type</MenuItem>
+                            <MenuItem value="daily">Daily</MenuItem>
+                            <MenuItem value="weekly">Weekly</MenuItem>
+                            <MenuItem value="fortnightly">Fortnightly</MenuItem>
+                            <MenuItem value="monthly">Monthly</MenuItem>
+                        </Select>
+                    </FormControl>
+                    <TextField
+                        label={`Repeat for how many ${repeatTypeLabel}?`}
+                        type="number"
+                        value={repeatUntil}
+                        onChange={(e) => handleRepeatUntilChange(e.target.value)}
+                        margin="normal"
+                        fullWidth
+                    />
                 </>
             )}
-            
-            {errorMessage && <p>{errorMessage}</p>}
 
-            <SaveButton onClick={handleSubmit}>
-                {checkingTimes ? 
-                    <Spinner/>
-                    :
-                    <>
-                        Save Event
-                    </>
-                }
-            </SaveButton>
+            {errorMessage && <Typography color="error">{errorMessage}</Typography>}
+
+            <Button
+                variant="contained"
+                color="primary"
+                onClick={handleSubmit}
+                disabled={checkingTimes || saveDisabled}
+                startIcon={checkingTimes ? <Spinner /> : null}
+            >
+                Save Event
+            </Button>
+
             <ShowOverlappingEvents overlappingEvents={overlappingEvents} />
-    
         </div>
-    )
+    );
 }
 
 function formatPriceInPounds(pennies) {

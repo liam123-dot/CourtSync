@@ -2,14 +2,13 @@ import React, {useEffect} from 'react';
 import { HashRouter as Router, Route, Routes } from 'react-router-dom';
 import SignUpScreen from "./Authentication/SignUpScreen";
 import VerificationCodeScreen from "./Authentication/VerificationCodeScreen";
-// import PlayerHomeScreen from "./Home/PlayerHomeScreen/PlayerHomeScreen"
-import CoachHomeScreen from "./Home/CoachHomeScreen/CoachHomeScreen"
+import CoachHomeScreen2 from './Home/CoachHomeScreen/CoachHomeScreen2';
 import SignInScreen from "./Authentication/SignInScreen";
 import { refreshTokens } from './Authentication/RefreshTokens';
-import SettingsPage from './SettingsPage/SettingsPage';
+import SettingsPage2 from './SettingsPage/SettingsPage2';
 import EntryPage from './EntryPage/EntryPage';
 import CancelBookingPage from './PlayerBookings/CancelBookingsPage';
-import InvoicePage from './PlayerBookings/InvoicePage';
+import InvoicePage from './Home/InvoicePage/InvoicePage';
 import PlayerPage from './PlayerPage/PlayerPage';
 import PlayerHomeScreen2 from './Home/PlayerHomeScreen2/PlayerHomeScreen2';
 import NavigationBar from './NavigationBar';
@@ -70,8 +69,8 @@ function CoachDashboard() {
         }}>
             <NavigationBar/>
             <Routes>
-                <Route path="/:coachSlug" element={<CoachHomeScreen/>} />
-                <Route path="/settings" element={<SettingsPage/>} />
+                <Route path="/:coachSlug" element={<CoachHomeScreen2/>} />
+                <Route path="/settings" element={<SettingsPage2/>} />
                 <Route path="/invoices" element={<InvoicePage/>} />
                 <Route path="/players" element={<PlayerPage/>} />
             </Routes>

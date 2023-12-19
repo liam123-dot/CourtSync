@@ -1,46 +1,13 @@
-import React, {useEffect, useState} from 'react';
-import styled from '@emotion/styled';
-
-import {SaveButton} from '../../CommonAttributes/SaveButton';
-import { Spinner } from '../../../Spinner';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { TextField, Checkbox, FormControlLabel, Button, Grid, Typography, Container, FormControl, InputLabel, Select, MenuItem, Box, FormGroup, Divider } from '@mui/material';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { TimePicker } from '@mui/x-date-pickers/TimePicker';
+import { Spinner } from '../../../Spinner';
 import { useRefreshTimetable } from '../RefreshTimetableContext';
-import { checkValid } from './CheckValidRepeat';
+
+import dayjs from 'dayjs';
 import ShowOverlappingEvents from './ShowOverlappingEvents';
-
-const Container = styled.div`
-  display: flex;
-  flex-direction: row;
-`;
-
-const FormColumn = styled.div`
-  display: flex;
-  flex-direction: column;
-`;
-
-const StyledLabel = styled.label`
-  margin-bottom: 10px;
-`;
-
-const StyledInput = styled.input`
-  font-size: 16px;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  margin-top: 5px;
-`;
-
-const StyledSelect = styled.select`
-  font-size: 16px;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  margin-top: 5px;
-`;
-
-const ErrorMessage = styled.p`
-  color: red;
-`;
 
 export default function CoachAddEvent({closeModal}) {
 
@@ -69,6 +36,27 @@ export default function CoachAddEvent({closeModal}) {
 
     const {refresh} = useRefreshTimetable();
 
+    const [repeatTypeLabel, setRepeatTypeLabel] = useState('weeks');
+
+    const handleRepeatTypeChange = e => {
+        setRepeatType(e.target.value);
+        switch (e.target.value) {
+            case 'daily':
+                setRepeatTypeLabel('days');
+                break;
+            case 'weekly':
+                setRepeatTypeLabel('weeks');
+                break;
+            case 'fortnightly':
+                setRepeatTypeLabel('fortnights');
+                break;
+            case 'monthly':
+                setRepeatTypeLabel('months');
+                break;
+            default:
+                setRepeatTypeLabel('weeks');
+        }
+    }
 
     useEffect(() => {
         if (overlappingEvents && ((overlappingEvents.bookings && overlappingEvents.bookings.length > 0)
@@ -79,12 +67,6 @@ export default function CoachAddEvent({closeModal}) {
         }
     }, [overlappingEvents])
              
-    const handleRepeatTypeChange = e => {
-
-
-        setRepeatType(e.target.value);
-    }
-
     const handleSave = async () => {
 
         // check start and end time are in the future
@@ -96,11 +78,11 @@ export default function CoachAddEvent({closeModal}) {
             return;
         }
 
-        const fromTime = new Date(`${startDate}T${startTime}`);
-        const toTime = new Date(`${endDate}T${endTime}`);
+        const fromDateTime = combineDateAndTime(startDate, startTime);
+        const toDateTime = combineDateAndTime(endDate, endTime);
 
-        const fromTimeEpoch = Math.floor(fromTime.getTime() / 1000);
-        const toTimeEpoch = Math.floor(toTime.getTime() / 1000);
+        const fromTimeEpoch = fromDateTime.unix();
+        const toTimeEpoch = toDateTime.unix();
 
         const currentTime = Math.floor(Date.now() / 1000);
 
@@ -133,7 +115,7 @@ export default function CoachAddEvent({closeModal}) {
                     end_time: toTimeEpoch,
                     repeats: repeats,
                     repeats_frequency: repeatType,
-                    repeats_until: repeatUntil ? calculateRepeatsUntil() : null,
+                    repeats_until: repeatUntil ? dayjs(startDate).add(repeatUntil * 7, 'day').unix(): null,
                 },
                 {
                     headers: {
@@ -153,35 +135,30 @@ export default function CoachAddEvent({closeModal}) {
 
     }
 
-    const handleStartDateChange = e => {
+    const handleStartDateChange = value => {
 
-        const value = e.target.value;
-
-        setStartDate(value)
+        console.log(value);
+        setStartDate(value);
         setEndDate(value);
 
     }
 
     const handleEndDateChange = e => {
-
+        
         const value = e.target.value;
 
         setEndDate(value)
 
     }
 
-    const handleStartTimeChange = e => {
-
-        const value = e.target.value;
-
+    const handleStartTimeChange = value => {
+        console.log(value);
         setStartTime(value)
 
     }
 
-    const handleEndTimeChange = e => {
-
-        const value = e.target.value;
-
+    const handleEndTimeChange = value => {
+        console.log(value);
         setEndTime(value)
     }
 
@@ -195,130 +172,175 @@ export default function CoachAddEvent({closeModal}) {
         }
     }
 
+    const combineDateAndTime = (date, time) => {
+        return dayjs(date)
+            .hour(time.hour())
+            .minute(time.minute())
+            .second(0);
+    };
+
     useEffect(() => {
-
         const doCheck = async () => {
-
-            if (startDate === null || endDate === null || startTime === null || endTime === null ||
-                startDate==='' || endDate==='' || startTime==='' || endTime===''){
+            if (!startDate || !endDate || !startTime || !endTime) {
                 setTimesValid(false);
-                return
+                return;
             }
-            if (repeats && !repeatType && !repeatUntil) {
+            if (repeats && (!repeatType || !repeatUntil)) {
                 setTimesValid(false);
-                return
+                return;
             }
 
             setCheckingOverlapsLoading(true);
 
-            const response = await checkValid(startDate, endDate, startTime, endTime, repeats, repeatUntil, repeatType);
-            
-            if (response.overlaps) {
-                setOverlappingEvents(response);
-            } else {
-                setOverlappingEvents(null);
+            const fromDateTime = combineDateAndTime(startDate, startTime);
+            const toDateTime = combineDateAndTime(endDate, endTime);
+
+            const fromTimeUnix = fromDateTime.unix();
+            const toTimeUnix = toDateTime.unix();
+
+            try {
+
+                let response;
+
+                if (repeats) {
+                    // Calculate repeats_until if necessary
+                    const repeatsUntilUnix = dayjs(startDate).add(repeatUntil * 7, 'day').unix();
+                    response = await axios.get(`${process.env.REACT_APP_API_URL}/timetable/check-overlaps?from=${fromTimeUnix}&to=${toTimeUnix}&repeats=${repeats}&repeat_frequency=${repeatType}&repeat_until=${repeatsUntilUnix}`, {
+                        headers: {
+                            Authorization: localStorage.getItem('AccessToken')
+                        }
+                    });
+                } else {
+                    response = await axios.get(`${process.env.REACT_APP_API_URL}/timetable/check-overlaps?from=${fromTimeUnix}&to=${toTimeUnix}`, {
+                        headers: {
+                            Authorization: localStorage.getItem('AccessToken')
+                        }
+                    });
+                }
+
+                const data = response.data;
+
+                if (data.overlaps) {
+                    setTimesValid(false);
+                    setOverlappingEvents(data);
+                } else {
+                    setTimesValid(true);
+                    setOverlappingEvents(null);
+                }
+
+            } catch (error) {
+                console.log(error);
             }
 
+            // Handle the response...
+            
             setCheckingOverlapsLoading(false);
-
-        }
+        };
 
         doCheck();
+    }, [startDate, endDate, startTime, endTime, repeats, repeatType, repeatUntil]);
 
-    }, [startDate, endDate, startTime, endTime, repeats, repeatType, repeatUntil])
+
+    useEffect(() => {
+        if (overlappingEvents && ((overlappingEvents.bookings && overlappingEvents.bookings.length > 0)
+            || (overlappingEvents.events && overlappingEvents.events.length > 0))) {
+            setSaveDisabled(true);
+        } else {
+            setSaveDisabled(false);
+        }
+    }, [overlappingEvents]);
 
     return (
-        <Container>
-            <FormColumn>
-                <StyledLabel>
-                    Start Date
-                    <StyledInput
-                        type="date"
-                        value={startDate}
-                        onChange={handleStartDateChange}
+        <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+        <Box mb={2} sx={{width: '100%'}}>
+            <DatePicker
+                sx={{width: '100%'}}
+                label="Start Date"
+                value={startDate}
+                onChange={handleStartDateChange}
+                format="DD/MM/YYYY"
+                minDate={dayjs().startOf('day')}
+            />
+        </Box>
+        <Box mb={2} sx={{width: '100%'}}>
+            <TimePicker
+                sx={{width: '100%'}}
+                label="Start Time"
+                value={startTime}
+                onChange={handleStartTimeChange}
+            />
+        </Box>
+        <Box mb={2} sx={{width: '100%'}}>
+            <TimePicker
+                sx={{width: '100%'}}
+                label="End Time"
+                value={endTime}
+                onChange={handleEndTimeChange}
+            />
+        </Box>
+            <TextField
+                label="Title"
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Enter Title"
+                fullWidth
+                margin="normal"
+            />
+            <TextField
+                label="Description"
+                type="text"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Enter Description"
+                fullWidth
+                margin="normal"
+            />
+            <FormGroup>
+                <FormControlLabel
+                    control={<Checkbox checked={repeats} onChange={(e) => setRepeats(e.target.checked)} />}
+                    label="Repeats"
+                />
+            </FormGroup>
+            {repeats && (
+                <>
+                    <FormControl fullWidth margin="normal">
+                        <InputLabel>Repeat Type</InputLabel>
+                        <Select value={repeatType} label="Repeat Type" onChange={handleRepeatTypeChange}>
+                            <MenuItem value="daily">Daily</MenuItem>
+                            <MenuItem value="weekly">Weekly</MenuItem>
+                            <MenuItem value="fortnightly">Fortnightly</MenuItem>
+                            <MenuItem value="monthly">Monthly</MenuItem>
+                        </Select>
+                    </FormControl>
+                    <TextField
+                        label={`Repeat for how many ${repeatTypeLabel}?`}
+                        type="number"
+                        value={repeatUntil}
+                        onChange={(e) => handleRepeatUntilChange(e.target.value)}
+                        fullWidth
+                        margin="normal"
                     />
-                </StyledLabel>
-    
-                <StyledLabel>
-                    Start Time
-                    <StyledInput
-                        type="time"
-                        value={startTime}
-                        onChange={handleStartTimeChange}
-                    />
-                </StyledLabel>
-    
-                <StyledLabel>
-                    End Time
-                    <StyledInput
-                        type="time"
-                        value={endTime}
-                        onChange={handleEndTimeChange}
-                    />
-                </StyledLabel>
-    
-                <StyledLabel>
-                    Title
-                    <StyledInput
-                        type="text"
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        placeholder="Enter Title"
-                    />
-                </StyledLabel>
-    
-                <StyledLabel>
-                    Description
-                    <StyledInput
-                        type="text"
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        placeholder="Enter Description"
-                    />
-                </StyledLabel>
-    
-                <StyledLabel>
-                    Repeats
-                    <StyledInput
-                        type="checkbox"
-                        checked={repeats}
-                        onChange={(e) => setRepeats(e.target.checked)}
-                    />
-                </StyledLabel>
-    
-                {repeats && (
-                    <>
-                        <StyledLabel>
-                            Repeat Type
-                            <StyledSelect value={repeatType} onChange={handleRepeatTypeChange}>
-                                <option value="" disabled>Select Repeat Type</option>
-                                <option value="daily">Daily</option>
-                                <option value="weekly">Weekly</option>
-                                <option value="fortnightly">Fortnightly</option>
-                                <option value="monthly">Monthly</option>
-                            </StyledSelect>
-                        </StyledLabel>
-    
-                        <StyledLabel>
-                            Repeat for how many weeks?
-                            <StyledInput
-                                type="number"
-                                value={repeatUntil}
-                                onChange={(e) => handleRepeatUntilChange(e.target.value)}
-                                style={{ width: '50px' }}
-                            />
-                        </StyledLabel>
-                    </>
-                )}
-    
-                {errorMessage && <ErrorMessage>{errorMessage}</ErrorMessage>}
-    
-                <SaveButton onClick={handleSave} disabled={saveDisabled}>
-                    {saving || checkingOverlapsLoading ? <Spinner /> : 'Save Event'}
-                </SaveButton>
-            </FormColumn>
+                </>
+            )}
+            {errorMessage && (
+                <Typography color="error" marginY={2}>
+                    {errorMessage}
+                </Typography>
+            )}
+            <Button 
+                variant="contained" 
+                color="primary" 
+                onClick={handleSave} 
+                disabled={saveDisabled}
+                startIcon={saving || checkingOverlapsLoading ? <Spinner /> : null}
+                fullWidth
+                sx={{ marginTop: 2 }}
+            >
+                Save Event
+            </Button>
             <ShowOverlappingEvents overlappingEvents={overlappingEvents} />
-        </Container>
+        </Box>
     );
     
 }

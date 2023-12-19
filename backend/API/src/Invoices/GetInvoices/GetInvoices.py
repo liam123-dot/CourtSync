@@ -9,6 +9,7 @@ from src.Users.GetSelf.GetSelf import get_coach
 
 GetInvoicesBlueprint = Blueprint('invoices', __name__)
 
+
 def fetch_contact_names(phone_numbers):
     if len(phone_numbers) == 0:
         return []
@@ -79,6 +80,9 @@ def get_weekly_or_monthly_invoices(username, request_data):
 
 
 def get_daily_invoices(username, request_data):
+    
+    #TODO still group daily invoices together as one invoice since that is how they are sent
+    
     if request_data['status_view'] == 'upcoming':
         paid_status = 'AND paid=0 AND invoice_sent=0 AND status=\'confirmed\''
     else:
@@ -113,7 +117,7 @@ def get_daily_invoices(username, request_data):
     return results
 
 
-def get_invoices(username, request_data):
+def get_invoices_(username, request_data):
     
     if request_data['view'] == 'daily':
         invoices = get_daily_invoices(username, request_data)
@@ -134,7 +138,7 @@ def get_coach_invoice_preferences(coach_id):
 
 # ------------------------------ GET INVOICES ENDPOINT ------------------------------
 
-@GetInvoicesBlueprint.route('/invoices', methods=['GET'])
+@GetInvoicesBlueprint.route('/invoices-', methods=['GET'])
 def get_invoices_endpoint():
     request_data, error, status = get_query_parameters()
     if error:
@@ -162,7 +166,7 @@ def get_invoices_endpoint():
     
     if request_data['view'] in ['daily', 'weekly', 'monthly']:
     
-        invoices = get_invoices(coach_id, request_data)
+        invoices = get_invoices_(coach_id, request_data)
     else:
         return jsonify(message="Invalid view"), 400
     
@@ -284,3 +288,5 @@ def get_daily_invoices_specific(username, request_data):
         results = execute_query(sql, (username, start_timestamp, end_timestamp), is_get_query=True)
          
     return results
+
+

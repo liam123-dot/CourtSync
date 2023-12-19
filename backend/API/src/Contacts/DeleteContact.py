@@ -32,4 +32,8 @@ def delete_contact_endpoint(contact_id):
     
     execute_query(sql, (contact_id, ), False)
     
+    sql = "UPDATE Players SET enabled=0 WHERE contact_id=%s"
+    
+    execute_query(sql, (contact_id, ), False)
+    
     return jsonify({'success': True}), 200

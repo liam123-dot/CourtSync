@@ -6,6 +6,8 @@ import { Spinner } from '../../../../Spinner';
 import { usePopup } from '../../../../Notifications/PopupContext';
 import AddNewPricingRuleComponent from './AddNewPricingRuleComponent';
 import PricingRule from './PricingRuleComponent';
+import { useSettingsLabels } from '../../../SettingsPage2';
+import { CircularProgress } from '@mui/material';
 
 const Container = styled.div`
   padding: 20px;
@@ -21,7 +23,6 @@ const InputContainer = styled.div`
   display: flex;
   flex-direction: row;
   align-items: center;
-  justify-content: center;
   width: 100%;
   margin-bottom: 20px;
 `;
@@ -51,9 +52,13 @@ export default function CostInput() {
 
     const [price, setPrice] = useState(''); // Store the price as a string
     const [isSaving, setIsSaving] = useState(false);
+    const [isExtraRulesLoading, setIsExtraRulesLoading] = useState(false);
+    const [isDefaultPriceLoading, setIsDefaultPriceLoading] = useState(false);
 
     const [addingRule, setAddingRule] = useState(false);
     const [pricingRules, setPricingRules] = useState([]);
+
+    const { refreshLabels } = useSettingsLabels();
 
     const { showPopup } = usePopup();
 
@@ -70,6 +75,8 @@ export default function CostInput() {
 
     const getRules = async () => {
 
+        setIsExtraRulesLoading(true);
+
         try {
             const response = await axios.get(`${process.env.REACT_APP_API_URL}/pricing-rules?include_default=False`,{
                 headers: {
@@ -83,11 +90,14 @@ export default function CostInput() {
             console.error(error);
         }
 
+        setIsExtraRulesLoading(false);
+
     }
 
     useEffect(() => {
 
         const getPrice = async () => {
+          setIsDefaultPriceLoading(true);
             try {
                 const response = await axios.get(`${process.env.REACT_APP_API_URL}/features/hourly-rate`,
                     {
@@ -100,6 +110,7 @@ export default function CostInput() {
             } catch (error) {
                 console.error(error);
             }
+            setIsDefaultPriceLoading(false);
         }
 
         getPrice();
@@ -125,6 +136,7 @@ export default function CostInput() {
             )
 
             showPopup('Success');
+            refreshLabels();
 
         } catch (error) {
             console.error(error);
@@ -134,7 +146,9 @@ export default function CostInput() {
 
     }
     return (
-        <Container>
+        <Container style={{
+          textAlign: 'left'
+        }}>
           <Heading>
             Set your cost per hour for lessons as well as additional costs or fixed costs that may occur. 
             Additional costs can also be added by editing bookings
@@ -142,6 +156,9 @@ export default function CostInput() {
     
           <InputContainer>
             <p>Lesson Cost per Hour:</p>
+            {
+              isDefaultPriceLoading ? <CircularProgress/> : (
+            <>
             <span>£</span>
             <StyledInput
               type="text"
@@ -152,20 +169,35 @@ export default function CostInput() {
             <SaveButton onClick={handleSave}>
               {isSaving ? <Spinner /> : 'Save'}
             </SaveButton>
+            </>
+              )}
           </InputContainer>
-    
-          <InputContainer>
-            <Heading>Extra Rules</Heading>
-            <StyledButton onClick={() => setAddingRule(true)}>Add New Rule</StyledButton>
-          </InputContainer>
-    
-          {addingRule && 
-            <AddNewPricingRuleComponent setShown={setAddingRule} refresh={getRules}/>
-          }
-    
-          {pricingRules.map((rule, index) => (
-            <PricingRule key={index} pricingRule={rule} refresh={getRules}/>
-          ))}
+
+          {!isExtraRulesLoading ? (
+            <>
+      
+            <InputContainer>
+              <Heading>Extra Rules</Heading>
+            
+            </InputContainer>
+      
+      
+            {pricingRules.map((rule, index) => (
+              <PricingRule key={index} pricingRule={rule} refresh={getRules}/>
+              ))}
+                {addingRule && 
+                  <AddNewPricingRuleComponent setShown={setAddingRule} refresh={getRules}/>
+                }
+              {addingRule ? (
+                <StyledButton onClick={() => setAddingRule(false)}>Cancel New Rule</StyledButton>
+              ): 
+              (
+                <StyledButton onClick={() => setAddingRule(true)}>Add New Rule</StyledButton>
+              )}
+          </>
+          ): (
+            <CircularProgress/>
+          )}
         </Container>
       );
 }

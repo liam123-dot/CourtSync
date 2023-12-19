@@ -1,18 +1,12 @@
 import { useEffect, useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import axios from "axios"
-import TimeBox from "./TimeBox"
-import ConfirmBooking from "./ConfirmBooking"
 import Box from '@mui/material/Box';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import Container from '@mui/material/Container';
 import Button from '@mui/material/Button';
-import FormControl from '@mui/material/FormControl';
-import InputLabel from '@mui/material/InputLabel';
-import Select from '@mui/material/Select';
-import MenuItem from '@mui/material/MenuItem';
-import Typography from '@mui/material/Typography';
 import dayjs from 'dayjs';
+import DateTimeDurationSelector from "../ChooseDateTimeDuration";
+import { CircularProgress } from "@mui/material";
 
 export default function PlayerHomeScreen2() {
 
@@ -23,29 +17,13 @@ export default function PlayerHomeScreen2() {
     const [selectedTime, setSelectedTime] = useState(null);
     const [selectedDuration, setSelectedDuration] = useState(null);
 
-    const [durations, setDurations] = useState([]);
+    const [checking, setChecking] = useState(false);
 
-    const [availableStartTimes, setAvailableStartTimes] = useState();
-    
-    const [onConfirm, setOnConfirm] = useState(false);
+    const [durations, setDurations] = useState([]);    
 
-    const getAvailableStartTimes = async () => {
-        if (!selectedDate) return;
-    
-        try {
-            // convert date to epoch time in seconds
-            const epochTime = selectedDate.unix();
-    
-            const response = await axios.get(`${process.env.REACT_APP_API_URL}/timetable/${coachSlug}/booking-availability?startTime=${epochTime}&duration=${selectedDuration}`);
-    
-            const data = response.data;
-    
-            setAvailableStartTimes(data);
-    
-        } catch (error) {
-            console.log(error);
-        }
-    }
+    const [invalidSlug, setInvalidSlug] = useState(false);
+
+    const [ready, setReady] = useState(false);
 
     const getCoachDurations = async () => {
             
@@ -59,64 +37,86 @@ export default function PlayerHomeScreen2() {
 
         } catch (error) {
             console.log(error);
+            if (error.response.data.error === 'Invalid slug') { 
+                setInvalidSlug(true);
+            }
         }
     
         
     }
 
-    useEffect(() => {
+    const checkReady = async () => {
+        setChecking(true);
+        try {
+            const response = await axios.get(`${process.env.REACT_APP_API_URL}/coach/${coachSlug}/ready`);
+            const data = response.data;
 
-        if (!selectedDate) return;
-        if (!selectedDuration) return;
-
-        getAvailableStartTimes(selectedDate);
-
-    }, [selectedDate, selectedDuration])
-
-    const handleDurationChange = (e) => {
-        console.log(e.target.value);
-        setSelectedDuration(e.target.value);
-    }
-
-    useEffect(() => {
-            
-        getCoachDurations();
-    }, [])
-    
-    const handleTimeBoxClick = (startTime) => {
-        // If the same time is clicked again, deselect it
-        if (selectedTime === startTime) {
-            setSelectedTime(null);
-        } else {
-            setSelectedTime(startTime);
+            setReady(data);
+        } catch (error) {
+            console.log(error);
         }
-    };
-    
-    const StartTimeHousing = ({ startTimes }) => {
-        return (
-            <div style={{ justifyContent: 'center', alignItems: 'center' }}>
-                {startTimes.map(startTime => (
-                    <TimeBox 
-                        key={startTime} 
-                        startTime={Number(startTime)} 
-                        onClick={() => handleTimeBoxClick(startTime)}
-                        isSelected={selectedTime === startTime} // Pass isSelected prop
-                    />
-                ))}
-            </div>
-        );
-    };
+        setChecking(false);
 
-    const handleDateChange = (date) => {
-        console.log(date);
-        setSelectedDate(date);
     }
+
+    // useEffect(() => {
+
+    //     if (!selectedDate) return;
+    //     if (!selectedDuration) return;
+
+    //     getAvailableStartTimes(selectedDate);
+
+    // }, [selectedDate, selectedDuration])
+
+    useEffect(() => {
+        getCoachDurations();
+        checkReady();
+    }, [])
 
     const navigateToConfirmBooking = () => {
         navigate(`/${coachSlug}/confirm?startTime=${selectedTime}&duration=${selectedDuration}`)
     }
      
-    return (
+    return !invalidSlug ? 
+        (checking ? 
+            (
+                <CircularProgress/>
+            ) : ready ? (
+                <Container maxWidth="md"> {/* Container for horizontal centering */}
+                    <Box 
+                        sx={{ 
+                            display: 'flex', 
+                            flexDirection: 'column', 
+                            // justifyContent: 'center', // Vertical centering
+                            alignItems: 'center', // Horizontal centering
+                            minHeight: '100vh', // Full viewport height
+                            padding: 2 
+                        }}
+                    >
+                        <DateTimeDurationSelector
+                            selectedDate={selectedDate}
+                            selectedTime={selectedTime}
+                            selectedDuration={selectedDuration}
+                            setSelectedDate={setSelectedDate}
+                            setSelectedTime={setSelectedTime}
+                            setSelectedDuration={setSelectedDuration}
+                            coachSlug={coachSlug}
+
+                        />
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            disabled={!selectedDate || !selectedTime || !selectedDuration}
+                            onClick={() => navigateToConfirmBooking()}
+                            sx={{ mt: 2, width: '100%' }}
+                        >
+                            Confirm
+                        </Button>
+                    </Box>
+                </Container>
+    ): (<>
+        Coach not setup their account yet
+    </>)): (
         <Container maxWidth="md"> {/* Container for horizontal centering */}
             <Box 
                 sx={{ 
@@ -128,56 +128,9 @@ export default function PlayerHomeScreen2() {
                     padding: 2 
                 }}
             >
-                <FormControl fullWidth margin="normal">
-                    <DatePicker
-                        label="Select a Date"
-                        value={selectedDate}
-                        onChange={handleDateChange}
-                        format="DD/MM/YYYY"
-                        minDate={dayjs().startOf('day')}
-                    />
-                    {durations.length > 0 && (
-                        <FormControl fullWidth margin="normal">
-                            <InputLabel>Select a Duration</InputLabel>
-                            <Select
-                                value={selectedDuration}
-                                onChange={(e) => handleDurationChange(e)}
-                                label="Select a Duration"
-                            >
-                                <MenuItem value="">
-                                    <em>Select a duration</em>
-                                </MenuItem>
-                                {durations.map(duration => (
-                                    <MenuItem key={duration} value={duration}>
-                                        {duration} minutes
-                                    </MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
-                    )}
-                </FormControl>
-
-                {availableStartTimes && (
-                    <StartTimeHousing startTimes={availableStartTimes} />
-                )}
-
-                {availableStartTimes && availableStartTimes.length === 0 && (
-                    <Typography color="error" sx={{ mt: 2 }}>
-                        No available times on this date
-                    </Typography>
-                )}
-
-                <Button
-                    variant="contained"
-                    color="primary"
-                    disabled={!selectedDate || !selectedTime || !selectedDuration}
-                    onClick={() => navigateToConfirmBooking()}
-                    sx={{ mt: 2, width: '100%' }}
-                >
-                    Confirm
-                </Button>
+                <h1>Invalid URL</h1>
             </Box>
         </Container>
-    );
+    )
 
 }
