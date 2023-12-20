@@ -130,14 +130,12 @@ def get_invoices_between_time(coach_id, start_time, end_time, contact_email=None
     FROM Bookings
     INNER JOIN Contacts ON Bookings.contact_id = Contacts.contact_id
     INNER JOIN Players ON Bookings.player_id = Players.player_id
-    WHERE Bookings.start_time >= %s
     AND status='confirmed'
-    AND (Bookings.start_time + (Bookings.duration * 60)) <= %s
     AND Bookings.start_time < UNIX_TIMESTAMP()
     AND Bookings.coach_id = %s
     """
     
-    args = [start_time, end_time, coach_id]
+    args = [coach_id, ]
 
     # Adding contact email condition if provided
     if contact_email:
