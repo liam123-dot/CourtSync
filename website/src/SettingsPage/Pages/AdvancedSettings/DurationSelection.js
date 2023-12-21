@@ -62,7 +62,7 @@ export default function DurationSelector() {
 
     return (
         <Box>
-            <p>Lessons can only last the durations you select</p>
+            <p>Lessons can only be booked at the durations you select</p>
             <Box>
                 {!isLoading && durations.map(duration => (
                     <FormControlLabel

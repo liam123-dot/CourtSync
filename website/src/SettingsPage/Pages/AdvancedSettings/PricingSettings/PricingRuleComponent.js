@@ -157,8 +157,8 @@ export default function PricingRule({pricingRule, refresh}){
                             <IconButton 
                                 onClick={confirmDelete} 
                                 sx={{ 
-                                    opacity: showDelete ? 1 : 0, 
-                                    visibility: showDelete ? 'visible' : 'hidden' 
+                                    opacity: 1, 
+                                    visibility: 'visible' 
                                 }}
                             >
                                 <DeleteIcon color="error" />

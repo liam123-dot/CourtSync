@@ -118,6 +118,13 @@ function InvoiceRow(props) {
 
   const handleDeleteInvoice = async () => {
 
+    try {
+
+     } catch (error) {
+      console.error('Error deleting invoice:', error);
+      // Handle error appropriately
+     }
+
   }
 
   const loadHistory = async () => {
@@ -171,18 +178,6 @@ function InvoiceRow(props) {
         <TableCell align="right">£{(row.total_cost / 100.0).toFixed(2)}</TableCell>
         <TableCell align="right">{row.invoice_sent ? 'Yes' : 'No'}</TableCell>
         <TableCell align="right">{row.paid ? 'Yes' : 'No'}</TableCell>        
-          {!row.paid && !row.invoice_sent && (
-            <TableCell align="right" size="small">
-              {/* Red Close IconButton */}
-                <IconButton
-                  aria-label="delete invoice"
-                  onClick={() => setConfirmDeleteOpen(true)}
-                  sx={{ color: 'red' }}
-                  >
-                  <CloseIcon />
-                </IconButton>
-              </TableCell>
-          )}
           {!row.paid && row.invoice_sent && (
             <TableCell align="right" size="small">
               {/* Green Tick IconButton */}
@@ -190,11 +185,23 @@ function InvoiceRow(props) {
                 aria-label="confirm action"
                 onClick={() => setConfirmMarkPaidOpen(true)}
                 sx={{ color: 'green' }} // Reduced margin
-              >
+                >
                 <CheckCircleIcon />
               </IconButton>
   
             </TableCell>
+            )}
+            {!row.paid && (
+              <TableCell align="right" size="small">
+                {/* Red Close IconButton */}
+                  <IconButton
+                    aria-label="delete invoice"
+                    onClick={() => setConfirmDeleteOpen(true)}
+                    sx={{ color: 'red' }}
+                    >
+                    <CloseIcon />
+                  </IconButton>
+                </TableCell>
             )}
         </TableRow>
       <TableRow>

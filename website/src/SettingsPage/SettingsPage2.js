@@ -23,7 +23,7 @@ export default function SettingsPage2() {
     const [tabsToComponents, setTabsToComponents] = useState([
       { label: "Profile", component: <CoachProfileSettings />, url: "profile" },
       { label: "Personal Details", component: <CoachPersonalSettings />, url: "personalDetails" },
-      { label: "Invoicing", component: <InvoicingSettings />, url: "invoicing" },
+      { label: "Invoicing", component: <InvoicingSettings />, endpointName: 'invoices',url: "invoicing" },
       { label: "Duration", component: <DurationSelector />, endpointName: "durations", url: 'durations' },
       { label: "Pricing", component: <PricingSettings />, endpointName: "pricing_rules", url: 'pricing' },
       { label: "Working Hours", component: <WorkingHoursSettingsHosting />, endpointName: "working_hours", url: 'workingHours'},

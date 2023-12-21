@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Box, Typography, Button, CircularProgress, FormControl, InputLabel, Select, MenuItem, Backdrop } from '@mui/material';
 import { usePopup } from '../../../Notifications/PopupContext';
+import { useSettingsLabels } from '../../SettingsPage2';
 
 export default function InvoicingSettings() {
     const [hasStripeAccount, setHasStripeAccount] = useState(false);
@@ -12,6 +13,7 @@ export default function InvoicingSettings() {
     const [showBackdrop, setShowBackdrop] = useState(false);
 
     const { showPopup } = usePopup();
+    const { refreshLabels } = useSettingsLabels();
 
     useEffect(() => {
         const fetchData = async () => {
@@ -31,6 +33,7 @@ export default function InvoicingSettings() {
         };
 
         fetchData();
+        refreshLabels();
     }, []);
 
     const handleSave = async () => {
@@ -40,6 +43,7 @@ export default function InvoicingSettings() {
                 headers: { 'Authorization': localStorage.getItem('AccessToken') }
             });
             showPopup('Success');
+            refreshLabels();
         } catch (error) {
             console.error(error);
         }
@@ -63,7 +67,7 @@ export default function InvoicingSettings() {
 
         try {
 
-            setShowBackdrop(true);
+        setShowBackdrop(true)
 
             const response = await axios.post(`${process.env.REACT_APP_API_URL}/user/stripe-account/generate-link`, {}, {
                 headers: { 'Authorization': localStorage.getItem('AccessToken') }
@@ -109,7 +113,7 @@ export default function InvoicingSettings() {
             </FormControl>
 
             <Box sx={{display: 'flex', flexDirection: 'column', mt: 2}}>
-                <Button variant="contained" onClick={handleSave} sx={{ mt: 2 }}>
+                <Button variant="contained" onClick={handleSave} sx={{ mt: 2, maxWidth: '250px' }}>
                     {isLoading.save ? <CircularProgress size={24} /> : 'Save'}
                 </Button>
 
