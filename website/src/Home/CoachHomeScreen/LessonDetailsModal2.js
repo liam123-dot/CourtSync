@@ -146,6 +146,8 @@ export default function LessonDetailsModal2({isOpen, onClose, booking}) {
     const [confirmCancelOpen, setConfirmCancelOpen] = useState(false);
     const [onCancelProcess, setOnCancelProcess] = useState(false);
     const [cancelRepeats, setCancelRepeats] = useState(false);
+
+    console.log(booking);
     
     return booking && (
         <Modal
@@ -225,7 +227,14 @@ export default function LessonDetailsModal2({isOpen, onClose, booking}) {
                             Invoice Sent: {booking.invoice_sent ? 'Yes' : 'No'}
                         </Typography>
                     </ListItem>
-                    { booking.invoice_sent && (
+                    {booking.invoice_sent && booking.invoice_cancelled && (
+                        <ListItem divider>
+                            <Typography>
+                                Invoice Cancelled: Yes
+                            </Typography>
+                        </ListItem>
+                    )}
+                    { booking.invoice_sent && !booking.invoice_cancelled && (
                         <ListItem divider>
                             <Typography>
                                 Invoice Paid: {booking.paid ? 'Yes' : 'No'}
