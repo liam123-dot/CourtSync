@@ -99,18 +99,27 @@ function InvoiceRow(props) {
 
     setIsMarkingPaid(true);
     setConfirmMarkPaidOpen(false);
-    
-    try {
-      
-      const response = await axios.post(`${process.env.REACT_APP_API_URL}/invoices/${row.invoice_id}/paid`,
-        {},
-        {
-          headers: {
-            Authorization: localStorage.getItem('AccessToken') 
-          }
-        }
-      ) 
 
+    try {
+        if (row.invoice_sent) {
+        
+          const response = await axios.post(`${process.env.REACT_APP_API_URL}/invoices/${row.invoice_id}/paid`,
+            {},
+            {
+              headers: {
+                Authorization: localStorage.getItem('AccessToken') 
+              }
+            }
+          )     
+          } else {
+            const response = await axios.post(`${process.env.REACT_APP_API_URL}/invoices/paid`, {
+              booking_ids: row.booking_ids
+            }, {
+              headers: {
+                Authorization: localStorage.getItem('AccessToken') 
+              }
+            });
+          }
       showPopup('Invoice marked as paid');
       fetchInvoiceData(view, statusView);
 
@@ -209,7 +218,7 @@ function InvoiceRow(props) {
         <TableCell align="right">{row.paid ? 'Yes' : 'No'}</TableCell>       
         {!row.invoice_cancelled ? (
           <>
-          {!row.paid && row.invoice_sent && (
+          {!row.paid && (
             <TableCell align="right" size="small">
               {/* Green Tick IconButton */}
               {isMarkingPaid ? (

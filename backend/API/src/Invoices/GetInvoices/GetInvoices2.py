@@ -57,7 +57,7 @@ def get_invoices(coach_id, frequency="daily", status="pending", contact_email=No
         sql += " AND Bookings.invoice_sent = 1 AND Bookings.paid = 0 AND Bookings.invoice_cancelled = 0"
     elif status == "completed":
         sql += " AND Bookings.invoice_sent = 1 AND Bookings.paid = 1"
-        sql += " OR Bookings.invoice_cancelled = 1"
+        sql += " OR Bookings.invoice_cancelled = 1 OR paid_from='outside stripe'"
     
         
     sql += " ) AND Bookings.coach_id = %s"

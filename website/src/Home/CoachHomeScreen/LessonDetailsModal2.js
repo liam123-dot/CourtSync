@@ -241,6 +241,15 @@ export default function LessonDetailsModal2({isOpen, onClose, booking}) {
                             </Typography>
                         </ListItem>
                     )}
+                    {
+                        !booking.invoice_sent && booking.paid && (
+                            <ListItem divider>
+                                <Typography>
+                                    Paid outside of Stripe
+                                </Typography>
+                            </ListItem>
+                        )
+                    }
                     <ListItem divider>
                         <LessonCost rules={{
                             cost: booking.cost,
