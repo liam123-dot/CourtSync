@@ -34,30 +34,35 @@ def get_invoices(coach_id, frequency="daily", status="pending", contact_email=No
         COUNT(Bookings.booking_id) as bookings_count,
         SUM(Bookings.cost) AS total_cost,
         SUM(Bookings.extra_costs) AS total_extra_costs,
+        Bookings.invoice_cancelled as invoice_cancelled,
+        GROUP_CONCAT(Bookings.booking_id) as booking_ids,
         {time_group}
     FROM Bookings
     INNER JOIN Contacts ON Bookings.contact_id = Contacts.contact_id
-    WHERE Bookings.start_time < UNIX_TIMESTAMP()
+    WHERE (Bookings.start_time < UNIX_TIMESTAMP()
     AND status='confirmed'
-    AND Bookings.coach_id = %s
     """
     
     args = [coach_id]
-
-    # Modify the query based on the status
-    if status == "upcoming":
-        sql += " AND Bookings.invoice_sent = 0 AND Bookings.paid = 0"
-    elif status == "pending":
-        sql += " AND Bookings.invoice_sent = 1 AND Bookings.paid = 0"
-    elif status == "completed":
-        sql += " AND Bookings.invoice_sent = 1 AND Bookings.paid = 1"
-
     # Adding contact email condition if provided
     if contact_email:
         sql += " AND Contacts.email = %s"
         args.append(contact_email)
 
-    sql += f" GROUP BY contact_email, {group_by}, contact_name, Bookings.invoice_sent, Bookings.paid, Bookings.invoice_id"
+    # Modify the query based on the status
+    if status == "upcoming":
+        sql += " AND Bookings.invoice_sent = 0 AND Bookings.paid = 0 AND Bookings.invoice_cancelled = 0"
+        
+    elif status == "pending":
+        sql += " AND Bookings.invoice_sent = 1 AND Bookings.paid = 0 AND Bookings.invoice_cancelled = 0"
+    elif status == "completed":
+        sql += " AND Bookings.invoice_sent = 1 AND Bookings.paid = 1"
+        sql += " OR Bookings.invoice_cancelled = 1"
+    
+        
+    sql += " ) AND Bookings.coach_id = %s"
+
+    sql += f" GROUP BY contact_email, {group_by}, contact_name, Bookings.invoice_sent, Bookings.paid, Bookings.invoice_id, Bookings.invoice_cancelled"
     sql += f" ORDER BY {order_by}"
     sql += " LIMIT %s OFFSET %s"
     args.extend([limit, offset])

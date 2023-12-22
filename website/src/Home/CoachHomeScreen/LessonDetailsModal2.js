@@ -203,6 +203,7 @@ export default function LessonDetailsModal2({isOpen, onClose, booking}) {
                             Duration: {booking.duration_minutes} minutes
                         </Typography>
                     </ListItem>
+
                     {
                         booking.repeat_id && (
                             <>
@@ -219,6 +220,18 @@ export default function LessonDetailsModal2({isOpen, onClose, booking}) {
                             </>
                         )
                     }
+                    <ListItem divider>
+                        <Typography>
+                            Invoice Sent: {booking.invoice_sent ? 'Yes' : 'No'}
+                        </Typography>
+                    </ListItem>
+                    { booking.invoice_sent && (
+                        <ListItem divider>
+                            <Typography>
+                                Invoice Paid: {booking.paid ? 'Yes' : 'No'}
+                            </Typography>
+                        </ListItem>
+                    )}
                     <ListItem divider>
                         <LessonCost rules={{
                             cost: booking.cost,

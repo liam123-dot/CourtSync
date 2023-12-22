@@ -23,6 +23,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import Modal from '@mui/material/Modal';
 import { usePopup } from '../../Notifications/PopupContext';
 import { InvoiceDataContext } from './InvoicePage';
+import { Tab } from '@mui/material';
 
 function LessonCostModal({ open, handleClose, lesson }) {
   if (!lesson) return;
@@ -78,6 +79,7 @@ function InvoiceRow(props) {
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   const [isMarkingPaid, setIsMarkingPaid] = useState(false); // New state for loading indicator
+  const [isDeleting, setIsDeleting] = useState(false); // New state for loading indicator
 
   const {fetchInvoiceData, view, statusView} = useContext(InvoiceDataContext);
 
@@ -99,15 +101,15 @@ function InvoiceRow(props) {
     setConfirmMarkPaidOpen(false);
     
     try {
-
+      
       const response = await axios.post(`${process.env.REACT_APP_API_URL}/invoices/${row.invoice_id}/paid`,
         {},
         {
           headers: {
-            Authorization: localStorage.getItem('AccessToken') // Replace with actual token retrieval method
+            Authorization: localStorage.getItem('AccessToken') 
           }
         }
-      )
+      ) 
 
       showPopup('Invoice marked as paid');
       fetchInvoiceData(view, statusView);
@@ -122,13 +124,33 @@ function InvoiceRow(props) {
   }
 
   const handleDeleteInvoice = async () => {
-
+    setIsDeleting(true);
     try {
+
+      if (row.invoice_sent){
+        const response = await axios.put(`${process.env.REACT_APP_API_URL}/invoices/${row.invoice_id}/cancel`, {}, 
+        { headers:
+        {
+          Authorization: localStorage.getItem('AccessToken')
+        }});
+      } else {
+        const response = await axios.put(`${process.env.REACT_APP_API_URL}/invoices/cancel`, {
+          booking_ids: row.booking_ids
+        }, {
+          headers: {
+            Authorization: localStorage.getItem('AccessToken')           
+          }
+        });     
+      } 
+      setConfirmDeleteOpen(false);
+      fetchInvoiceData(view, statusView);
+      showPopup('Invoice cancelled');
 
      } catch (error) {
       console.error('Error deleting invoice:', error);
       // Handle error appropriately
      }
+     setIsDeleting(false);
 
   }
 
@@ -139,7 +161,7 @@ function InvoiceRow(props) {
       try {
         const response = await axios.get(`${process.env.REACT_APP_API_URL}/invoices/time-range`, {
           headers: {
-            Authorization: localStorage.getItem('AccessToken') // Replace with actual token retrieval method
+            Authorization: localStorage.getItem('AccessToken') 
           },
           params: {
             start_time: startEpoch,
@@ -159,6 +181,8 @@ function InvoiceRow(props) {
       }
     }
   };
+
+  console.log(row)
 
   return (
     <React.Fragment>
@@ -182,7 +206,9 @@ function InvoiceRow(props) {
         <TableCell align="right">{row.bookings_count}</TableCell>
         <TableCell align="right">£{(row.total_cost / 100.0).toFixed(2)}</TableCell>
         <TableCell align="right">{row.invoice_sent ? 'Yes' : 'No'}</TableCell>
-        <TableCell align="right">{row.paid ? 'Yes' : 'No'}</TableCell>        
+        <TableCell align="right">{row.paid ? 'Yes' : 'No'}</TableCell>       
+        {!row.invoice_cancelled ? (
+          <>
           {!row.paid && row.invoice_sent && (
             <TableCell align="right" size="small">
               {/* Green Tick IconButton */}
@@ -203,6 +229,9 @@ function InvoiceRow(props) {
             {!row.paid && (
               <TableCell align="right" size="small">
                 {/* Red Close IconButton */}
+                {isDeleting ? (
+                  <CircularProgress size={24} />
+                ) : (
                   <IconButton
                     aria-label="delete invoice"
                     onClick={() => setConfirmDeleteOpen(true)}
@@ -210,8 +239,15 @@ function InvoiceRow(props) {
                     >
                     <CloseIcon />
                   </IconButton>
+                )}
                 </TableCell>
             )}
+            </>
+          ): (
+            <TableCell align="right" size="small">
+              Cancelled
+            </TableCell>
+          )}
         </TableRow>
       <TableRow>
         <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={7}>

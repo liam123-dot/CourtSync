@@ -41,6 +41,8 @@ from src.Contacts.Players.GetPlayers import GetPlayersBlueprint
 from src.Contacts.Players.DeletePlayer import DeletePlayerBlueprint
 from src.Contacts.Players.EditPlayer import EditPlayerBlueprint
 
+from src.Invoices.CancelInvoice import CancelInvoiceBlueprint
+from src.Invoices.CancelInvoices import CancelInvoicesBlueprint
 from src.Invoices.GetInvoices.GetInvoices import GetInvoicesBlueprint
 from src.Invoices.GetInvoices.GetInvoices2 import GetInvoices2Blueprint
 from src.Invoices.Private.InvoicePaidWebhook import InvoicePaidWebhookBlueprint
@@ -108,6 +110,8 @@ def create_app():
     app.register_blueprint(DeletePlayerBlueprint)
     app.register_blueprint(EditPlayerBlueprint)
     
+    app.register_blueprint(CancelInvoiceBlueprint)
+    app.register_blueprint(CancelInvoicesBlueprint)
     app.register_blueprint(GetInvoicesBlueprint)
     app.register_blueprint(GetInvoices2Blueprint)
     app.register_blueprint(InvoicePaidWebhookBlueprint)

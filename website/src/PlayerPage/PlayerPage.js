@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Box, Table, TableBody, TableCell, TableContainer, Button, TableHead, TableRow, Paper, IconButton, Collapse, Typography } from '@mui/material';
+import { Box, Table, TableBody, TableCell, TableContainer, Button, TableHead, TableRow, Paper, IconButton, Collapse, Typography, CircularProgress } from '@mui/material';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import CreatePlayer from './CreatePlayer';
@@ -56,9 +56,11 @@ export default function PlayerPage() {
     const [isCreateContactOpen, setIsCreateContactOpen] = useState(false);
     const [showConfirmationPopup, setShowConfirmationPopup] = useState(false);
     const [itemToDelete, setItemToDelete] = useState(null);
+    const [contactsLoading, setContactsLoading] = useState(true);
     const { showPopup } = usePopup();
 
     const fetchData = async () => {
+        setContactsLoading(true);
         try {
             const response = await axios.get(`${process.env.REACT_APP_API_URL}/contacts`, {
                 headers: {
@@ -69,12 +71,16 @@ export default function PlayerPage() {
         } catch (error) {
             console.error(error);
         }
+        setContactsLoading(false);
     };
     useEffect(() => {
+
         fetchData();
     }, []);
     
-    return (
+    return contactsLoading ? (
+        <CircularProgress/>
+    ): (
         <Box sx={{ marginTop: 2 }}>
             <Typography>
                 Add details for an individual that you organise lessons with i.e the individual who books and pays for lessons. Inputting ALL information correctly is important for invoices to go to the correct places
