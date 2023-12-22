@@ -23,7 +23,6 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import Modal from '@mui/material/Modal';
 import { usePopup } from '../../Notifications/PopupContext';
 import { InvoiceDataContext } from './InvoicePage';
-import { Tab } from '@mui/material';
 
 function LessonCostModal({ open, handleClose, lesson }) {
   if (!lesson) return;
@@ -78,6 +77,8 @@ function InvoiceRow(props) {
   const [confirmMarkPaidOpen, setConfirmMarkPaidOpen] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
+  const [isMarkingPaid, setIsMarkingPaid] = useState(false); // New state for loading indicator
+
   const {fetchInvoiceData, view, statusView} = useContext(InvoiceDataContext);
 
   const { showPopup } = usePopup();
@@ -93,6 +94,9 @@ function InvoiceRow(props) {
   };
 
   const handleMarkInvoicePaid = async () => {
+
+    setIsMarkingPaid(true);
+    setConfirmMarkPaidOpen(false);
     
     try {
 
@@ -107,12 +111,13 @@ function InvoiceRow(props) {
 
       showPopup('Invoice marked as paid');
       fetchInvoiceData(view, statusView);
-      setConfirmMarkPaidOpen(false);
 
     } catch (error) {
       console.error('Error marking invoice as paid:', error);
       // Handle error appropriately
     }
+
+    setIsMarkingPaid(false);
 
   }
 
@@ -181,13 +186,17 @@ function InvoiceRow(props) {
           {!row.paid && row.invoice_sent && (
             <TableCell align="right" size="small">
               {/* Green Tick IconButton */}
-              <IconButton
-                aria-label="confirm action"
-                onClick={() => setConfirmMarkPaidOpen(true)}
-                sx={{ color: 'green' }} // Reduced margin
+              {isMarkingPaid ? (
+                <CircularProgress size={24} />
+              ) : (
+                <IconButton
+                  aria-label="confirm action"
+                  onClick={() => setConfirmMarkPaidOpen(true)}
+                  sx={{ color: 'green' }} // Reduced margin
                 >
-                <CheckCircleIcon />
-              </IconButton>
+                  <CheckCircleIcon />
+                </IconButton>
+              )}
   
             </TableCell>
             )}
@@ -222,7 +231,7 @@ function InvoiceRow(props) {
                   </TableHead>
                   <TableBody>
                     {row.history.map((historyRow) => (
-                      <TableRow key={historyRow.date} key={historyRow.booking_id}>
+                      <TableRow key={historyRow.date}>
                         <TableCell component="th" scope="row">
                             {new Date(historyRow.start_time * 1000).toLocaleDateString('en-GB', {
                               day: '2-digit',

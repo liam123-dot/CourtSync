@@ -46,6 +46,7 @@ export default function CoachAddLesson ({closeModal}) {
     const [overlappingEvents, setOverlappingEvents] = useState(null);
 
     const [repeatTypeLabel, setRepeatTypeLabel] = useState('weeks');
+    const [repeatMultiplier, setRepeatMultiplier] = useState(7); // new state for repeat multiplier
 
     const [saveDisabled, setSaveDisabled] = useState(false);
 
@@ -63,18 +64,23 @@ export default function CoachAddLesson ({closeModal}) {
         switch (e.target.value) {
             case 'daily':
                 setRepeatTypeLabel('days');
+                setRepeatMultiplier(1); // daily multiplier
                 break;
             case 'weekly':
                 setRepeatTypeLabel('weeks');
+                setRepeatMultiplier(7); // weekly multiplier
                 break;
             case 'fortnightly':
                 setRepeatTypeLabel('fortnights');
+                setRepeatMultiplier(14); // fortnightly multiplier
                 break;
             case 'monthly':
                 setRepeatTypeLabel('months');
+                setRepeatMultiplier(30); // rough monthly multiplier
                 break;
             default:
                 setRepeatTypeLabel('weeks');
+                setRepeatMultiplier(7); // default to weekly
         }
     }
 
@@ -130,7 +136,7 @@ export default function CoachAddLesson ({closeModal}) {
 
         try {
 
-            const repeatsUntil = Number(selectedStartTime) + (Number(repeatUntil) * 7 * 24 * 60 * 60);
+            const repeatsUntil = Number(selectedStartTime) + (Number(repeatUntil) * repeatMultiplier * 24 * 60 * 60);
 
             const response = await axios.post(`${process.env.REACT_APP_API_URL}/booking`, {
                 startTime: selectedStartTime,

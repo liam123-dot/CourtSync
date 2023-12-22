@@ -90,10 +90,9 @@ export default function CoachHomeScreen2() {
     }
 
     useEffect (() => {
-
         if (dateRange.start === null || dateRange.end === null) return;
 
-        fetchData(dateRange.start, dateRange.end)
+        fetchData(dateRange.start, dateRange.end, true)
 
     }, [dateRange, showCancelled])
 

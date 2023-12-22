@@ -37,7 +37,7 @@ def send_player_confirmation_email(player_email, start_time, duration, cost, has
     
     # Complete the email body with the cancellation link
     bodyHTML += f"""
-            <p>To cancel your lesson, <a href="{cancel_url}">click here.: {cancel_url}</a></p>
+            <p>To cancel your lesson, <a href="{cancel_url}">click here: {cancel_url}</a></p>
         </body>
     </html>
     """
@@ -156,7 +156,7 @@ def send_player_booked_by_coach_email(player_email, start_time, duration, cost, 
     
     # Complete the email body with the cancellation link
     bodyHTML += f"""
-            <p>To cancel your lesson, <a href="{cancel_url}">click here.: {cancel_url}</a></p>
+            <p>To cancel your lesson, <a href="{cancel_url}">click here: {cancel_url}</a></p>
         </body>
     </html>
     """
