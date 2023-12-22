@@ -6,8 +6,7 @@ import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Button from '@mui/material/Button';
 import InvoiceTable from './InvoiceTable';
-import { Backdrop, CircularProgress } from '@mui/material';
-// 
+import { Backdrop, CircularProgress, useMediaQuery, useTheme } from '@mui/material';
 
 export const InvoiceDataContext = createContext(null);
 
@@ -22,6 +21,9 @@ export default function InvoicePage() {
     const [invoicesInitialised, setInvoicesInitialised] = useState(false);
 
     const [playerSelected, setPlayerSelected] = useState(null);
+    
+    const theme = useTheme();
+    const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));    
 
     // Fetch invoice data
     const fetchInvoiceData = async (view, statusView, contactEmail = null, limit = 50, offset = 0) => {
@@ -116,16 +118,25 @@ export default function InvoicePage() {
             <Box sx={{ borderTop: '4px solid #000', width: '100%', height: '100%', display: 'flex' }}>
                 <Box sx={{ flex: 1 }}>
                     <Box sx={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between' }}>
-                        <Tabs value={statusView} onChange={handleTabChange} aria-label="Invoice Status Tabs">
-                            <Tab value="completed" label="Completed" />
-                            <Tab value="pending" label="Pending" />
-                            <Tab value="upcoming" label="Upcoming" />
-                        </Tabs>
-                    </Box>
+                            <Tabs 
+                                value={statusView} 
+                                onChange={handleTabChange} 
+                                aria-label="Invoice Status Tabs"
+                                variant={isSmallScreen ? "scrollable" : "standard"}
+                                scrollButtons={isSmallScreen ? "auto" : false}
+                            >
+                                <Tab value="completed" label="Completed" />
+                                <Tab value="pending" label="Pending" />
+                                <Tab value="upcoming" label="Upcoming" />
+                            </Tabs>
+                        </Box>
                     {
                         statusView === 'upcoming' && (
                             <Box bgcolor="primary.main" color="primary.contrastText" p={2} borderRadius={3}>
-                                <Typography variant="h6" align="center">
+                                <Typography 
+                                        variant={isSmallScreen ? 'body1' : 'h6'} 
+                                        align="center"
+                                >
                                     Invoices to be sent on {calculateNextInvoiceDate().toLocaleDateString()}
                                 </Typography>
                             </Box>

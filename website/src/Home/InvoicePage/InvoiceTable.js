@@ -17,13 +17,13 @@ import axios from 'axios';
 import CircularProgress from '@mui/material/CircularProgress';
 import CloseIcon from '@mui/icons-material/Close';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import { useTheme, useMediaQuery } from '@mui/material';
 import {LessonCost} from '../CoachHomeScreen/LessonDetailsModal2'
 import ConfirmationDialog from '../ConfirmationDialog';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import Modal from '@mui/material/Modal';
 import { usePopup } from '../../Notifications/PopupContext';
 import { InvoiceDataContext } from './InvoicePage';
-import { Tab } from '@mui/material';
 
 function LessonCostModal({ open, handleClose, lesson }) {
   if (!lesson) return;
@@ -82,6 +82,9 @@ function InvoiceRow(props) {
   const [isDeleting, setIsDeleting] = useState(false); // New state for loading indicator
 
   const {fetchInvoiceData, view, statusView} = useContext(InvoiceDataContext);
+
+  const theme = useTheme();
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
 
   const { showPopup } = usePopup();
 
@@ -211,29 +214,29 @@ function InvoiceRow(props) {
         <TableCell component="th" scope="row">
           {row.contact_name}
         </TableCell>
-        <TableCell align="right">{row.contact_email}</TableCell>
+        {!isSmallScreen && <TableCell align="right">{row.contact_email}</TableCell>}
         <TableCell align="right">{row.bookings_count}</TableCell>
-        <TableCell align="right">£{(row.total_cost / 100.0).toFixed(2)}</TableCell>
-        <TableCell align="right">{row.invoice_sent ? 'Yes' : 'No'}</TableCell>
-        <TableCell align="right">{row.paid ? 'Yes' : 'No'}</TableCell>       
-        {!row.invoice_cancelled ? (
+        {!isSmallScreen && <TableCell align="right">£{(row.total_cost / 100.0).toFixed(2)}</TableCell>}
+        {!isSmallScreen && <TableCell align="right">{row.invoice_sent ? 'Yes' : 'No'}</TableCell>}
+        {!isSmallScreen && <TableCell align="right">{row.paid ? 'Yes' : 'No'}</TableCell>}
+        {/* Additional cells for actions like marking paid or deleting, only if invoice is not cancelled */}
+        {!row.invoice_cancelled && (
           <>
-          {!row.paid && (
-            <TableCell align="right" size="small">
-              {/* Green Tick IconButton */}
-              {isMarkingPaid ? (
-                <CircularProgress size={24} />
-              ) : (
-                <IconButton
-                  aria-label="confirm action"
-                  onClick={() => setConfirmMarkPaidOpen(true)}
-                  sx={{ color: 'green' }} // Reduced margin
-                >
-                  <CheckCircleIcon />
-                </IconButton>
-              )}
-  
-            </TableCell>
+            {!row.paid && (
+              <TableCell align="right" size="small">
+                {/* Green Tick IconButton */}
+                {isMarkingPaid ? (
+                  <CircularProgress size={24} />
+                ) : (
+                  <IconButton
+                    aria-label="confirm action"
+                    onClick={() => setConfirmMarkPaidOpen(true)}
+                    sx={{ color: 'green' }} // Reduced margin
+                  >
+                    <CheckCircleIcon />
+                  </IconButton>
+                )}
+              </TableCell>
             )}
             {!row.paid && (
               <TableCell align="right" size="small">
@@ -245,21 +248,17 @@ function InvoiceRow(props) {
                     aria-label="delete invoice"
                     onClick={() => setConfirmDeleteOpen(true)}
                     sx={{ color: 'red' }}
-                    >
+                  >
                     <CloseIcon />
                   </IconButton>
                 )}
-                </TableCell>
+              </TableCell>
             )}
-            </>
-          ): (
-            <TableCell align="right" size="small">
-              Cancelled
-            </TableCell>
-          )}
-        </TableRow>
+          </>
+        )}
+      </TableRow>
       <TableRow>
-        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={7}>
+      <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={isSmallScreen ? 4 : 8}>
           <Collapse in={open} timeout="auto" unmountOnExit>
             <Box sx={{ margin: 1 }}>
               <Typography variant="h6" gutterBottom component="div">
@@ -334,7 +333,9 @@ InvoiceRow.propTypes = {
 };
 
 export default function InvoiceTable({data}) {
-  // console.log(data);
+  const theme = useTheme();
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
+
   return data && (
     <TableContainer component={Paper}>
       <Table aria-label="collapsible table">
@@ -342,11 +343,11 @@ export default function InvoiceTable({data}) {
           <TableRow>
             <TableCell />
             <TableCell>Contact Name</TableCell>
-            <TableCell align="right">Contact Email</TableCell>
+            { !isSmallScreen && <TableCell align="right">Contact Email</TableCell> }
             <TableCell align="right">Lesson Count</TableCell>
-            <TableCell align="right">Total Cost</TableCell>
-            <TableCell align="right">Invoice Sent</TableCell>
-            <TableCell align="right">Paid</TableCell>            
+            { !isSmallScreen && <TableCell align="right">Total Cost</TableCell> }
+            { !isSmallScreen && <TableCell align="right">Invoice Sent</TableCell> }
+            { !isSmallScreen && <TableCell align="right">Paid</TableCell> }
           </TableRow>
         </TableHead>
         <TableBody>

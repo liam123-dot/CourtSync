@@ -2,7 +2,9 @@ import React, { useEffect, useState } from "react";
 import styled from "@emotion/styled";
 import { Link, useLocation } from "react-router-dom";
 import axios from "axios";
-import { Tab, Tabs, Avatar, Box, Tooltip } from '@mui/material';
+import { Tab, Tabs, Avatar, Box, Tooltip, IconButton, Drawer, List, ListItem, ListItemText } from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
+
 
 export default function NavigationBar() {
 
@@ -11,6 +13,7 @@ export default function NavigationBar() {
     const [value, setValue] = useState(0);
     const [slug, setSlug] = useState(null);
     const location = useLocation();
+    const [mobileOpen, setMobileOpen] = useState(false);
 
     const [blockTabs, setBlockTabs] = useState(false);
 
@@ -121,30 +124,79 @@ export default function NavigationBar() {
         );
     };
 
-    return (
-        <Tooltip 
-            title={blockTabs ? "Settings page needs to be completed": ""}
-        >
-            <div style={{
-                width: "100%",
-                height: "75px",
-                display: "flex",
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-                color: "white",
-                padding: "0 20px",
-                borderBottom: "1px solid #ddd",
+const handleDrawerToggle = () => {
+    setMobileOpen(!mobileOpen);
+};
+
+const drawer = (
+    <Box
+        sx={{ width: 250 }} // Set the width of the drawer
+        role="presentation"
+        onClick={handleDrawerToggle}
+        onKeyDown={handleDrawerToggle}
+    >
+        <List>
+            {/* List of navigation items */}
+            <ListItem button component={Link} to={`/dashboard${timetableLink}`}>
+                <ListItemText primary="Timetable" />
+            </ListItem>
+            <ListItem button component={Link} to="/dashboard/invoices">
+                <ListItemText primary="Invoices" />
+            </ListItem>
+            <ListItem button component={Link} to="/dashboard/players">
+                <ListItemText primary="Players" />
+            </ListItem>
+            <ListItem button component={Link} to="/dashboard/settings?tab=profile">
+                <ListItemText primary="Settings" />
+            </ListItem>
+        </List>
+    </Box>
+);
+
+return (
+    <Box sx={{ flexGrow: 1 }}>
+        <Tooltip title={blockTabs ? "Settings page needs to be completed" : ""}>
+            <Box sx={{
+                display: 'flex', 
+                flexDirection: 'row', 
+                alignItems: 'center', 
+                justifyContent: 'space-between',
+                padding: '0 20px',
             }}>
-                    <Tabs value={value} onChange={handleChange} sx={{ flexGrow: 1, marginBottom: '5px' }}>
+                <IconButton
+                    color="inherit"
+                    aria-label="open drawer"
+                    edge="start"
+                    onClick={handleDrawerToggle}
+                    sx={{ mr: 2, display: { sm: 'none' } }}
+                >
+                    <MenuIcon />
+                </IconButton>
+                <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+                    <Tabs value={value} onChange={handleChange}>
                         {renderTab("Timetable", `/dashboard${timetableLink}`, 0)}
                         {renderTab("Invoices", "/dashboard/invoices", 1)}
                         {renderTab("Players", "/dashboard/players", 2)}
-                        {renderTab("Settings", "/dashboard/settings?tab=profile", 3)}
+                        {renderTab("Settings", "/dashboard/settings?tab=profile", 3)}                    
                     </Tabs>
-                    <Avatar src={imageUrl} component={Link} to="/dashboard/settings?tab=profile" style={{ marginLeft: '10px' }} />
-            </div>
+                </Box>
+                <Avatar src={imageUrl} component={Link} to="/dashboard/settings?tab=profile" sx={{ ml: '10px' }} />
+            </Box>
         </Tooltip>
-    );
-   
+        <Drawer
+            variant="temporary"
+            open={mobileOpen}
+            onClose={handleDrawerToggle}
+            ModalProps={{
+                keepMounted: true, // Better open performance on mobile.
+            }}
+            sx={{
+                display: { xs: 'block', sm: 'none' },
+                '& .MuiDrawer-paper': { boxSizing: 'border-box', width: 240 },
+            }}
+        >
+            {drawer}
+        </Drawer>
+    </Box>
+);
 }
