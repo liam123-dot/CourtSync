@@ -88,6 +88,7 @@ def create_invoice(cursor, coach, contact, bookings):
             customer=customer_id,
             invoice=invoice,
             price=price,
+            days_until_due=7,
             stripe_account=coach['stripe_account']
         )
         booking_ids[booking['booking_id']] = line_item['id']

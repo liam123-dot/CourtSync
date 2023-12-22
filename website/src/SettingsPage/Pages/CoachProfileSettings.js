@@ -17,6 +17,8 @@ export default function CoachProfileSettings() {
 
     const [coachLink, setCoachLink] = useState('');
     const [coachSetUp, setCoachSetUp] = useState(false);
+
+    const [isImageUploading, setIsImageUploading] = useState(false);
     
     const [showEmailPublicly, setShowEmailPublicly] = useState(false);
     const [showPhoneNumberPublicly, setShowPhoneNumberPublicly] = useState(false);
@@ -115,6 +117,7 @@ export default function CoachProfileSettings() {
     const handleImageUpload = async (file) => {
 
         const contentType = file.type;
+        setIsImageUploading(true);
     
         try {
             // 1. Fetch the pre-signed URL from the server
@@ -142,8 +145,9 @@ export default function CoachProfileSettings() {
 
             console.log(s3Response)
 
-            fetchCoachDetails();
             showPopup('Success');
+            await fetchCoachDetails();
+            setIsImageUploading(false);
             // 3. Optional: Refresh the profile image or coach details after successful upload
 
             // (e.g., by re-fetching coach details or setting the new profile image in your state)
@@ -151,6 +155,7 @@ export default function CoachProfileSettings() {
         } catch (error) {
             console.error("Error uploading profile image", error);
         }
+        setIsImageUploading(false);
     }
 
     const handleSignOut = () => {
@@ -177,7 +182,9 @@ export default function CoachProfileSettings() {
                 <CardContent>
                     <Typography variant="h6" gutterBottom>Your Profile</Typography>
                     <Box sx={{ my: 2, textAlign: 'center' }}>
+                        {!isImageUploading ? 
                         <ProfileButton imageUrl={coachDetails?.profile_picture_url} size={200} onClick={triggerFileInput}/>
+                        : <CircularProgress />}
                         <input type="file" ref={fileInputRef} accept=".jpg, .jpeg, .png" style={{ display: 'none' }} onChange={handleImageChange} />
                     </Box>
                     <Divider />
