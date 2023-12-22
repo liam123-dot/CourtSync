@@ -30,8 +30,11 @@ export default function CoachHomeScreen2() {
 
     const [businessHours, setBusinessHours] = useState([]);
 
+    const [headerToolbarConfig, setHeaderToolbarConfig] = useState({});
+
     const { showPopup } = usePopup();
     const bookingsCache = useRef({}); // Cache for storing bookings data
+    const calendarRef = useRef(null); // Ref to calendar component
 
     const [dateRange, setDateRange] = useState({ start: null, end: null });
 
@@ -77,6 +80,36 @@ export default function CoachHomeScreen2() {
 
     }
 
+        // Function to determine the toolbar layout
+        const determineToolbarLayout = () => {
+            if (window.innerWidth < 768) {
+                // Configuration for small screens
+                return {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'addEvent toggleCancelled',
+                };
+            } else {
+                // Configuration for larger screens
+                return {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'timeGridWeek,timeGridDay addEvent workingHours customLink toggleCancelled',
+                };
+            }
+        };
+
+        useEffect(() => {
+            const updateToolbarConfig = () => {
+                setHeaderToolbarConfig(determineToolbarLayout());
+            };
+    
+            window.addEventListener('resize', updateToolbarConfig);
+            updateToolbarConfig(); // Set initial config
+    
+            return () => window.removeEventListener('resize', updateToolbarConfig);
+        }, []);
+
     const handleEventClick = (clickInfo) => {
         const data = clickInfo.event.extendedProps;
         const type = data.type;
@@ -112,6 +145,28 @@ export default function CoachHomeScreen2() {
         getLink();
       }, []);
 
+      useEffect(() => {
+        const updateCalendarView = () => {
+            if (calendarRef.current) {
+                const calendarApi = calendarRef.current.getApi();
+                const currentView = calendarApi.view.type; // Get the current view type
+    
+                // Decide whether to switch to 'timeGridDay' or 'timeGridWeek'
+                if (window.innerWidth < 768 && currentView !== 'timeGridDay') {
+                    calendarApi.changeView('timeGridDay');
+                } else if (window.innerWidth >= 768 && currentView !== 'timeGridWeek') {
+                    calendarApi.changeView('timeGridWeek');
+                }
+            }
+        };
+    
+        window.addEventListener('resize', updateCalendarView);
+        updateCalendarView(); // Call on initial load
+    
+        return () => window.removeEventListener('resize', updateCalendarView);
+    }, []);
+    
+
     const toggleShowCancelled = () => {
         setShowCancelled(!showCancelled);
     };
@@ -144,6 +199,7 @@ export default function CoachHomeScreen2() {
                 initialView='timeGridWeek'
                 firstDay={1}
                 events={bookings}
+                ref={calendarRef}
                 customButtons={{
                     addEvent: {
                         text: '+',
@@ -164,11 +220,7 @@ export default function CoachHomeScreen2() {
                 }}
                 dayHeaderFormat={{ weekday: 'long', day: 'numeric' }}
                 businessHours={businessHours}
-                headerToolbar={{
-                    left: 'prev,next today',
-                    center: 'title',
-                    right: 'timeGridWeek,timeGridDay addEvent workingHours customLink toggleCancelled',
-                }}
+                headerToolbar={headerToolbarConfig}
                 eventClick={handleEventClick}
                 datesSet={handleDateRangeChange}
             />
