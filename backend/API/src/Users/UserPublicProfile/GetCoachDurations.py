@@ -22,8 +22,11 @@ def get_durations_endpoint(slug):
         for result in results
     ]
     
-    return jsonify(output), 200
-    
+    return jsonify(
+        durations=output,
+        booking_scope=coach['booking_scope']               
+    ), 200
+        
 @GetDurationsBlueprint.route('/coach/durations', methods=['GET'])
 def get_durations_token_endpoint():
     
@@ -44,4 +47,8 @@ def get_durations_token_endpoint():
         for result in results
     ]
     
-    return jsonify(output), 200
+    return jsonify(
+        durations=output,
+        booking_scope=coach['booking_scope']               
+    ), 200
+

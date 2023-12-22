@@ -118,7 +118,7 @@ export default function DateTimeDurationSelector({
 
             const data = response.data;
 
-            setDurations(data);
+            setDurations(data.durations);
 
         } catch (error) {
             console.log(error);

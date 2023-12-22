@@ -32,8 +32,8 @@ export default function PlayerHomeScreen2() {
             const response = await axios.get(`${process.env.REACT_APP_API_URL}/coach/${coachSlug}/durations`);
 
             const data = response.data;
-
-            setDurations(data);
+            
+            setDurations(data.durations);
 
         } catch (error) {
             console.log(error);
@@ -58,15 +58,6 @@ export default function PlayerHomeScreen2() {
         setChecking(false);
 
     }
-
-    // useEffect(() => {
-
-    //     if (!selectedDate) return;
-    //     if (!selectedDuration) return;
-
-    //     getAvailableStartTimes(selectedDate);
-
-    // }, [selectedDate, selectedDuration])
 
     useEffect(() => {
         getCoachDurations();

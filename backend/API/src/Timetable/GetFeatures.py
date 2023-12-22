@@ -65,7 +65,10 @@ def get_durations():
     
     durations = get_durations(coach_id)
     
-    return jsonify(durations=durations), 200
+    return jsonify(
+        durations=durations,
+        booking_scope=coach['booking_scope']
+        ), 200
 
 def get_durations(coach_id):
     results = execute_query('SELECT duration FROM Durations WHERE coach_id=%s', (coach_id,), is_get_query=True)

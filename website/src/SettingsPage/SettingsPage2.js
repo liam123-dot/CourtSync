@@ -73,35 +73,41 @@ export default function SettingsPage2() {
         }
     }
 
+    const isMobile = window.innerWidth <= 768; // Example breakpoint for mobile
+
+    const renderTabs = () => (
+        <Tabs
+            orientation={isMobile ? "horizontal" : "vertical"}
+            variant="scrollable"
+            value={selectedTab}
+            onChange={handleTabChange}
+            sx={{
+                marginRight: isMobile ? '0' : '10px',
+                borderRight: isMobile ? 'none' : '1px solid #ddd',
+                height: isMobile ? 'auto' : '100vh',
+                width: isMobile ? '100%' : '325px',
+            }}
+        >
+            {tabsToComponents.map((tab, index) => (
+                <Tab 
+                    key={index} 
+                    label={tab.label} 
+                    sx={{
+                        color: tab.label.includes('Requires Setup') ? 'red' : 'inherit',
+                        fontWeight: tab.label.includes('Requires Setup') ? 'bold' : 'normal'
+                    }}
+                />
+            ))}
+        </Tabs>
+    );
+
     useEffect(() => {
         refreshLabels();
     }, []);
 
     return (
-        <div style={{ display: "flex" }}>
-            <Tabs
-                orientation="vertical"
-                variant="scrollable"
-                value={selectedTab}
-                onChange={handleTabChange}
-                sx={{
-                    marginRight: '10px',
-                    borderRight: '1px solid #ddd', // Add border here
-                    height: '100vh'
-                }}
-            >
-                {tabsToComponents.map((tab, index) => (
-                    <Tab 
-                        key={index} 
-                        label={tab.label} 
-                        sx={{
-                            width: '325px',
-                            color: tab.label.includes('Requires Setup') ? 'red' : 'inherit',
-                            fontWeight: tab.label.includes('Requires Setup') ? 'bold' : 'normal'
-                        }}
-                    />
-                ))}
-            </Tabs>
+        <div style={{ display: "flex", flexDirection: isMobile ? 'column' : 'row' }}>
+            {renderTabs()}
             <SettingsLabelsContext.Provider value={{refreshLabels}}>
                 <div style={{ flex: 1 }}>{tabsToComponents[selectedTab].component}</div>
             </SettingsLabelsContext.Provider>
