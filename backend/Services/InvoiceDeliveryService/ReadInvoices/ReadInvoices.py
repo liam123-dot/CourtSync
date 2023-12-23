@@ -124,6 +124,7 @@ def get_bookings(cursor, coach_id, from_time, to_time):
     AND Bookings.start_time >= %s AND Bookings.start_time <= %s
     AND Bookings.invoice_sent = 0
     AND Bookings.paid = 0
+    AND Bookings.invoice_cancelled = 0
     AND Bookings.status = 'confirmed'
     """
     

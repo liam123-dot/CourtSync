@@ -41,7 +41,6 @@ export default function PlayerHomeScreen2() {
                 setInvalidSlug(true);
             }
         }
-    
         
     }
 
