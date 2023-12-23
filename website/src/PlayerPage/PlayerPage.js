@@ -123,7 +123,6 @@ export default function PlayerPage() {
                         <Button variant="contained" onClick={() => setIsCreateContactOpen(true)}>Create Contact</Button>
                     </Box>
             }
-{isCreateContactOpen && <CreateContact setOpen={setIsCreateContactOpen} fetchData={fetchData} />}
 
 {contactData.map((contact, index) => (
     <ContactCard key={index} contact={contact} fetchData={fetchData} />
