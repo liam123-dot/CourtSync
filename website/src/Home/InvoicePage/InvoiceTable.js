@@ -256,6 +256,13 @@ function InvoiceRow(props) {
             )}
           </>
         )}
+        {
+          row.invoice_cancelled && (
+            <TableCell align="right" size="small">
+              Cancelled
+            </TableCell>
+          )
+        }
       </TableRow>
       <TableRow>
       <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={isSmallScreen ? 4 : 8}>
