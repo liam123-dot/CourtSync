@@ -5,14 +5,17 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import Checkbox from '@mui/material/Checkbox';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
+import TextField from '@mui/material/TextField';
 
 import { usePopup } from '../../../Notifications/PopupContext';
 import { useSettingsLabels } from '../../SettingsPage2';
+import { Typography } from '@mui/material';
 
 export default function DurationSelector() {
     const [selectedDurations, setSelectedDurations] = useState([]);
     const [isSaving, setIsSaving] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [bookingScope, setBookingScope] = useState();
     const { showPopup } = usePopup();
     const { refreshLabels } = useSettingsLabels();
 
@@ -40,8 +43,27 @@ export default function DurationSelector() {
         setIsLoading(false);
     };
 
+    const getBookingScope = async () => {
+
+        try {
+
+            // const response = await axios.get(`${process.env.REACT_APP_API_URL}/features/booking-scope`, {
+            //     headers: {
+            //         Authorization: localStorage.getItem('AccessToken')
+            //     }
+            // });
+
+            // setBookingScope(response.data.bookingScope);
+
+        } catch (error) {
+            console.log(error);
+        }
+
+    }
+
     useEffect(() => {
         getDurations();
+        getBookingScope();
     }, []);
 
     const handleSave = async () => {
@@ -79,6 +101,14 @@ export default function DurationSelector() {
                 {
                     isLoading && <CircularProgress />
                 }
+                {/* <Typography>Booking Scope (in weeks): </Typography>
+                <TextField
+                    type="number"
+                    value={bookingScope}
+                    onChange={setBookingScope}
+                    label="Number of Weeks"
+                    variant="outlined"
+                /> */}
             </Box>
     
             <Button onClick={handleSave} variant="contained" color="primary">

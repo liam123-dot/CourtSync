@@ -28,7 +28,7 @@ const style = {
     p: 4,
   };
 
-export const LessonCost = ({booking, forceExpanded=false}) => {
+export const LessonCost = ({booking, forceExpanded=false, editable=false}) => {
 
     const [expanded, setExpanded] = useState(forceExpanded);
     const [rulesLoaded, setRulesLoaded] = useState(false);
