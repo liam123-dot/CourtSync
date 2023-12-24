@@ -103,6 +103,9 @@ export default function ConfirmBooking() {
     const [verificationCode, setVerificationCode] = useState('');
     const [emailVerified, setEmailVerified] = useState(false);
 
+    const [isSendVerifyEmailLoading, setIsSendVerifyEmailLoading] = useState(false);
+    const [isCheckVerifyEmailCodeLoading, setIsCheckVerifyEmailCodeLoading] = useState(false);
+
     const [pricingData, setPricingData] = useState({});
 
     const [submitLoading, setSubmitLoading] = useState(false);
@@ -190,6 +193,8 @@ export default function ConfirmBooking() {
     const handleVerifyEmail = async () => {
         // Logic to send verification code
 
+        setIsSendVerifyEmailLoading(true);
+
         try {
 
             const response = await axios.post(`${process.env.REACT_APP_API_URL}/contacts/verify-email`, {
@@ -204,9 +209,12 @@ export default function ConfirmBooking() {
         }
 
         setIsVerifyingEmail(true);
+        setIsSendVerifyEmailLoading(false);
     };
 
     const handleVerifyEmailCode = async () => {
+
+      setIsCheckVerifyEmailCodeLoading(true);
 
         try {
 
@@ -230,6 +238,8 @@ export default function ConfirmBooking() {
         } catch (error) {
             console.log(error)
         }
+
+        setIsCheckVerifyEmailCodeLoading(false);
 
     }
 
@@ -308,7 +318,22 @@ export default function ConfirmBooking() {
                           fullWidth
                           sx={{ mt: 3 }}
                         >
-                          {!isVerifyingEmail ? "Verify Email" : "Submit Code"}
+                          {!isVerifyingEmail ? (
+                            isSendVerifyEmailLoading ? (
+                              <CircularProgress/>
+                            ): (
+                              <Typography>
+                                Verify Email
+                              </Typography>
+                            )): (
+                              isCheckVerifyEmailCodeLoading ? (
+                                <CircularProgress/>
+                              ): (
+                                <Typography>
+                                  Submit Code
+                                </Typography>
+                              )
+                          )}
                         </Button>
                       </Grid>
                     )}

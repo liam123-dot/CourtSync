@@ -6,6 +6,7 @@ import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import CreateContact from './CreateContact';
 import ConfirmationPopup from '../Notifications/ConfirmComponent';
 import AddIcon from '@mui/icons-material/Add';
+import CreatePlayer from './CreatePlayer';
 
 function PlayerComponent({ player }) {
     return (
@@ -18,26 +19,37 @@ function PlayerComponent({ player }) {
 
 function ContactCard({ contact, fetchData }) {
     const [open, setOpen] = useState(false);
+    const [isCreatePlayerOn, setIsCreatePlayerOn] = useState(false);    
 
     return contact && (
-        <Paper sx={{ marginBottom: 2, padding: 2 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="h6">{contact.name}</Typography>
-                <IconButton aria-label="expand row" onClick={() => setOpen(!open)}>
-                    {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
-                </IconButton>
-            </Box>
-            <Collapse in={open} timeout="auto" unmountOnExit>
-                <Box sx={{ margin: 1 }}>
-                    <Typography variant="body1" gutterBottom>Email: {contact.email}</Typography>
-                    <Typography variant="body1" gutterBottom>Phone: {contact.phone_number}</Typography>
-                    <Typography variant="body2" gutterBottom component="div">Players:</Typography>
-                    {contact.players && contact.players.map((player, index) => (
-                        <PlayerComponent key={index} player={player} />
-                    ))}
+        <Box>
+            <Paper sx={{ marginBottom: 2, padding: 2 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="h6">{contact.name}</Typography>
+                    <Box sx={{ ml: 'auto', display: 'flex' }}>
+                        <IconButton onClick={() => setIsCreatePlayerOn(true)}>
+                            <AddIcon/>
+                        </IconButton>
+                        <IconButton aria-label="expand row" onClick={() => setOpen(!open)}>
+                            {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+                        </IconButton>
+                    </Box>
                 </Box>
-            </Collapse>
-        </Paper>
+                <Collapse in={open} timeout="auto" unmountOnExit>
+                    <Box sx={{ margin: 1 }}>
+                        <Typography variant="body1" gutterBottom>Email: {contact.email}</Typography>
+                        <Typography variant="body1" gutterBottom>Phone: {contact.phone_number}</Typography>
+                        <Typography variant="body2" gutterBottom component="div">Players:</Typography>
+                        {contact.players && contact.players.map((player, index) => (
+                            <PlayerComponent key={index} player={player} />
+                        ))}
+                    </Box>
+                </Collapse>
+            </Paper>
+            <Modal open={isCreatePlayerOn} onClose={() => setIsCreatePlayerOn(false)}>
+                <CreatePlayer contactId={contact.contact_id} setOpen={setIsCreatePlayerOn} fetchData={fetchData}/>
+            </Modal>
+        </Box>
     );
 }
 

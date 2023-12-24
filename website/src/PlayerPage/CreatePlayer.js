@@ -1,13 +1,15 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { Box, Button, TextField, Typography, FormControl } from '@mui/material';
+import { Box, Button, TextField, Typography, FormControl, CircularProgress } from '@mui/material';
 
 export default function CreatePlayer({ contactId, setOpen, fetchData }) {
     const [playerName, setPlayerName] = useState("");
+    const [isCreatePlayerLoading, setIsCreatePlayerLoading] = useState(false);
 
     const submitPlayer = async (e) => {
         e.preventDefault();
-    
+        setIsCreatePlayerLoading(true);
+
         const nameParts = playerName.split(' ');
         if (nameParts.length < 2) {
             alert("Please enter a first name and a surname.");
@@ -28,6 +30,7 @@ export default function CreatePlayer({ contactId, setOpen, fetchData }) {
         } catch (error) {
             console.log(error)
         }
+        setIsCreatePlayerLoading(false);
     }
 
     const handleNameChange = (e) => {
@@ -56,7 +59,7 @@ export default function CreatePlayer({ contactId, setOpen, fetchData }) {
                     variant="outlined"
                 />
                 <Button type="submit" variant="contained" color="primary">
-                    Submit
+                    {isCreatePlayerLoading ? <CircularProgress/> : "Submit"}
                 </Button>
             </FormControl>
             <Button onClick={() => setOpen(false)} sx={{ mt: 1 }}>Cancel</Button>
