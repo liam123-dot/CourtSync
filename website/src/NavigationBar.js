@@ -103,7 +103,7 @@ export default function NavigationBar() {
             setValue(0);
         } else if (location.pathname.startsWith('/dashboard/invoices')) {
             setValue(1);
-        } else if (location.pathname.startsWith('/dashboard/players')) {
+        } else if (location.pathname.startsWith('/dashboard/contacts')) {
             setValue(2);
         } else if (location.pathname.startsWith('/dashboard/settings')) {
             setValue(3);
@@ -143,8 +143,8 @@ const drawer = (
             <ListItem button component={Link} to="/dashboard/invoices">
                 <ListItemText primary="Invoices" />
             </ListItem>
-            <ListItem button component={Link} to="/dashboard/players">
-                <ListItemText primary="Players" />
+            <ListItem button component={Link} to="/dashboard/contacts">
+                <ListItemText primary="Contacts" />
             </ListItem>
             <ListItem button component={Link} to="/dashboard/settings?tab=profile">
                 <ListItemText primary="Settings" />
@@ -176,7 +176,7 @@ return (
                     <Tabs value={value} onChange={handleChange}>
                         {renderTab("Timetable", `/dashboard${timetableLink}`, 0)}
                         {renderTab("Invoices", "/dashboard/invoices", 1)}
-                        {renderTab("Players", "/dashboard/players", 2)}
+                        {renderTab("Contacts", "/dashboard/contacts", 2)}
                         {renderTab("Settings", "/dashboard/settings?tab=profile", 3)}                    
                     </Tabs>
                 </Box>

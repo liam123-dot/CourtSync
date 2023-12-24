@@ -16,7 +16,7 @@ export default function DurationSelector() {
     const { showPopup } = usePopup();
     const { refreshLabels } = useSettingsLabels();
 
-    const durations = [30, 60, 90, 120]
+    const durations = [15, 30, 45, 60, 75 ,90, 105, 120]
 
     const toggleDuration = (duration) => {
         const updatedDurations = selectedDurations.includes(duration)

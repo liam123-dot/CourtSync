@@ -113,7 +113,7 @@ export default function InvoicePage() {
         return nextInvoiceDate;
     }
 
-    return !isInitialLoad && !isInvoicesLoading ? (
+    return !isInitialLoad ? (
         invoicesInitialised ? (
             <Box sx={{ borderTop: '4px solid #000', width: '100%', height: '100%', display: 'flex' }}>
                 <Box sx={{ flex: 1 }}>
@@ -142,9 +142,13 @@ export default function InvoicePage() {
                             </Box>
                         )
                     }
-                    <InvoiceDataContext.Provider value={{ fetchInvoiceData, view, statusView }}>
-                        <InvoiceTable data={data} />
-                    </InvoiceDataContext.Provider>
+                    {isInvoicesLoading ? (
+                        <CircularProgress/>
+                    ):(
+                        <InvoiceDataContext.Provider value={{ fetchInvoiceData, view, statusView }}>                    
+                            <InvoiceTable data={data} tab={statusView}/>
+                        </InvoiceDataContext.Provider>
+                    )}                    
                 </Box>
             </Box>
         ) : (

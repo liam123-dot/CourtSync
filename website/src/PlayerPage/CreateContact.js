@@ -8,13 +8,17 @@ export default function CreateContact({ setOpen, fetchData }) {
     const [contactEmail, setContactEmail] = useState("");
     const [contactPhoneNumber, setContactPhoneNumber] = useState("");
     const [isPlayerICoach, setIsPlayerICoach] = useState(false);
+    const [errorMessage, setErrorMessage] = useState(null);
+    const [isSubmitLoading, setIsSubmitLoading] = useState(false);
 
     const { showPopup } = usePopup();
 
     const submitContact = async () => {
+        setErrorMessage(null);
+        setIsSubmitLoading(true);
         const names = contactName.split(' ');
         if (names.length < 2) {
-          showPopup("Please enter both a first and last name.");
+          setErrorMessage("Please enter both a first and last name.");
           return;
         }
       
@@ -44,6 +48,7 @@ export default function CreateContact({ setOpen, fetchData }) {
         } catch (error) {
             console.log(error);
         }
+        setIsSubmitLoading(false);
     };
 
     const handleNameChange = (e) => {
@@ -105,11 +110,28 @@ export default function CreateContact({ setOpen, fetchData }) {
                     label="Is a player"
                     sx={{ mb: 2 }}
                 />
+                {
+                    errorMessage && (
+                        <Typography color="error" sx={{ mb: 2 }}>{errorMessage}</Typography>
+                    )
+                }
+            </Box>
+            <Box sx={{
+                display: 'flex',
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                width: '100%'
+            
+            }}>
                 <Button variant="contained" color="primary" onClick={submitContact} sx={{ mb: 1 }}>
-                    Submit
+                    {
+                        isSubmitLoading ? <CircularProgress color="inherit" /> : "Create Contact"
+                    }
+                </Button>
+                <Button variant="outlined" onClick={() => setOpen(false)}>
+                    Cancel
                 </Button>
             </Box>
-            <Button variant="outlined" onClick={() => setOpen(false)}>Cancel</Button>
         </Box>
     );
 }

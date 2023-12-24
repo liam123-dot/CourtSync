@@ -217,8 +217,14 @@ function InvoiceRow(props) {
         {!isSmallScreen && <TableCell align="right">{row.contact_email}</TableCell>}
         <TableCell align="right">{row.bookings_count}</TableCell>
         {!isSmallScreen && <TableCell align="right">£{(row.total_cost / 100.0).toFixed(2)}</TableCell>}
-        {!isSmallScreen && <TableCell align="right">{row.invoice_sent ? 'Yes' : 'No'}</TableCell>}
-        {!isSmallScreen && <TableCell align="right">{row.paid ? 'Yes' : 'No'}</TableCell>}
+        {
+          (row.invoice_sent || row.paid) && (
+            <>
+              {!isSmallScreen && <TableCell align="right">{row.invoice_sent ? 'Yes' : 'No'}</TableCell>}
+              {!isSmallScreen && <TableCell align="right">{row.paid ? 'Yes' : 'No'}</TableCell>}
+            </>
+          )
+        }
         {/* Additional cells for actions like marking paid or deleting, only if invoice is not cancelled */}
         {!row.invoice_cancelled && (
           <>
@@ -339,7 +345,7 @@ InvoiceRow.propTypes = {
   }).isRequired,
 };
 
-export default function InvoiceTable({data}) {
+export default function InvoiceTable({data, tab}) {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -353,8 +359,13 @@ export default function InvoiceTable({data}) {
             { !isSmallScreen && <TableCell align="right">Contact Email</TableCell> }
             <TableCell align="right">Lesson Count</TableCell>
             { !isSmallScreen && <TableCell align="right">Total Cost</TableCell> }
-            { !isSmallScreen && <TableCell align="right">Invoice Sent</TableCell> }
-            { !isSmallScreen && <TableCell align="right">Paid</TableCell> }
+            { tab !=='upcoming' && (
+              <>
+                { !isSmallScreen && <TableCell align="right">Invoice Sent</TableCell> }
+                { !isSmallScreen && <TableCell align="right">Paid</TableCell> }
+              </>
+            )
+            }
           </TableRow>
         </TableHead>
         <TableBody>
