@@ -1,18 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { Box, Divider, CircularProgress, Link, Snackbar } from '@mui/material';
 import ChangePasswordScreen from '../../Authentication/ChangePasswordScreen';
 
-const dividerStyle = {
-    borderTop: '1px solid #ccbfbe',
-    borderBottom: '1px solid #ccbfbe',
-    paddingBottom: '10px'
-}
-
 export default function CoachPersonalSettings () {
-
     const [coachDetails, setCoachDetails] = useState({});
-    const [isEditing, setIsEditing] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
 
     const fetchCoachDetails = async () => {
         setIsLoading(true);
@@ -25,9 +19,7 @@ export default function CoachPersonalSettings () {
                     }
                 }
             );
-            const data = response.data;
-            setCoachDetails(data);
-
+            setCoachDetails(response.data);
         } catch (error) {
             console.error("Error fetching coach details", error);
         }
@@ -38,37 +30,54 @@ export default function CoachPersonalSettings () {
         fetchCoachDetails();
     }, []);
 
-    return (
-        <div>
-            <div style={dividerStyle}>
-                <p><strong>First Name: </strong> 
-                    {isEditing ? (
-                        <input type="text" name="first_name" value={coachDetails.first_name} onChange={handleInputChange} />
-                    ) : (
-                        coachDetails.first_name
-                    )}
-                </p>
-            </div>
-            <div style={dividerStyle}>
-                <p><strong>Last Name: </strong> 
-                    {isEditing ? (
-                        <input type="text" name="last_name" value={coachDetails.last_name} onChange={handleInputChange} />
-                    ) : (
-                        coachDetails.last_name
-                    )}
-                </p>
-            </div>
-            <div style={dividerStyle}>
-                <p><strong>Email: </strong> 
-                    {isEditing ? (
-                        <input type="text" name="email" value={coachDetails.email} onChange={handleInputChange} />
-                    ) : (
-                        coachDetails.email
-                    )}
-                </p>
-            </div>
-            <ChangePasswordScreen/>
-        </div>
-    )
+    const handleInputChange = (event) => {
+        setCoachDetails({ ...coachDetails, [event.target.name]: event.target.value });
+    };
 
+    const handleLinkClick = async () => {
+        try {
+            await navigator.clipboard.writeText(`${process.env.REACT_APP_API_URL}/timetable/${coachDetails.slug}/apple-calendar`);
+            setSnackbarOpen(true);
+        } catch (error) {
+            console.error('Failed to copy', error);
+        }
+    };
+
+    return (
+        <Box sx={{ p: 2 }}>
+            {isLoading ? (
+                <CircularProgress />
+            ) : (
+                <>
+                    <Divider sx={{ my: 2 }} />
+                    <Box sx={{ mb: 2 }}>
+                        <strong>First Name: </strong>{coachDetails.first_name}
+                    </Box>
+                    <Divider sx={{ my: 2 }} />
+                    <Box sx={{ mb: 2 }}>
+                        <strong>Last Name: </strong>{coachDetails.last_name}
+                    </Box>
+                    <Divider sx={{ my: 2 }} />
+                    <Box sx={{ mb: 2 }}>
+                        <strong>Email: </strong>{coachDetails.email}
+                    </Box>
+                    <Divider sx={{ my: 2 }} />
+                    <Box sx={{ mb: 2 }}>
+                        <strong>Apple Calendar Subscription Link (TEST): </strong>
+                        <Link onClick={handleLinkClick} color="primary" sx={{ cursor: 'pointer' }}>
+                            Copy Link
+                        </Link>
+                    </Box>
+                    <ChangePasswordScreen/>
+                    <Snackbar
+                        open={snackbarOpen}
+                        autoHideDuration={6000}
+                        onClose={() => setSnackbarOpen(false)}
+                        message="Link copied to clipboard"
+                    />
+                </>
+            )}
+        </Box>
+    );
+    
 }

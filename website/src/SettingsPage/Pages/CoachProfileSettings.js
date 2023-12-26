@@ -16,7 +16,7 @@ export default function CoachProfileSettings() {
     const [isEditing, setIsEditing] = useState(false);
 
     const [coachLink, setCoachLink] = useState('');
-    const [coachSetUp, setCoachSetUp] = useState(false);
+    const [coachSetUp, setCoachSetUp] = useState(true);
 
     const [isImageUploading, setIsImageUploading] = useState(false);
     
@@ -83,8 +83,7 @@ export default function CoachProfileSettings() {
             setCoachDetails(data);
             setInitialCoachDetails(data);
             
-            setCoachLink(`${process.env.REACT_APP_WEBSITE_URL}/#${data.slug}`);
-            setCoachSetUp(data.coach_setup);
+            setCoachLink(`${process.env.REACT_APP_WEBSITE_URL}/#/${data.slug}`);
 
             setShowEmailPublicly(data.show_email_publicly);
             setShowPhoneNumberPublicly(data.show_phone_number_publicly);

@@ -290,7 +290,10 @@ export default function LessonDetailsModal2({isOpen, onClose, booking}) {
                 
                 <CancelBooking
                     booking={booking}
-                    close={() => setOnCancelProcess(false)}
+                    close={() => {
+                        setOnCancelProcess(false)
+                        onClose();
+                    }}
                     onCancelProcess={onCancelProcess}
                     setOnCancelProcess={setOnCancelProcess}
                     cancelRepeat={cancelRepeats}
