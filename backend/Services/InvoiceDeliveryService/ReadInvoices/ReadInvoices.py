@@ -10,34 +10,32 @@ from Database import DBConfig
 client = boto3.client('sqs')
 
 def lambda_handler(event, context):
-    
     DB = DBConfig()
     connection = DB.get_db_connection()
-        
+
     QUEUE_URL = os.environ['QUEUE_URL']
     
     invoice_type = event.get('view', None)
-    
+
     if not invoice_type:
         return {
             'statusCode': 400,
             'body': json.dumps('No view specified')
         }
-
-    day_times = get_times(invoice_type)
     
     with connection.cursor() as cursor:
-    
         coaches = get_coaches(cursor, invoice_type)
+        coach_ids = [coach['coach_id'] for coach in coaches]
         
         for coach in coaches:
-        
-            bookings = get_bookings(cursor, coach['coach_id'], day_times[0], day_times[1])
+            bookings = get_bookings(cursor, coach['coach_id'], invoice_type, coach_ids)
             if len(bookings) == 0:
                 continue
             contacts = format_bookings(bookings)
             
             coach['contacts'] = contacts
+
+            print(coach)
             
             response = client.send_message(
                 QueueUrl=QUEUE_URL,
@@ -45,34 +43,14 @@ def lambda_handler(event, context):
             )
             
             print(response)
-        
+
     return {
         'statusCode': 200,
         'body': json.dumps({
             'message': 'success'
         })
-    }        
+    }
     
-    # for coach in coaches:
-    #     unsent_invoices = get_bookings(coach['coach_id'], from_time=day_times[0], to_time=day_times[1], invoice_sent=False, invoice_paid=False)
-    #     # unsent_invoices = get_coach_unsent_invoices(cursor, coach[0], day_times)
-    #     return {
-    #         'statusCode': 200,
-    #         'body': json.dumps(unsent_invoices)
-    #     }
-    #     if len(unsent_invoices) != 0:
-    #         response = client.send_message(
-    #             QueueUrl=QUEUE_URL,
-    #             MessageBody=json.dumps({'bookings': unsent_invoices, 'coach_id': coach[0], 'stripe_account': coach[1], 'coach_name': coach[2]}),
-    #         )
-    #         print(response)
-            
-    # return {
-    #     'statusCode': 200,
-    #     'body': json.dumps('Hello from Lambda!')
-    # }        
-    
-
 def format_bookings(bookings):
     contacts = {}
     
@@ -96,10 +74,8 @@ def format_bookings(bookings):
         
     return contacts
 
-
 def get_coaches(cursor, invoice_type):
     sql = "SELECT coach_id, stripe_account, name FROM Coaches WHERE invoice_type=%s AND stripe_account IS NOT NULL"
-
     cursor.execute(sql, (invoice_type,))
     result = cursor.fetchall()
     
@@ -114,21 +90,25 @@ def get_coaches(cursor, invoice_type):
     
     return coaches
 
-def get_bookings(cursor, coach_id, from_time, to_time):
-    sql = f"""
-    SELECT Bookings.*, Contacts.name AS contact_name, Contacts.email as contact_email, Contacts.phone_number as contact_phone_number, Contacts.contact_id as contact_id, Players.name AS player_name
+def get_bookings(cursor, coach_id, invoice_type, coach_ids):
+    sql = """
+    SELECT Bookings.*, Contacts.name AS contact_name, Contacts.email as contact_email, Contacts.phone_number as contact_phone_number, Contacts.contact_id as contact_id, Players.name AS player_name, Contacts.invoice_type as invoice_type
     FROM Bookings
     INNER JOIN Contacts ON Bookings.contact_id = Contacts.contact_id
     INNER JOIN Players ON Bookings.player_id = Players.player_id
-    WHERE Bookings.coach_id = %s
-    AND Bookings.start_time >= %s AND Bookings.start_time <= %s
-    AND Bookings.invoice_sent = 0
+    WHERE Bookings.invoice_sent = 0
+    AND Bookings.start_time < UNIX_TIMESTAMP()
     AND Bookings.paid = 0
     AND Bookings.invoice_cancelled = 0
     AND Bookings.status = 'confirmed'
+    AND ((invoice_type=%s AND Bookings.coach_id = %s)
+    OR (invoice_type='daily' AND Bookings.coach_id IN (%s)))
     """
+
+    # Convert coach_ids list to a string for the SQL query
+    coach_ids_str = ', '.join(["'%s'" % id for id in coach_ids])
     
-    cursor.execute(sql, (coach_id, from_time, to_time))
+    cursor.execute(sql, (invoice_type, coach_id, coach_ids_str))
     
     column_names = [desc[0] for desc in cursor.description]
     result = cursor.fetchall()

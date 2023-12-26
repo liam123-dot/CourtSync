@@ -124,7 +124,7 @@ export default function CoachAddEvent({closeModal}) {
                 }
             );            
 
-            refresh();
+            refresh(true);
             closeModal();
 
         } catch (error) {
