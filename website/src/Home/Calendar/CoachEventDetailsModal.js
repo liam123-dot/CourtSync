@@ -96,7 +96,7 @@ export default function CoachEventDetailsModal({ isOpen, onClose, coachEvent }) 
                         <Button variant="contained" onClick={() => {
                             setShowConfirmation(true);
                             setCancelRepeats(false);
-                        }}>Cancel</Button>
+                        }}>Cancel Event</Button>
 
                         {coachEvent.repeat_id && (
                             <Button variant="contained" onClick={() => {

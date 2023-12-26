@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import { Box, Button, TextField, Typography, FormControl, CircularProgress } from '@mui/material';
 
-export default function CreatePlayer({ contactId, setOpen, fetchData }) {
+export default function CreatePlayer({ contactId, setOpen, setContainerOpen, fetchData }) {
     const [playerName, setPlayerName] = useState("");
     const [isCreatePlayerLoading, setIsCreatePlayerLoading] = useState(false);
 
@@ -25,8 +25,9 @@ export default function CreatePlayer({ contactId, setOpen, fetchData }) {
                 },
             })
     
-            fetchData();
+            await fetchData(false);
             setOpen(false);
+            setContainerOpen(true);
         } catch (error) {
             console.log(error)
         }

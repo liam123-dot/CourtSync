@@ -50,7 +50,7 @@ def create_invoice(cursor, coach, contact, bookings):
         collection_method='send_invoice',
         payment_settings={"payment_method_types": ["customer_balance"]},
         customer=customer_id,
-        due_date=int(time.time()) + 60*60*24
+        days_until_due=7
     )
     
     amount_due =0
@@ -88,7 +88,6 @@ def create_invoice(cursor, coach, contact, bookings):
             customer=customer_id,
             invoice=invoice,
             price=price,
-            days_until_due=7,
             stripe_account=coach['stripe_account']
         )
         booking_ids[booking['booking_id']] = line_item['id']

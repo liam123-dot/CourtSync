@@ -47,7 +47,7 @@ function ContactCard({ contact, fetchData }) {
                 </Collapse>
             </Paper>
             <Modal open={isCreatePlayerOn} onClose={() => setIsCreatePlayerOn(false)}>
-                <CreatePlayer contactId={contact.contact_id} setOpen={setIsCreatePlayerOn} fetchData={fetchData}/>
+                <CreatePlayer contactId={contact.contact_id} setOpen={setIsCreatePlayerOn} setContainerOpen={setOpen} fetchData={fetchData}/>
             </Modal>
         </Box>
     );
@@ -59,8 +59,10 @@ export default function PlayerPage() {
     const [openModal, setOpenModal] = useState(false);
     const [contactsLoading, setContactsLoading] = useState(true);
 
-    const fetchData = async () => {
-        setContactsLoading(true);
+    const fetchData = async (rerender=true) => {
+        if (rerender) {
+            setContactsLoading(true);
+        }
         try {
             const response = await axios.get(`${process.env.REACT_APP_API_URL}/contacts`, {
                 headers: {

@@ -27,6 +27,7 @@ from src.Bookings.AddBooking.CalculateLessonCost import CalculateLessonCostBluep
 from src.Bookings.Cancellations.PlayerCancellation import PlayerCancelBookingBlueprint
 from src.Bookings.Cancellations.CoachCancellation import CoachCancellationBlueprint
 from src.Bookings.GetBookings.GetBookings import GetBookingsBlueprint
+from src.Bookings.AddBooking.CheckDays import CheckDaysBlueprint
 
 from src.CoachEvents.AddCoachEvent import AddCoachEventBlueprint
 from src.CoachEvents.CancelCoachEvent import CancelCoachEventBlueprint
@@ -96,6 +97,7 @@ def create_app():
     app.register_blueprint(CoachAddBookingBlueprint)
     app.register_blueprint(PlayerCancelBookingBlueprint)
     app.register_blueprint(CoachCancellationBlueprint)
+    app.register_blueprint(CheckDaysBlueprint)
     
     app.register_blueprint(AddCoachEventBlueprint)
     app.register_blueprint(CancelCoachEventBlueprint)

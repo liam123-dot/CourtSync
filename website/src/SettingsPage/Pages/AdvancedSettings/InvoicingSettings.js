@@ -22,7 +22,7 @@ export default function InvoicingSettings() {
                     headers: { 'Authorization': localStorage.getItem('AccessToken') }
                 });
                 const data = response.data;
-                setHasStripeAccount(!!data.stripe_account);
+                setHasStripeAccount(data.stripe_account);
                 setInvoiceType(data.invoice_type || '');
                 setAccountFullySetup(data.stripe_account_set_up);
                 setIsInitialLoading(false);
@@ -74,11 +74,13 @@ export default function InvoicingSettings() {
             });
             
             console.log(response)
-            // window.location.href = response.data.url;
+            window.location.href = response.data.url;
 
         } catch (error) {
+            showPopup(error.response.data.error)
             console.error(error);
         }
+        setShowBackdrop(false)
 
     }
 

@@ -14,11 +14,13 @@ def create_repeating_lesson(
         contact_id,
         start_time,
         duration,
-        coach_id,
+        coach,
         booking_time,
         repeat_until,
         repeat_frequency
     ):
+    
+    coach_id = coach['coach_id']
     
     end_time = start_time + duration*60
     
@@ -46,7 +48,7 @@ def create_repeating_lesson(
             lesson_cost,
             rules,
             duration,
-            coach_id,
+            coach,
             booking_time,
             repeat_rule['repeat_id']
         )

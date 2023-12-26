@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { Box, Button, TextField, FormControlLabel, Checkbox, Typography } from '@mui/material';
+import { Box, Button, TextField, FormControlLabel, Checkbox, Typography, CircularProgress } from '@mui/material';
 import { usePopup } from "../Notifications/PopupContext";
 
 export default function CreateContact({ setOpen, fetchData }) {
@@ -15,18 +15,18 @@ export default function CreateContact({ setOpen, fetchData }) {
 
     const submitContact = async () => {
         setErrorMessage(null);
-        setIsSubmitLoading(true);
         const names = contactName.split(' ');
         if (names.length < 2) {
-          setErrorMessage("Please enter both a first and last name.");
-          return;
+            setErrorMessage("Please enter both a first and last name.");
+            return;
         }
-      
+        
+        setIsSubmitLoading(true);
         const capitalizedNames = names.map(
           name => name.charAt(0).toUpperCase() + name.slice(1)
         );
         const fullName = capitalizedNames.join(' ');
-              try {
+        try {
             const response = await axios.post(
                 `${process.env.REACT_APP_API_URL}/contact`,
                 {

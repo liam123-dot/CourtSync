@@ -4,7 +4,6 @@ import axios from "axios"
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Button from '@mui/material/Button';
-import dayjs from 'dayjs';
 import DateTimeDurationSelector from "../ChooseDateTimeDuration";
 import { CircularProgress } from "@mui/material";
 
@@ -13,7 +12,7 @@ export default function PlayerHomeScreen2() {
     const { coachSlug } = useParams()
     const navigate = useNavigate()
 
-    const [selectedDate, setSelectedDate] = useState(dayjs());
+    const [selectedDate, setSelectedDate] = useState(null);
     const [selectedTime, setSelectedTime] = useState(null);
     const [selectedDuration, setSelectedDuration] = useState(null);
 
