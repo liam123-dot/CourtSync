@@ -46,7 +46,8 @@ def check_settings():
     durations = check_durations(coach['coach_id'])
     pricing_rules = check_pricing_rules(coach['coach_id'])
     working_hours = check_working_hours(coach['coach_id'])
-    invoicing_ready = coach['coach_stripe_setup']
+    print(coach.keys())
+    invoicing_ready = coach['stripe_account_set_up']
     
     return jsonify(
         durations=durations,
