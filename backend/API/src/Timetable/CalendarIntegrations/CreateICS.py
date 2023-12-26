@@ -23,7 +23,7 @@ def create_ics(slug):
         event.name = booking['player_name']
         start_time = datetime.utcfromtimestamp(booking['start_time'])
         event.begin = start_time
-        event.end = start_time + timedelta(seconds=booking['duration'])
+        event.end = start_time + timedelta(minutes=booking['duration'])
         cal.events.add(event)
 
     # Convert the calendar to a string
