@@ -90,6 +90,8 @@ export default function ConfirmBooking() {
 
     const [contactEmailFound, setContactEmailFound] = useState(false);
 
+    const [foundContactEmail, setFoundContactEmail] = useState(''); // [contactEmail, setContactEmail
+
     const [contactName, setContactName] = useState('');
     const [contactEmail, setContactEmail] = useState('');
     const [contactPhoneNumber, setContactPhoneNumber] = useState('');
@@ -128,8 +130,29 @@ export default function ConfirmBooking() {
 
     }
 
+    useEffect(() => {
+
+      
+      if (contactEmailFound) {
+        
+        if (foundContactEmail != contactEmail) {
+        
+          setEmailVerified(false)
+          setContactEmailFound(false)
+          setIsVerifyingEmail(false)
+        }
+      } else {
+        if (foundContactEmail === contactEmail) {
+          setContactEmailFound(true)
+        }
+      }
+
+    }, [contactEmail])
+
     const getContact = async contactEmail => {
       setContactLoading(true);
+      setContactEmailFound(true);
+      setFoundContactEmail(contactEmail);       
         try {
                 
             const response = await axios.get(`${process.env.REACT_APP_API_URL}/${coachSlug}/contact/${contactEmail}`);
@@ -140,11 +163,10 @@ export default function ConfirmBooking() {
 
             setContactName(data.name);
             setContactEmail(data.email);
-            setContactEmailFound(true);                
             setContactPhoneNumber(data.phone_number);
             // data.players is an array objects, convert to array of strings from object['name']
             const playerNames = data.players.map(player => player.name);
-            console.log(playerNames)
+            
             setPossiblePlayerNames(playerNames);
             setPlayerName(playerNames[0])
             setContactLoading(false);
@@ -228,6 +250,8 @@ export default function ConfirmBooking() {
             showPopup('Success, Email verified');
             setEmailVerified(true);
             localStorage.setItem('contactEmail', contactEmail);
+            setContactEmailFound(true);
+            setFoundContactEmail(contactEmail);
 
             const getContactSuccess = await getContact(contactEmail);
 
