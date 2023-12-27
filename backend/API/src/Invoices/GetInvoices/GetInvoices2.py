@@ -28,6 +28,7 @@ def get_invoices(coach_id, frequency="daily", status="pending", contact_email=No
     SELECT
         Contacts.email as contact_email,
         Contacts.name as contact_name,
+        Contacts.invoice_type as invoice_type,
         Bookings.invoice_sent,
         Bookings.paid,
         Bookings.invoice_id,

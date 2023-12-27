@@ -40,6 +40,7 @@ def get_weekly_or_monthly_invoices(username, request_data):
         sql = f"""SELECT
                     Contacts.email as contact_email,
                     Contacts.name as contact_name,
+                    Contacts.invoice_type as invoice_type,
                     COUNT(Bookings.booking_id) AS bookings_count,
                     SUM(Bookings.cost + Bookings.extra_costs) AS total_cost,
                     {time_group}
@@ -56,6 +57,7 @@ def get_weekly_or_monthly_invoices(username, request_data):
         sql = f"""SELECT
                     Contacts.email as contact_email,
                     Contacts.name as contact_name,
+                    Contacts.invoice_type as invoice_type,
                     COUNT(Bookings.booking_id) AS bookings_count,
                     SUM(Bookings.cost + Bookings.extra_costs) AS total_cost,
                     {time_group}

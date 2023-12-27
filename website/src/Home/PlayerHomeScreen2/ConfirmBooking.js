@@ -162,6 +162,8 @@ export default function ConfirmBooking() {
     const getContactDetails = async () => {
         setLoading(true);
         const contactEmail = localStorage.getItem('contactEmail');
+
+        console.log(contactEmail)
                 
         if (contactEmail) {
             getContact(contactEmail);
@@ -225,6 +227,7 @@ export default function ConfirmBooking() {
 
             showPopup('Success, Email verified');
             setEmailVerified(true);
+            localStorage.setItem('contactEmail', contactEmail);
 
             const getContactSuccess = await getContact(contactEmail);
 
