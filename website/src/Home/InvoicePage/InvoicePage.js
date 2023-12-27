@@ -130,18 +130,6 @@ export default function InvoicePage() {
                                 <Tab value="upcoming" label="Upcoming" />
                             </Tabs>
                         </Box>
-                    {
-                        statusView === 'upcoming' && (
-                            <Box bgcolor="primary.main" color="primary.contrastText" p={2} borderRadius={3}>
-                                <Typography 
-                                        variant={isSmallScreen ? 'body1' : 'h6'} 
-                                        align="center"
-                                >
-                                    Invoices to be sent on {calculateNextInvoiceDate().toLocaleDateString()}
-                                </Typography>
-                            </Box>
-                        )
-                    }
                     {isInvoicesLoading ? (
                         <CircularProgress/>
                     ):(

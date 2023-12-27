@@ -217,12 +217,12 @@ function InvoiceRow(props) {
         <TableCell align="right">{row.bookings_count}</TableCell>
         {!isSmallScreen && <TableCell align="right">£{(row.total_cost / 100.0).toFixed(2)}</TableCell>}
         {
-          (row.invoice_sent || row.paid) && (
+          // (row.invoice_sent || row.paid) && (
             <>
               {!isSmallScreen && <TableCell align="right">{row.invoice_sent ? 'Yes' : 'No'}</TableCell>}
               {!isSmallScreen && <TableCell align="right">{row.paid ? 'Yes' : 'No'}</TableCell>}
             </>
-          )
+          // )
         }
         {
           tab === 'upcoming' && (
