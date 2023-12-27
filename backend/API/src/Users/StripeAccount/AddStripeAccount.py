@@ -46,6 +46,8 @@ def create_stripe_account():
     
     coach['stripe_account'] = stripe_account['id']
     
+    insert_stripe_account(coach['coach_id'], stripe_account['id'])
+    
     link = generate_account_link(coach)
     
     return jsonify({'url': link}), 200
