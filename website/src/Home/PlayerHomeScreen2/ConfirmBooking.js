@@ -116,6 +116,8 @@ export default function ConfirmBooking() {
 
     const [contactLoading, setContactLoading] = useState(false);
 
+    const navigate = useNavigate();
+
     const getPricing = async () => {
 
         try {
@@ -293,7 +295,15 @@ export default function ConfirmBooking() {
             setLessonBooked(true);
 
         } catch (error) {
-            console.log(error)
+            if (error.response) {
+              if (error.response.data) {
+                if (error.response.data.message === "Booking overlaps with another booking") {
+                  showPopup("This slot has been taken, please select another.");
+                  navigate(-1);
+                }
+              }
+              
+            }
         }
 
         setSubmitLoading(false);

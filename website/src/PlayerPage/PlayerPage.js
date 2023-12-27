@@ -150,7 +150,7 @@ export default function PlayerPage() {
 
     return contactData && (
         <Box sx={{ padding: 2 }}>
-            <Typography variant="h4" gutterBottom>Player Management</Typography>
+            <Typography variant="h4" gutterBottom>Contact and Player Management</Typography>
             <Typography variant="body1">
                 Add details for an individual that you organise lessons with i.e the individual who books and pays for lessons. Inputting ALL information correctly is important for invoices to go to the correct places.
             </Typography>                        
