@@ -135,14 +135,14 @@ export default function ConfirmBooking() {
       
       if (contactEmailFound) {
         
-        if (foundContactEmail != contactEmail) {
+        if (foundContactEmail !== contactEmail) {
         
           setEmailVerified(false)
           setContactEmailFound(false)
           setIsVerifyingEmail(false)
         }
       } else {
-        if (foundContactEmail === contactEmail) {
+        if (foundContactEmail === contactEmail && contactEmail !== '') {
           setContactEmailFound(true)
         }
       }
@@ -153,30 +153,30 @@ export default function ConfirmBooking() {
       setContactLoading(true);
       setContactEmailFound(true);
       setFoundContactEmail(contactEmail);       
-        try {
-                
-            const response = await axios.get(`${process.env.REACT_APP_API_URL}/${coachSlug}/contact/${contactEmail}`);
-            
-            const data = response.data;
+      try {
+              
+          const response = await axios.get(`${process.env.REACT_APP_API_URL}/${coachSlug}/contact/${contactEmail}`);
+          
+          const data = response.data;
 
-            console.log(data);
+          console.log(data);
 
-            setContactName(data.name);
-            setContactEmail(data.email);
-            setContactPhoneNumber(data.phone_number);
-            // data.players is an array objects, convert to array of strings from object['name']
-            const playerNames = data.players.map(player => player.name);
-            
-            setPossiblePlayerNames(playerNames);
-            setPlayerName(playerNames[0])
-            setContactLoading(false);
-            return true
-
-        } catch (error) {
-            console.log(error);
-        } finally {
+          setContactName(data.name);
+          setContactEmail(data.email);
+          setContactPhoneNumber(data.phone_number);
+          // data.players is an array objects, convert to array of strings from object['name']
+          const playerNames = data.players.map(player => player.name);
+          
+          setPossiblePlayerNames(playerNames);
+          setPlayerName(playerNames[0])
           setContactLoading(false);
-        }
+          return true
+
+      } catch (error) {
+          console.log(error);
+      } finally {
+        setContactLoading(false);
+      }
       setContactLoading(false);
         return false
     }
@@ -299,6 +299,8 @@ export default function ConfirmBooking() {
         setSubmitLoading(false);
 
     }
+
+    console.log(contactEmailFound, isVerifyingEmail, emailVerified)
 
     const waiting = !(emailVerified || contactEmailFound)
 
