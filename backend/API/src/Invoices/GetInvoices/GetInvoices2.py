@@ -63,7 +63,7 @@ def get_invoices(coach_id, frequency="daily", status="pending", contact_email=No
         
     sql += " ) AND Bookings.coach_id = %s"
 
-    sql += f" GROUP BY contact_email, {group_by}, contact_name, Bookings.invoice_sent, Bookings.paid, Bookings.invoice_id, Bookings.invoice_cancelled"
+    sql += f" GROUP BY contact_email, {group_by}, contact_name, Bookings.invoice_sent, Bookings.paid, Bookings.invoice_id, Bookings.invoice_cancelled, Contacts.invoice_type"
     sql += f" ORDER BY {order_by}"
     sql += " LIMIT %s OFFSET %s"
     args.extend([limit, offset])
