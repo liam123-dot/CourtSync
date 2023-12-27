@@ -1,4 +1,6 @@
 from flask import Blueprint, jsonify, request
+from datetime import datetime, timedelta
+import time
 
 from src.Database.ExecuteQuery import execute_query
 from src.Users.GetSelf.GetSelf import get_coach
@@ -70,6 +72,9 @@ def get_invoices(coach_id, frequency="daily", status="pending", contact_email=No
 
     # Execute the query
     result = execute_query(sql, args)
+    
+    dates = get_dates()        
+    
     return result
 
 
@@ -94,9 +99,25 @@ def get_invoices_endpoint():
     contact_email = request.args.get('contact_email')
     limit = request.args.get('limit', 50, type=int)
     offset = request.args.get('offset', 0, type=int)
+    
+    date_conversion = get_dates()
 
     try:
         invoices = get_invoices(coach_id, frequency, status, contact_email, limit, offset)
+        
+        for i in range(0, len(invoices)):        
+            invoice = invoices[i]
+            if 'send_date' not in invoice.keys():
+                invoice_type = invoice['invoice_type']
+                if invoice_type == 'default':
+                    invoice['invoice_type'] = coach['invoice_type']
+                    
+                invoices[i]['send_date'] = date_conversion[invoice['invoice_type']]
+                
+        # sort by send_date which is in the format dd/mm/yyyy
+        
+        invoices = sorted(invoices, key=lambda k: datetime.strptime(k['send_date'], '%d/%m/%Y'))
+        
         return jsonify(invoices=invoices, invoices_initialised=True), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -217,3 +238,31 @@ def get_invoices_time_range_endpoint():
         return jsonify(invoices=invoices), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+def get_dates():
+    # Get the current date
+    current_date = datetime.fromtimestamp(int(time.time()))
+
+    # Calculate the next day
+    next_day = current_date + timedelta(days=1)
+
+    # Calculate the Monday of the next week
+    days_until_next_monday = (7 - current_date.weekday()) % 7
+    if days_until_next_monday == 0:
+        days_until_next_monday = 7
+    next_monday = current_date + timedelta(days=days_until_next_monday)
+
+    # Calculate the 1st of the next month
+    if current_date.month == 12:
+        next_month_first = datetime(current_date.year + 1, 1, 1)
+    else:
+        next_month_first = datetime(current_date.year, current_date.month + 1, 1)
+
+    # Format the dates and return them in a dictionary
+    return {
+        "daily": next_day.strftime("%d/%m/%Y"),
+        "weekly": next_monday.strftime("%d/%m/%Y"),
+        "monthly": next_month_first.strftime("%d/%m/%Y")
+    }
+    

@@ -59,6 +59,8 @@ def create_invoice(cursor, coach, contact, bookings):
     
     items = False
     
+    date = get_current_date()
+    
     for booking in bookings:
         
         if check_booking_sent(cursor, booking['booking_id']):
@@ -99,7 +101,7 @@ def create_invoice(cursor, coach, contact, bookings):
         )
         
         for booking_id in booking_ids.keys():
-            mark_invoices_sent(cursor, booking_id, invoice['id'])
+            mark_invoices_sent(cursor, booking_id, date, invoice['id'])
 
 def get_customer_id(cursor, coach, contact):
     sql = "SELECT stripe_customer_id FROM Contacts WHERE contact_id=%s"
@@ -130,10 +132,10 @@ def insert_customer_id(cursor, contact, customer_id):
     cursor.execute(sql, (customer_id, contact['contact_id']))
     
     
-def mark_invoices_sent(cursor, booking_id, invoice_id):
+def mark_invoices_sent(cursor, booking_id, send_date, invoice_id):
 
-    sql = "UPDATE Bookings SET invoice_sent=1, invoice_id=%s WHERE booking_id=%s"
-    cursor.execute(sql, (invoice_id, booking_id))
+    sql = "UPDATE Bookings SET invoice_sent=1, invoice_id=%s, send_date=%s WHERE booking_id=%s"
+    cursor.execute(sql, (invoice_id, send_date, booking_id))
     
 def check_booking_sent(cursor, booking_id):
     sql = "SELECT invoice_sent FROM Bookings WHERE booking_id=%s"
@@ -144,3 +146,7 @@ def check_booking_sent(cursor, booking_id):
         invoice_sent = None
         
     return invoice_sent
+
+def get_current_date():
+    # returns date in dd/mm/yyyy format
+    return datetime.now().strftime('%d/%m/%Y')

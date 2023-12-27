@@ -17,7 +17,7 @@ import axios from 'axios';
 import CircularProgress from '@mui/material/CircularProgress';
 import CloseIcon from '@mui/icons-material/Close';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import { useTheme, useMediaQuery } from '@mui/material';
+import { useTheme, useMediaQuery, Tab } from '@mui/material';
 import {LessonCost} from '../CoachHomeScreen/LessonDetailsModal2'
 import ConfirmationDialog from '../ConfirmationDialog';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -66,9 +66,8 @@ const getEpochRange = (row) => {
   return [startDate.getTime() / 1000, endDate.getTime() / 1000]; // Convert to epoch
 };
 
-
 function InvoiceRow(props) {
-  const { row } = props;
+  const { row, tab } = props;
   const [open, setOpen] = React.useState(false);
   const [historyLoaded, setHistoryLoaded] = React.useState(false);
 
@@ -225,6 +224,13 @@ function InvoiceRow(props) {
             </>
           )
         }
+        {
+          tab === 'upcoming' && (
+            <TableCell align="right">
+              {row.send_date}
+            </TableCell>
+          )
+        }
         {/* Additional cells for actions like marking paid or deleting, only if invoice is not cancelled */}
         {!row.invoice_cancelled && (
           <>
@@ -359,18 +365,23 @@ export default function InvoiceTable({data, tab}) {
             { !isSmallScreen && <TableCell align="right">Contact Email</TableCell> }
             <TableCell align="right">Lesson Count</TableCell>
             { !isSmallScreen && <TableCell align="right">Total Cost</TableCell> }
+            {
+              !isSmallScreen && tab === 'upcoming' && (
+                <TableCell align="right">Sending Date</TableCell>
+              )
+            }
             { tab !=='upcoming' && (
               <>
                 { !isSmallScreen && <TableCell align="right">Invoice Sent</TableCell> }
                 { !isSmallScreen && <TableCell align="right">Paid</TableCell> }
               </>
-            )
+            )            
             }
           </TableRow>
         </TableHead>
         <TableBody>
           {data.map((row, index) => {
-            return <InvoiceRow key={index} row={row} />
+            return <InvoiceRow key={index} row={row} tab={tab} />
           })}
         </TableBody>
       </Table>
