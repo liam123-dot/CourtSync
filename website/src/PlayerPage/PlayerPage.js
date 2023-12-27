@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Box, Typography, CircularProgress, Paper, IconButton, Collapse, Fab, Modal } from '@mui/material';
+import { Box, Typography, CircularProgress, Paper, IconButton, Collapse, Fab, Modal, Select, MenuItem } from '@mui/material';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import EditIcon from '@mui/icons-material/Edit';
 import CreateContact from './CreateContact';
 import ConfirmationPopup from '../Notifications/ConfirmComponent';
 import AddIcon from '@mui/icons-material/Add';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CreatePlayer from './CreatePlayer';
 
 function PlayerComponent({ player }) {
@@ -20,6 +22,34 @@ function PlayerComponent({ player }) {
 function ContactCard({ contact, fetchData }) {
     const [open, setOpen] = useState(false);
     const [isCreatePlayerOn, setIsCreatePlayerOn] = useState(false);    
+    const [isEditingInvoiceType, setIsEditingInvoiceType] = useState(false);
+    const [updatingInvoiceType, setUpdatingInvoiceType] = useState(contact.invoice_type);
+    const [isSubmiting, setIsSubmiting] = useState(false);
+
+    const handleSubmit = async () => {
+
+        setIsSubmiting(true);
+
+        try {
+
+            const response = await axios.put(`${process.env.REACT_APP_API_URL}/contact/${contact.contact_id}`, {
+                invoice_type: updatingInvoiceType,
+            }, {
+                headers: {
+                    Authorization: `${localStorage.getItem("AccessToken")}`,
+                },
+            });
+
+            contact['invoice_type'] = updatingInvoiceType;
+
+        } catch (error) {
+            console.error(error);
+        }
+
+        setIsSubmiting(false);
+        setIsEditingInvoiceType(false);
+
+    }
 
     return contact && (
         <Box>
@@ -39,6 +69,40 @@ function ContactCard({ contact, fetchData }) {
                     <Box sx={{ margin: 1 }}>
                         <Typography variant="body1" gutterBottom>Email: {contact.email}</Typography>
                         <Typography variant="body1" gutterBottom>Phone: {contact.phone_number}</Typography>
+                        <Typography variant="body1" gutterBottom>
+                            Invoice Type: 
+                            {isEditingInvoiceType ? (
+                                <>
+                                    <Select value={updatingInvoiceType} onChange={(e) => setUpdatingInvoiceType(e.target.value)}>
+                                        <MenuItem value="" disabled>Select Option</MenuItem>
+                                        <MenuItem value="default">Default</MenuItem>
+                                        <MenuItem value="daily">Daily</MenuItem>
+                                        <MenuItem value="weekly">Weekly</MenuItem>
+                                        <MenuItem value="monthly">Monthly</MenuItem>
+                                    </Select>
+                                    <IconButton 
+                                        onClick={handleSubmit}
+                                        sx={{ color: 'green' }} // Reduced margin
+                                        disabled={updatingInvoiceType === contact.invoice_type}
+                                    >
+                                        {
+                                            isSubmiting ? (
+                                                <CircularProgress/>
+                                            ) : (
+                                                <CheckCircleIcon/>
+                                            )
+                                        }
+                                    </IconButton>
+                                </>
+                            ) : (
+                                <>
+                                    {contact.invoice_type.charAt(0).toUpperCase() + contact.invoice_type.slice(1)}
+                                    <IconButton onClick={() => setIsEditingInvoiceType(true)}>
+                                        <EditIcon/>
+                                    </IconButton>
+                                </>
+                            )}
+                        </Typography>
                         <Typography variant="body2" gutterBottom component="div">Players:</Typography>
                         {contact.players && contact.players.map((player, index) => (
                             <PlayerComponent key={index} player={player} />
