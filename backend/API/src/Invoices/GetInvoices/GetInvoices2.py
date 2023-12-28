@@ -139,11 +139,9 @@ def get_invoicing_status_endpoint():
         invoices_initialised=invoices_initialised
     ), 200
 
-def get_invoices_between_time(coach_id, start_time, end_time, contact_email=None, invoice_id=None, paid=None, invoice_sent=None, limit=50, offset=0):
+def get_invoices_between_time(coach_id, contact_email=None, invoice_id=None, paid=None, invoice_sent=None, limit=50, offset=0):
     if not coach_id:
         raise Exception("Coach ID is required")
-    if not start_time or not end_time:
-        raise Exception("Both start time and end time are required")
 
     # Prepare the SQL query
     sql = """
@@ -202,8 +200,6 @@ def get_invoices_time_range_endpoint():
     coach_id = coach["coach_id"]
 
     # Extract query parameters for time range
-    start_time = request.args.get('start_time')
-    end_time = request.args.get('end_time')
     contact_email = request.args.get('contact_email')
     paid = request.args.get('paid', None)
     invoice_sent = request.args.get('invoice_sent', None)
@@ -216,23 +212,9 @@ def get_invoices_time_range_endpoint():
         
     if invoice_sent is not None:
         invoice_sent = invoice_sent == 'true'
-        
-        
-    print('paid, invoice_sent')
-    print( paid, invoice_sent)
-
-    # Validate time parameters
-    if not start_time or not end_time:
-        return jsonify({"error": "start_time and end_time parameters are required"}), 400
 
     try:
-        start_time = int(start_time)
-        end_time = int(end_time)
-    except ValueError:
-        return jsonify({"error": "Invalid start_time or end_time. They should be epoch timestamps"}), 400
-
-    try:
-        invoices = get_invoices_between_time(coach_id, start_time, end_time, contact_email, paid=paid, invoice_id=invoice_id, invoice_sent=invoice_sent, limit=limit, offset=offset)
+        invoices = get_invoices_between_time(coach_id, contact_email, paid=paid, invoice_id=invoice_id, invoice_sent=invoice_sent, limit=limit, offset=offset)
         return jsonify(invoices=invoices), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500

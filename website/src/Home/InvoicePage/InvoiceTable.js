@@ -167,7 +167,7 @@ function InvoiceRow(props) {
 
   const loadHistory = async () => {
     if (!historyLoaded) {
-      const [startEpoch, endEpoch] = getEpochRange(row);
+      // const [startEpoch, endEpoch] = getEpochRange(row);
 
       try {
         const response = await axios.get(`${process.env.REACT_APP_API_URL}/invoices/time-range`, {
@@ -175,8 +175,8 @@ function InvoiceRow(props) {
             Authorization: localStorage.getItem('AccessToken') 
           },
           params: {
-            start_time: startEpoch,
-            end_time: endEpoch,
+            // start_time: startEpoch,
+            // end_time: endEpoch,
             contact_email: row.contact_email,
             paid: row.paid,
             invoice_sent: row.invoice_sent,

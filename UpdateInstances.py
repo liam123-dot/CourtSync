@@ -91,7 +91,7 @@ def create_asg_based_on_existing(existing_asg_name, new_asg_name):
             
             existing_target_group_details = next((tg for tg in get_target_groups_response['TargetGroups'] if tg['TargetGroupArn'] == existing_target_group_arn), None)
     
-    new_target_group_name = f"new-test-target-group-{random.randint(0, 1000)}"
+    new_target_group_name = f"new-test-target-group-{random.randint(0, 10000)}"
     
     new_tg_response = elbv2_client.create_target_group(
         Name=new_target_group_name,
@@ -213,7 +213,7 @@ asg_name = get_autoscaling_group()['AutoScalingGroupName']
 
 if asg_name:
     print(f"Found ASG: {asg_name}")
-    new_asg_name = f"test-autoscaling-group-{random.randint(0, 1000)}"
+    new_asg_name = f"test-autoscaling-group-{random.randint(0, 10000)}"
     print(f"Creating new ASG: {new_asg_name}")
     create_asg_based_on_existing(asg_name, new_asg_name)
 
