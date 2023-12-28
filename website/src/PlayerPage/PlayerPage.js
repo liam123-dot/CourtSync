@@ -219,21 +219,25 @@ export default function PlayerPage() {
 
             <Box sx={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between' }}>
                 <Autocomplete
-                    disabled={selectedPlayer !== null}
                     options={contactData}
                     getOptionLabel={(option) => option.name} // Display the name
                     style={{ width: 300, marginBottom: 2 }}
-                    onChange={(event, newValue) => setSelectedContact(newValue ? newValue.contact_id : '')}
+                    onChange={(event, newValue) => {
+                        setSelectedContact(newValue ? newValue.contact_id : '');
+                        setSelectedPlayer(null);
+                    }}
                     renderInput={(params) => <TextField {...params} label="Search Contact" />}
                 />    
 
                 {/* Autocomplete for Players */}
                 <Autocomplete
-                    disabled={selectedContact !== ''}
                     options={getAllPlayers()}
                     getOptionLabel={(option) => option.name}
                     style={{ width: 300, marginBottom: 2 }}
-                    onChange={(event, newValue) => setSelectedPlayer(newValue)}
+                    onChange={(event, newValue) => {
+                        setSelectedPlayer(newValue);
+                        setSelectedContact('');
+                    }}
                     renderInput={(params) => <TextField {...params} label="Search Player" />}
                 />
             </Box>
