@@ -1,6 +1,7 @@
 import boto3
 import time
 import requests
+import random
 
 elbv2_client = boto3.client('elbv2')
 asg_client = boto3.client('autoscaling')
@@ -63,7 +64,6 @@ def get_load_balancer(load_balancer_ARN):
 
 def create_asg_based_on_existing(existing_asg_name, new_asg_name):
     # Initialize boto3 client for Auto Scaling
-    asg_client = boto3.client('autoscaling')
 
     # Get the configuration of the existing ASG
     existing_asg = asg_client.describe_auto_scaling_groups(
@@ -75,7 +75,6 @@ def create_asg_based_on_existing(existing_asg_name, new_asg_name):
         return
 
     asg_config = existing_asg['AutoScalingGroups'][0]   
-    originial_asg_arn = asg_config['AutoScalingGroupARN']
     
     load_balancer_ARN = 'arn:aws:elasticloadbalancing:eu-west-2:925465361057:loadbalancer/app/test-api-alb/cfacc6060c83c1ad'
 
@@ -92,8 +91,10 @@ def create_asg_based_on_existing(existing_asg_name, new_asg_name):
             
             existing_target_group_details = next((tg for tg in get_target_groups_response['TargetGroups'] if tg['TargetGroupArn'] == existing_target_group_arn), None)
     
+    new_target_group_name = f"new-test-target-group-{random.randint(0, 1000)}"
+    
     new_tg_response = elbv2_client.create_target_group(
-        Name='new-target-group',
+        Name=new_target_group_name,
         Protocol=existing_target_group_details['Protocol'],
         Port=existing_target_group_details['Port'],
         VpcId=existing_target_group_details['VpcId'],
@@ -103,7 +104,7 @@ def create_asg_based_on_existing(existing_asg_name, new_asg_name):
         HealthCheckPath=existing_target_group_details['HealthCheckPath']
     )
     
-    print('Target Group Created.')
+    print(f"Target Group Created: {new_target_group_name}")
     
     new_target_group_arn = new_tg_response['TargetGroups'][0]['TargetGroupArn']
 
@@ -149,7 +150,7 @@ def create_asg_based_on_existing(existing_asg_name, new_asg_name):
     response = elbv2_client.modify_listener(
         ListenerArn=listener_arn,
         Port=existing_target_group_details['Port'],
-        Protocol=existing_target_group_details['Protocol'],
+        Protocol='HTTPS',
         DefaultActions=[
             {
                 'Type': 'forward',
@@ -158,12 +159,21 @@ def create_asg_based_on_existing(existing_asg_name, new_asg_name):
         ]
     )
     
-    print(f"Traffic rerouted. {response}")
+    print("Traffic rerouted")
     
+    print('Detaching old target group from the old ASG...')
+
+    response = asg_client.detach_load_balancer_target_groups(
+        AutoScalingGroupName=existing_asg_name,
+        TargetGroupARNs=[existing_target_group_arn]
+    )
+    
+    print('Old target group detached from the old ASG.')
+
     print("Assigning new target group to the old ASG...")
     
-    response = asg_client.update_auto_scaling_group(
-        AutoScalingGroupName=originial_asg_arn,
+    response = asg_client.attach_load_balancer_target_groups(
+        AutoScalingGroupName=existing_asg_name,
         TargetGroupARNs=[new_target_group_arn]
     )
     
@@ -172,27 +182,39 @@ def create_asg_based_on_existing(existing_asg_name, new_asg_name):
     # Delete the old Auto Scaling Group
     
     print('Deleting old ASG...')
-    print(f'ASG Name: {asg_name}')
+    print(f'ASG Name: {existing_asg_name}')
     
-    # response = asg_client.delete_auto_scaling_group(
-    #     AutoScalingGroupName=asg_name,
-    #     ForceDelete=True
-    # )
+    response = asg_client.delete_auto_scaling_group(
+        AutoScalingGroupName=existing_asg_name,
+        ForceDelete=True
+    )
     
     # Delete original target group
     
     print('Deleting old target group...')
-    print(f'Target Group ARN: {existing_target_group_arn}')
     
-    # response = elbv2_client.delete_target_group(
-    #     TargetGroupArn=existing_target_group_arn
-    # )
+    response = elbv2_client.delete_target_group(
+        TargetGroupArn=existing_target_group_arn
+    )
     
-    return response
+    print ('Old target group deleted.')
+        
+def get_autoscaling_group():
+    response = asg_client.describe_auto_scaling_groups()
+    for asg in response['AutoScalingGroups']:
+        if 'test-autoscaling-group' in asg['AutoScalingGroupName']:            
+            if 'Status' in asg and asg['Status'] == "Delete in progress":
+                continue
+            return asg
+        
+    return None
 
-asg_name = 'test-api-auto-scale-group'
+asg_name = get_autoscaling_group()['AutoScalingGroupName']
 
-response = create_asg_based_on_existing(asg_name, 'new-asg-name')
-print(response)
+if asg_name:
+    print(f"Found ASG: {asg_name}")
+    new_asg_name = f"test-autoscaling-group-{random.randint(0, 1000)}"
+    print(f"Creating new ASG: {new_asg_name}")
+    create_asg_based_on_existing(asg_name, new_asg_name)
 
 

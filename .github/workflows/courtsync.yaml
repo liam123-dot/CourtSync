@@ -32,7 +32,7 @@ jobs:
       - name: Reboot EC2 Instances
         run: |
           pip3 install -r update-requirements.txt
-          python3 update.py
+          python3 UpdateInstances.py
 
       - name: Build and Deploy Website
         run: |
