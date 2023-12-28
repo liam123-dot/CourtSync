@@ -115,7 +115,7 @@ export default function InvoicePage() {
 
     return !isInitialLoad ? (
         invoicesInitialised ? (
-            <Box sx={{ borderTop: '4px solid #000', width: '100%', height: '100%', display: 'flex' }}>
+            <Box sx={{width: '100%', height: '100%', display: 'flex' }}>
                 <Box sx={{ flex: 1 }}>
                     <Box sx={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between' }}>
                             <Tabs 

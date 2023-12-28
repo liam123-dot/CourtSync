@@ -1,2 +1,2 @@
-REACT_APP_API_URL=https://api-test.courtsync.co.uk:8000
+REACT_APP_API_URL=http://api-test.courtsync.co.uk:8000
 REACT_APP_WEBSITE_URL=http://test.courtsync.co.uk
