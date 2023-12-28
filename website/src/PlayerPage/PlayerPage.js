@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Box, Typography, CircularProgress, Paper, IconButton, Collapse, Fab, Modal, Select, MenuItem } from '@mui/material';
+import { Box, Typography, CircularProgress, Paper, IconButton, Collapse, Fab, Modal, Select, MenuItem, Button } from '@mui/material';
+import Autocomplete from '@mui/material/Autocomplete';
+import TextField from '@mui/material/TextField';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faInfo } from '@fortawesome/free-solid-svg-icons';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import EditIcon from '@mui/icons-material/Edit';
@@ -9,6 +13,18 @@ import ConfirmationPopup from '../Notifications/ConfirmComponent';
 import AddIcon from '@mui/icons-material/Add';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CreatePlayer from './CreatePlayer';
+
+const modalStyle = {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    width: '30%',
+    bgcolor: 'background.paper',
+    border: '2px solid #000',
+    boxShadow: 24,
+    p: 4,
+};
 
 function PlayerComponent({ player }) {
     return (
@@ -54,10 +70,13 @@ function ContactCard({ contact, fetchData }) {
     return contact && (
         <Box>
             <Paper sx={{ marginBottom: 2, padding: 2 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Box 
+                    sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+                    onClick={() => setOpen(!open)} // Toggle open state on click
+                >
                     <Typography variant="h6">{contact.name}</Typography>
                     <Box sx={{ ml: 'auto', display: 'flex' }}>
-                        <IconButton onClick={() => setIsCreatePlayerOn(true)}>
+                        <IconButton onClick={(e) => { e.stopPropagation(); setIsCreatePlayerOn(true); }}>
                             <AddIcon/>
                         </IconButton>
                         <IconButton aria-label="expand row" onClick={() => setOpen(!open)}>
@@ -122,6 +141,13 @@ export default function PlayerPage() {
     const [showConfirmationPopup, setShowConfirmationPopup] = useState(false);
     const [openModal, setOpenModal] = useState(false);
     const [contactsLoading, setContactsLoading] = useState(true);
+    const [showDescription, setShowDescription] = useState(false);
+
+    const [selectedContact, setSelectedContact] = useState(null);
+    const [selectedPlayer, setSelectedPlayer] = useState(null);
+
+    const filteredContacts = selectedContact ? contactData.filter(contact => contact.contact_id === selectedContact) : contactData;
+    // const filteredPlayers = selectedPlayer ? /* filter logic based on player selection */ : /* all players data */;
 
     const fetchData = async (rerender=true) => {
         if (rerender) {
@@ -144,18 +170,78 @@ export default function PlayerPage() {
         fetchData();
     }, []);
 
+    const getAllPlayers = () => {
+        return contactData.reduce((acc, contact) => {
+            const players = contact.players.map(player => ({
+                name: player.name,
+                contactId: contact.contact_id
+            }));
+            return acc.concat(players);
+        }, []);
+    };
+
+    // Function to find contact by player's contactId
+    const findContactByPlayer = (playerContactId) => {
+        return contactData.find(contact => contact.contact_id === playerContactId);
+    };
+
+    useEffect(() => {
+        
+        const contact = findContactByPlayer(selectedPlayer?.contactId);
+        console.log(contact)
+        if (contact){
+            setSelectedContact(contact.contact_id);
+        }
+
+    }, [selectedPlayer])
+
     if (contactsLoading) {
         return <CircularProgress />;
     }
 
     return contactData && (
         <Box sx={{ padding: 2 }}>
-            <Typography variant="h4" gutterBottom>Contact and Player Management</Typography>
-            <Typography variant="body1">
-                Add details for an individual that you organise lessons with i.e the individual who books and pays for lessons. Inputting ALL information correctly is important for invoices to go to the correct places.
-            </Typography>                        
+            <Typography variant="h4" gutterBottom>
+                Contact and Player Management            
+                <IconButton
+                    onClick={() => setShowDescription(!showDescription)}
+                >
+                    <FontAwesomeIcon icon={faInfo} />
+                </IconButton>                
+            </Typography>
+            <Modal open={showDescription} onClose={() => setShowDescription(false)}>
+                <Box sx={modalStyle}>
+                    <Typography variant="body1">
+                        Add details for an individual that you organise lessons with i.e the individual who books and pays for lessons. Inputting ALL information correctly is important for invoices to go to the correct places.
+                    </Typography>
+                </Box>
+            </Modal>         
 
-            {contactData.map((contact, index) => (
+            <Box sx={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between' }}>
+                <Autocomplete
+                    disabled={selectedPlayer !== null}
+                    options={contactData}
+                    getOptionLabel={(option) => option.name} // Display the name
+                    style={{ width: 300, marginBottom: 2 }}
+                    onChange={(event, newValue) => setSelectedContact(newValue ? newValue.contact_id : '')}
+                    renderInput={(params) => <TextField {...params} label="Search Contact" />}
+                />    
+
+                {/* Autocomplete for Players */}
+                <Autocomplete
+                    disabled={selectedContact !== ''}
+                    options={getAllPlayers()}
+                    getOptionLabel={(option) => option.name}
+                    style={{ width: 300, marginBottom: 2 }}
+                    onChange={(event, newValue) => setSelectedPlayer(newValue)}
+                    renderInput={(params) => <TextField {...params} label="Search Player" />}
+                />
+            </Box>
+
+            {selectedContact ? (
+                <ContactCard contact={filteredContacts[0]} fetchData={fetchData} />
+            ): 
+            contactData.map((contact, index) => (
                 <ContactCard key={index} contact={contact} fetchData={fetchData} />
             ))}
 

@@ -29,6 +29,8 @@ def lambda_handler(event, context):
         
         bookings = get_bookings(cursor, invoice_type, coach_ids)
         
+        print(coaches_dict)
+        
         coaches = {}
         
         for booking in bookings:
@@ -36,8 +38,8 @@ def lambda_handler(event, context):
                 coach_id = booking['coach_id']
                 coaches[coach_id] = {
                     'coach_id': coach_id,
-                    'stripe_account': coaches_dict[coach_id]['stripe_account'],
-                    'name': coaches_dict[coach_id]['name'],
+                    'stripe_account': booking['stripe_account'],
+                    'name': booking['coach_name'],
                     'contacts': {}
                 }
             
@@ -122,8 +124,18 @@ def get_coaches(cursor, invoice_type):
 
 def get_bookings(cursor, invoice_type, coach_ids):
     sql = """
-    SELECT Bookings.*, Contacts.name AS contact_name, Contacts.email as contact_email, Contacts.phone_number as contact_phone_number, Contacts.contact_id as contact_id, Players.name AS player_name, Contacts.invoice_type as invoice_type
+    SELECT 
+        Bookings.*, 
+        Contacts.name AS contact_name, 
+        Contacts.email as contact_email, 
+        Contacts.phone_number as contact_phone_number, 
+        Contacts.contact_id as contact_id, 
+        Players.name AS player_name, 
+        Contacts.invoice_type as contact_invoice_type,
+        Coaches.stripe_account as stripe_account,
+        Coaches.name as coach_name
     FROM Bookings
+    INNER JOIN Coaches ON Bookings.coach_id = Coaches.coach_id
     INNER JOIN Contacts ON Bookings.contact_id = Contacts.contact_id
     INNER JOIN Players ON Bookings.player_id = Players.player_id
     WHERE Bookings.invoice_sent = 0
@@ -132,7 +144,7 @@ def get_bookings(cursor, invoice_type, coach_ids):
     AND Bookings.invoice_cancelled = 0
     AND Bookings.status = 'confirmed'
     AND (Bookings.coach_id IN %s
-    OR invoice_type=%s)
+    OR Contacts.invoice_type=%s)
     """
 
     # Convert coach_ids list to a string for the SQL query    
@@ -140,6 +152,8 @@ def get_bookings(cursor, invoice_type, coach_ids):
     
     column_names = [desc[0] for desc in cursor.description]
     result = cursor.fetchall()
+    
+    print(result)
     
     results = []
     
@@ -153,37 +167,3 @@ def get_bookings(cursor, invoice_type, coach_ids):
         
     return results
     
-# function that gets the epoch time of the start and end of previous day
-def get_times(view='daily'):
-    date = datetime.now()
-    
-    if view == 'daily':
-        date = date.replace(day=date.day-1)
-        start_of_day = date.replace(hour=0, minute=0, second=0, microsecond=0)
-        end_of_day = date.replace(hour=23, minute=59, second=59, microsecond=999999)
-        
-        return (int(start_of_day.timestamp()), int(end_of_day.timestamp()))
-    elif view == 'weekly':
-        # Subtract the current day of the week from the date to get the last Monday
-        start_of_week = date - timedelta(days=date.weekday(), weeks=1)
-        # Add 6 to the start of the week to get the Sunday
-        end_of_week = start_of_week + timedelta(days=6)
-        
-        start_of_week = start_of_week.replace(hour=0, minute=0, second=0, microsecond=0)
-        end_of_week = end_of_week.replace(hour=23, minute=59, second=59, microsecond=999999)
-        
-        return (int(start_of_week.timestamp()), int(end_of_week.timestamp()))
-    
-    elif view == 'monthly':
-        # Set the date to the first day of the previous month
-        date = date.replace(day=1) - timedelta(days=1)
-        start_of_month = date.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-        
-        # assuming you have a datetime object called `date` representing the current month
-        last_day = calendar.monthrange(date.year, date.month)[1]
-        last_day_of_month = datetime(date.year, date.month, last_day, 23, 59, 59, 999999)
-        
-        return (int(start_of_month.timestamp()), int(last_day_of_month.timestamp()))
-    
-    else:
-        return None
