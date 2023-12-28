@@ -193,22 +193,22 @@ function InvoiceRow(props) {
     }
   };
 
-  console.log(row)
+  const handleExpand = () => {
+    setOpen(!open);
+    loadHistory();
+  }
 
   return (
     <React.Fragment>
-      <TableRow sx={{ '& > *': { borderBottom: 'unset' } }}>
+      <TableRow 
+        sx={{ 
+          '& > *': { borderBottom: 'unset' }, 
+          cursor: 'pointer' 
+        }} 
+        onClick={handleExpand}
+      >        
         <TableCell>
-          <IconButton
-            aria-label="expand row"
-            size="small"
-            onClick={() => {
-              setOpen(!open);
-              loadHistory();
-            }}
-          >
-            {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
-          </IconButton>
+          {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}          
         </TableCell>
         <TableCell component="th" scope="row">
           {row.contact_name}
@@ -242,7 +242,10 @@ function InvoiceRow(props) {
                 ) : (
                   <IconButton
                     aria-label="confirm action"
-                    onClick={() => setConfirmMarkPaidOpen(true)}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setConfirmMarkPaidOpen(true)
+                    }}
                     sx={{ color: 'green' }} // Reduced margin
                   >
                     <CheckCircleIcon />
@@ -258,7 +261,10 @@ function InvoiceRow(props) {
                 ) : (
                   <IconButton
                     aria-label="delete invoice"
-                    onClick={() => setConfirmDeleteOpen(true)}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setConfirmDeleteOpen(true);
+                    }}
                     sx={{ color: 'red' }}
                   >
                     <CloseIcon />

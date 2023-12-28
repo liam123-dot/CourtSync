@@ -146,6 +146,9 @@ export default function PlayerPage() {
     const [selectedContact, setSelectedContact] = useState(null);
     const [selectedPlayer, setSelectedPlayer] = useState(null);
 
+    const [autocompleteContactValue, setAutocompleteContactValue] = useState(null);
+    const [autocompletePlayerValue, setAutocompletePlayerValue] = useState(null);
+
     const filteredContacts = selectedContact ? contactData.filter(contact => contact.contact_id === selectedContact) : contactData;
     // const filteredPlayers = selectedPlayer ? /* filter logic based on player selection */ : /* all players data */;
 
@@ -195,6 +198,20 @@ export default function PlayerPage() {
 
     }, [selectedPlayer])
 
+    const handleContactChange = (event, newValue) => {
+        setAutocompleteContactValue(newValue);
+        setAutocompletePlayerValue(null); // Clear player selection
+        setSelectedContact(newValue ? newValue.contact_id : null);
+        setSelectedPlayer(null);
+    };
+
+    const handlePlayerChange = (event, newValue) => {
+        setAutocompletePlayerValue(newValue);
+        setAutocompleteContactValue(null); // Clear contact selection
+        setSelectedPlayer(newValue);
+        setSelectedContact('');
+    };
+
     if (contactsLoading) {
         return <CircularProgress />;
     }
@@ -217,27 +234,22 @@ export default function PlayerPage() {
                 </Box>
             </Modal>         
 
-            <Box sx={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, marginBottom: 2 }}>
                 <Autocomplete
+                    value={autocompleteContactValue}
                     options={contactData}
-                    getOptionLabel={(option) => option.name} // Display the name
-                    style={{ width: 300, marginBottom: 2 }}
-                    onChange={(event, newValue) => {
-                        setSelectedContact(newValue ? newValue.contact_id : '');
-                        setSelectedPlayer(null);
-                    }}
+                    getOptionLabel={(option) => option.name}
+                    style={{ width: 300 }}
+                    onChange={handleContactChange}
                     renderInput={(params) => <TextField {...params} label="Search Contact" />}
-                />    
-
-                {/* Autocomplete for Players */}
+                />
+                <Typography variant="body1">OR</Typography>
                 <Autocomplete
+                    value={autocompletePlayerValue}
                     options={getAllPlayers()}
                     getOptionLabel={(option) => option.name}
-                    style={{ width: 300, marginBottom: 2 }}
-                    onChange={(event, newValue) => {
-                        setSelectedPlayer(newValue);
-                        setSelectedContact('');
-                    }}
+                    style={{ width: 300 }}
+                    onChange={handlePlayerChange}
                     renderInput={(params) => <TextField {...params} label="Search Player" />}
                 />
             </Box>
