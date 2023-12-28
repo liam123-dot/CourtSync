@@ -73,6 +73,7 @@ def check_for_update(working_hour_id, existing_working_hours):
     return False
  
 def check_working_hours_valid(working_hours, coach_id):
+    return True, None
     current_time = time.time()
     sql = "SELECT start_time, duration FROM Bookings WHERE coach_id=%s and start_time>%s"
     results = execute_query(sql, (coach_id, int(current_time)))

@@ -5,6 +5,9 @@ import AddNewPricingRuleComponent from './AddNewPricingRuleComponent';
 import PricingRule from './PricingRuleComponent';
 import { useSettingsLabels } from '../../../SettingsPage2';
 import { usePopup } from '../../../../Notifications/PopupContext';
+import { IconButton, Tooltip } from '@mui/material';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faInfo } from '@fortawesome/free-solid-svg-icons';
 
 export default function CostInput() {
 
@@ -105,10 +108,13 @@ export default function CostInput() {
     }
     return (
       <Container sx={{ textAlign: 'left', p: 2 }}>
-          <Typography variant="h5" gutterBottom>
-              Set your cost per hour for lessons as well as additional costs or fixed costs that may occur. 
-              Additional costs can also be added by editing bookings.
-          </Typography>
+        <Tooltip title="Set your cost per hour for lessons as well as additional costs or fixed costs that may occur. Additional costs can also be added by editing bookings.">
+            <IconButton
+                onClick={() => setShowDescription(!showDescription)}
+            >
+                <FontAwesomeIcon icon={faInfo} />
+            </IconButton>  
+        </Tooltip>
   
           <Grid container spacing={2} alignItems="center">
               <Grid item xs={12} md={6}>

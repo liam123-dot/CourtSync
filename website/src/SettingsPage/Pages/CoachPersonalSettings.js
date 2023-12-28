@@ -34,15 +34,6 @@ export default function CoachPersonalSettings () {
         setCoachDetails({ ...coachDetails, [event.target.name]: event.target.value });
     };
 
-    const handleLinkClick = async () => {
-        try {
-            await navigator.clipboard.writeText(`${process.env.REACT_APP_API_URL}/timetable/${coachDetails.slug}/apple-calendar`);
-            setSnackbarOpen(true);
-        } catch (error) {
-            console.error('Failed to copy', error);
-        }
-    };
-
     return (
         <Box sx={{ p: 2 }}>
             {isLoading ? (
@@ -62,19 +53,7 @@ export default function CoachPersonalSettings () {
                         <strong>Email: </strong>{coachDetails.email}
                     </Box>
                     <Divider sx={{ my: 2 }} />
-                    <Box sx={{ mb: 2 }}>
-                        <strong>Apple Calendar Subscription Link (TEST): </strong>
-                        <Link onClick={handleLinkClick} color="primary" sx={{ cursor: 'pointer' }}>
-                            Copy Link
-                        </Link>
-                    </Box>
                     <ChangePasswordScreen/>
-                    <Snackbar
-                        open={snackbarOpen}
-                        autoHideDuration={6000}
-                        onClose={() => setSnackbarOpen(false)}
-                        message="Link copied to clipboard"
-                    />
                 </>
             )}
         </Box>

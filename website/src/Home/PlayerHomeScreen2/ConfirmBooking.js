@@ -325,6 +325,9 @@ export default function ConfirmBooking() {
                   <Grid container spacing={2} fullWidth xs={12}>
                     { !contactEmailFound && isVerifyingEmail && !emailVerified ? (
                       <Grid item xs={12}>
+                        <Typography>
+                          Please enter the verification code sent to your email: {contactEmail}.
+                        </Typography>
                         <TextField
                           label="Verification Code"
                           type="text"

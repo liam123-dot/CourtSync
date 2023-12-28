@@ -26,6 +26,13 @@ def get_coach_events(coach):
     
     return response
 
+def get_coach_durations(coach):
+    sql = "SELECT duration FROM Durations WHERE coach_id = %s"
+    
+    response = execute_query(sql, (coach['coach_id'], ))
+    
+    return response
+
 def check_days_from_coach(coach):
     
     bookings = get_bookings(coach)
@@ -36,33 +43,37 @@ def check_days_from_coach(coach):
     
     return bookings, coach_events, working_hours
 
-def organize_events_by_date(events, working_hours):
+def organize_events_by_date(events, working_hours, dates):
     events_by_date = {}
     for event in events:
-        date_key = f"{event['year']}-{event['month']}-{event['day']}"
+        # Format date_key with zero-padding
+        date_key = f"{event['year']:04d}-{event['month']:02d}-{event['day']:02d}"
         
         if date_key not in events_by_date:
             events_by_date[date_key] = []
-            
-            event_date = datetime(event['year'], event['month'], event['day'])
-            # Get the weekday number (0 for Monday, 6 for Sunday)
-            day_number = event_date.weekday()
-                            
-            working_hour = working_hours[day_number]
-            formatted_working_hour = get_formatted_working_hour_for_date(event_date, working_hour)
-            
-            events_by_date[date_key].extend(formatted_working_hour)
         
         event_details = {
             'start_time': event['start_time'],
             'duration': event['duration']
         }
         
-        events_by_date[date_key].append(event_details)
+        events_by_date[date_key].append(event_details)     
+
+    for date in dates:
+        if date not in events_by_date:
+            events_by_date[date] = []
         
+        event_date = datetime.strptime(date, "%Y-%m-%d")
+        weekday = event_date.weekday()
         
-    
+        working_hour = working_hours[weekday]
+        
+        formatted_working_hour = get_formatted_working_hour_for_date(event_date, working_hour)
+        
+        events_by_date[date].extend(formatted_working_hour)
+        
     return events_by_date
+
 
 def get_formatted_working_hour_for_date(date, working_hour):
     # get the epoch time for the date object
@@ -106,10 +117,31 @@ def format_working_hours(working_hours):
         
     return formatted_working_hours
     
+def check_for_gaps(all_events, min_duration):
+    gap_days = {}
+
+    for date, events in all_events.items():
+        # Sort events by start_time
+        events.sort(key=lambda x: x['start_time'])
+
+        # Check for gaps
+        has_gap = False
+        for i in range(len(events) - 1):
+            end_of_current = events[i]['start_time'] + events[i]['duration'] * 60
+            start_of_next = events[i + 1]['start_time']
+
+            if (start_of_next - end_of_current) > min_duration * 60:
+                has_gap = True
+                break
+
+        gap_days[date] = has_gap
+
+    return gap_days
+
 
 CheckDaysBlueprint = Blueprint("CheckDaysBlueprint", __name__)
 
-@CheckDaysBlueprint.route("/bookings/<slug>/check-days", methods=["GET"])
+@CheckDaysBlueprint.route("/timetable/<slug>/check-days", methods=["GET"])
 def check_days(slug):
     coach = get_coach_from_slug(slug)
     
@@ -118,9 +150,38 @@ def check_days(slug):
     
     bookings, coach_events, working_hours = check_days_from_coach(coach)
     
-    all_events = organize_events_by_date(bookings + coach_events, working_hours)
+    dates = calculate_dates(coach)
     
-    return jsonify(
-        all_events=all_events,
-        working_hours=working_hours
+    all_events = organize_events_by_date(bookings + coach_events, working_hours, dates)
+    
+    coach_durations = get_coach_durations(coach)
+    
+    coach_durations_sorted = sorted(coach_durations, key=lambda x: x['duration'])
+    
+    results = check_for_gaps(all_events, coach_durations_sorted[0]['duration'])
+    
+    return jsonify(        
+        results=results
     ), 200
+
+def calculate_dates(coach):
+    
+    now = datetime.now()
+    booking_scope_weeks = coach['booking_scope']
+    booking_scope_epoch = booking_scope_weeks * 7 * 24 * 60 * 60
+    
+    min_time = now.timestamp()
+    
+    max_time = now.timestamp() + booking_scope_epoch
+    
+    # return each day in yyyy-mm-dd format between min_time and max_time
+    
+    returner = []
+    
+    while min_time < max_time:
+        date = datetime.fromtimestamp(min_time)
+        returner.append(date.strftime("%Y-%m-%d"))
+        min_time += 86400
+        
+    return returner
+    

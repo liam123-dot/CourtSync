@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
-import { Button, Card, CardContent, CardActions, Grid, TextField, Typography, CircularProgress, Divider, Box, IconButton, TextareaAutosize, Switch, FormControlLabel } from '@mui/material';
+import { Button, Card, CardContent, CardActions, Grid, TextField, Typography, CircularProgress, Divider, Box, IconButton, TextareaAutosize, Switch, FormControlLabel, Modal } from '@mui/material';
 import { Save as SaveIcon, Edit as EditIcon, Cancel as CancelIcon, Logout as LogoutIcon } from '@mui/icons-material';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faInfo } from '@fortawesome/free-solid-svg-icons';
 import ProfileButton from "../../SidePanel/ProfilePicture";
 import { usePopup } from "../../Notifications/PopupContext";
 import { useNavigate } from 'react-router-dom';
+import Tooltip from "@mui/material/Tooltip";
 
 export default function CoachProfileSettings() {
     const [initialCoachDetails, setInitialCoachDetails] = useState(null);
@@ -25,6 +28,8 @@ export default function CoachProfileSettings() {
 
     const [isSaving, setIsSaving] = useState(false);
     const navigate = useNavigate();
+
+    const [showDescription, setShowDescription] = useState(false);
 
     const {showPopup} = usePopup();
 
@@ -179,7 +184,16 @@ export default function CoachProfileSettings() {
         <Box sx={{ maxWidth: 800, mx: 'auto', my: 4 }}>
             <Card variant="outlined">
                 <CardContent>
-                    <Typography variant="h6" gutterBottom>Your Profile</Typography>
+                    <Typography variant="h6" gutterBottom>
+                        Your Profile
+                        <Tooltip title="All information on your profile is shown to players when they book lessons with you.">
+                            <IconButton
+                                onClick={() => setShowDescription(!showDescription)}
+                            >
+                                <FontAwesomeIcon icon={faInfo} />
+                            </IconButton>  
+                        </Tooltip>
+                    </Typography>
                     <Box sx={{ my: 2, textAlign: 'center' }}>
                         {!isImageUploading ? 
                         <ProfileButton imageUrl={coachDetails?.profile_picture_url} size={200} onClick={triggerFileInput}/>

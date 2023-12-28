@@ -5,7 +5,10 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import Checkbox from '@mui/material/Checkbox';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
-import TextField from '@mui/material/TextField';
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faInfo } from '@fortawesome/free-solid-svg-icons';
 
 import { usePopup } from '../../../Notifications/PopupContext';
 import { useSettingsLabels } from '../../SettingsPage2';
@@ -84,7 +87,13 @@ export default function DurationSelector() {
 
     return (
         <Box>
-            <p>Lessons can only be booked at the durations you select</p>
+            <Tooltip title="Lessons can only be booked at the durations you select">
+                <IconButton
+                    onClick={() => setShowDescription(!showDescription)}
+                >
+                    <FontAwesomeIcon icon={faInfo} />
+                </IconButton>  
+            </Tooltip>
             <Box>
                 {!isLoading && durations.map(duration => (
                     <FormControlLabel

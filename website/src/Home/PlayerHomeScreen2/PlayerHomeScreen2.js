@@ -90,7 +90,7 @@ export default function PlayerHomeScreen2() {
                             setSelectedTime={setSelectedTime}
                             setSelectedDuration={setSelectedDuration}
                             coachSlug={coachSlug}
-
+                            checkDates={true}
                         />
                         <Button
                             variant="contained"

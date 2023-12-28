@@ -12,18 +12,18 @@ def get_invoices(coach_id, frequency="daily", status="pending", contact_email=No
         raise Exception("Coach ID is required")
 
     # Determine time grouping based on frequency
-    if frequency == 'daily':
-        time_group = "DAYOFMONTH(FROM_UNIXTIME(start_time)) as day, MONTH(FROM_UNIXTIME(start_time)) as month, YEAR(FROM_UNIXTIME(start_time)) as year"
-        group_by = "day, month, year"
-        order_by = "year, month, day"
-    elif frequency == 'weekly':
-        time_group = "WEEK(FROM_UNIXTIME(start_time)) as week, YEAR(FROM_UNIXTIME(start_time)) as year"
-        group_by = "week, year"
-        order_by = "year, week"
-    elif frequency == 'monthly':
-        time_group = "MONTH(FROM_UNIXTIME(start_time)) as month, YEAR(FROM_UNIXTIME(start_time)) as year"
-        group_by = "month, year"
-        order_by = "year, month"
+    # if frequency == 'daily':
+    #     time_group = "DAYOFMONTH(FROM_UNIXTIME(start_time)) as day, MONTH(FROM_UNIXTIME(start_time)) as month, YEAR(FROM_UNIXTIME(start_time)) as year"
+    #     group_by = "day, month, year"
+    #     order_by = "year, month, day"
+    # elif frequency == 'weekly':
+    #     time_group = "WEEK(FROM_UNIXTIME(start_time)) as week, YEAR(FROM_UNIXTIME(start_time)) as year"
+    #     group_by = "week, year"
+    #     order_by = "year, week"
+    # elif frequency == 'monthly':
+    #     time_group = "MONTH(FROM_UNIXTIME(start_time)) as month, YEAR(FROM_UNIXTIME(start_time)) as year"
+    #     group_by = "month, year"
+    #     order_by = "year, month"
 
     # Prepare the SQL query
     sql = f"""
@@ -38,8 +38,7 @@ def get_invoices(coach_id, frequency="daily", status="pending", contact_email=No
         SUM(Bookings.cost) AS total_cost,
         SUM(Bookings.extra_costs) AS total_extra_costs,
         Bookings.invoice_cancelled as invoice_cancelled,
-        GROUP_CONCAT(Bookings.booking_id) as booking_ids,
-        {time_group}
+        GROUP_CONCAT(Bookings.booking_id) as booking_ids
     FROM Bookings
     INNER JOIN Contacts ON Bookings.contact_id = Contacts.contact_id
     WHERE (Bookings.start_time < UNIX_TIMESTAMP()
@@ -65,8 +64,7 @@ def get_invoices(coach_id, frequency="daily", status="pending", contact_email=No
         
     sql += " ) AND Bookings.coach_id = %s"
 
-    sql += f" GROUP BY contact_email, {group_by}, contact_name, Bookings.invoice_sent, Bookings.paid, Bookings.invoice_id, Bookings.invoice_cancelled, Contacts.invoice_type"
-    sql += f" ORDER BY {order_by}"
+    sql += f" GROUP BY contact_email, contact_name, Bookings.invoice_sent, Bookings.paid, Bookings.invoice_id, Bookings.invoice_cancelled, Contacts.invoice_type"
     sql += " LIMIT %s OFFSET %s"
     args.extend([limit, offset])
 
