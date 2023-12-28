@@ -140,7 +140,7 @@ def create_asg_based_on_existing(existing_asg_name, new_asg_name):
             break
         else:
             print('Waiting for instances to be healthy...')            
-            time.sleep(15)
+            time.sleep(10)
           
     print('Rerouting traffic to new target group...')
     
