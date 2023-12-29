@@ -1,5 +1,6 @@
 from flask import request, jsonify, Blueprint
 import logging
+import time
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -7,7 +8,7 @@ from src.Bookings.GetBooking import get_booking
 from src.Database.ExecuteQuery import execute_query
 from src.Users.GetSelf.GetSelf import get_coach
 
-def get_pricing_rules(coach_id, start_time=None, end_time=None, include_default=True, include_disabled=False):
+def get_pricing_rules(coach_id, start_time=None, end_time=None, include_default=True, include_disabled=False, include_passed=False):
     """
     Retrieves pricing rules based on provided parameters.
     """
@@ -47,6 +48,9 @@ def get_pricing_rules(coach_id, start_time=None, end_time=None, include_default=
     # Exclude disabled rules unless include_disabled is True
     if not include_disabled:
         sql += " AND enabled != 0"
+        
+    if not include_passed:
+        sql += " AND NOT (period='one-time' AND end_time < UNIX_TIMESTAMP())"
 
     # Execute the query
     return execute_query(sql, values, True)
