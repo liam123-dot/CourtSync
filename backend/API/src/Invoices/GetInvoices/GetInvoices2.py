@@ -154,6 +154,7 @@ def get_invoices_between_time(coach_id, contact_email=None, invoice_id=None, pai
     INNER JOIN Contacts ON Bookings.contact_id = Contacts.contact_id
     INNER JOIN Players ON Bookings.player_id = Players.player_id
     AND status='confirmed'
+    AND invoice_cancelled = 0
     AND Bookings.start_time < UNIX_TIMESTAMP()
     AND Bookings.coach_id = %s
     """
