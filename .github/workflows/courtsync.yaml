@@ -30,12 +30,12 @@ jobs:
 
       - name: Sync with S3 test env
         run: |
-          aws s3 sync ./backend/API ${{ vars.AWS_API_S3_BUCKET }}}
+          aws s3 sync ./backend/API ${{ vars.AWS_API_S3_BUCKET }}
 
       - name: Reboot EC2 Instances TEST
         run: |
           pip3 install -r update-requirements.txt
-          python3 ${{ vars.AWS_EC2_REBOOT_SCRIPT }}}
+          python3 ${{ vars.AWS_EC2_REBOOT_SCRIPT }}
 
       - name: Build and Deploy Test Website
         run: |
@@ -43,7 +43,7 @@ jobs:
           cp test_env.txt .env
           npm install
           npm run build
-          aws s3 sync build ${{ vars.AWS_WEBSITE_S3_BUCKET }}}
+          aws s3 sync build ${{ vars.AWS_WEBSITE_S3_BUCKET }}
           cd ..
 
       - name: Revert Secret ID in test launch-script.sh
@@ -68,12 +68,12 @@ jobs:
 
       - name: Sync with S3 production env
         run: |
-          aws s3 sync ./backend/API ${{ vars.AWS_API_S3_BUCKET }}}
+          aws s3 sync ./backend/API ${{ vars.AWS_API_S3_BUCKET }}
 
       - name: Reboot EC2 Instances PRODUCTION
         run: |
           pip3 install -r update-requirements.txt
-          python3 ${{ vars.AWS_EC2_REBOOT_SCRIPT }}}
+          python3 ${{ vars.AWS_EC2_REBOOT_SCRIPT }}
 
       - name: Build and Deploy Production Website
         run: |
@@ -81,6 +81,6 @@ jobs:
           cp prod_env.txt .env
           npm install
           npm run build
-          aws s3 sync build ${{ vars.AWS_WEBSITE_S3_BUCKET }}}
+          aws s3 sync build ${{ vars.AWS_WEBSITE_S3_BUCKET }}
 
         
