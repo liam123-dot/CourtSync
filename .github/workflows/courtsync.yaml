@@ -49,7 +49,7 @@ jobs:
       - name: Revert Secret ID in test launch-script.sh
         run: |
           cd backend/API
-          sed -i 's/env-testing/YourSecretId/g' launch-script.sh
+          sed -i 's/${{vars.AWS_SECRET_ID}}/YourSecretId/g' launch-script.sh
           cd ../..
   
   deploy-prod:
