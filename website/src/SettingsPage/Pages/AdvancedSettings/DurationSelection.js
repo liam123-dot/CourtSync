@@ -9,6 +9,7 @@ import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faInfo } from '@fortawesome/free-solid-svg-icons';
+import Dialog from '@mui/material';
 
 import { usePopup } from '../../../Notifications/PopupContext';
 import { useSettingsLabels } from '../../SettingsPage2';
