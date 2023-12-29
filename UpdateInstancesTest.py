@@ -213,9 +213,9 @@ asg_name = get_autoscaling_group()['AutoScalingGroupName']
 
 if asg_name:
     print(f"Found ASG: {asg_name}")
-    new_number = random.randint(0, 10000)
+    new_number = str(random.randint(0, 10000))
     while new_number in asg_name:
-        new_number = random.randint(0, 10000)
+        new_number = str(random.randint(0, 10000))
     new_asg_name = f"test-autoscaling-group-{new_number}"
     print(f"Creating new ASG: {new_asg_name}")
     create_asg_based_on_existing(asg_name, new_asg_name)
