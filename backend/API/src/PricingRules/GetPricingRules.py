@@ -8,50 +8,25 @@ from src.Bookings.GetBooking import get_booking
 from src.Database.ExecuteQuery import execute_query
 from src.Users.GetSelf.GetSelf import get_coach
 
-def get_pricing_rules(coach_id, start_time=None, end_time=None, include_default=True, include_disabled=False, include_passed=False):
+def get_pricing_rules(coach_id):
     """
-    Retrieves pricing rules based on provided parameters.
+    Retrieves enabled pricing rules for the given coach_id. Automatically includes default rules, 
+    excludes past one-time events, and ensures that the rules are enabled.
     """
     # Base SQL query
-    sql = "SELECT * FROM PricingRules WHERE coach_id = %s"
+    sql = """
+    SELECT * FROM PricingRules 
+    WHERE 
+        coach_id = %s AND 
+        enabled = 1 AND 
+        (is_default = 1 OR
+        NOT (period = 'one-time' AND end_time < UNIX_TIMESTAMP()))
+    """
     values = (coach_id,)
-
-    # Additional conditions for time
-    time_conditions = []
-
-    if start_time is not None and end_time is not None:
-        time_conditions.append("(start_time <= %s AND end_time >= %s)")
-        values += (start_time, end_time)
-    elif start_time is not None:
-        time_conditions.append("start_time <= %s")
-        values += (start_time,)
-    elif end_time is not None:
-        time_conditions.append("end_time >= %s")
-        values += (end_time,)
-
-    # Constructing the time conditions part of the query
-    if time_conditions:
-        sql += " AND (" + " OR ".join(time_conditions) + ")"
-    
-    # Include default rules if specified
-    if include_default:
-        if time_conditions:
-            # Add to existing conditions
-            sql += " OR (is_default = 1)"
-        else:
-            # No time conditions, add as a new condition
-            sql += " OR is_default = 1"
-
-    # Exclude disabled rules unless include_disabled is True
-    if not include_disabled:
-        sql += " AND enabled = 1"
-
-    # Exclude passed one-time events unless include_passed is True
-    if not include_passed:
-        sql += " AND NOT (period = 'one-time' AND end_time < UNIX_TIMESTAMP())"
 
     # Execute the query
     return execute_query(sql, values)
+
 
 
 GetPricingRulesEndpoint = Blueprint('GetPricingRulesEndpoint', __name__)
