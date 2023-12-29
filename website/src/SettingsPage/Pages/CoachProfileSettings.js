@@ -8,7 +8,7 @@ import ProfileButton from "../../SidePanel/ProfilePicture";
 import { usePopup } from "../../Notifications/PopupContext";
 import { useNavigate } from 'react-router-dom';
 import Tooltip from "@mui/material/Tooltip";
-
+// 
 export default function CoachProfileSettings() {
     const [initialCoachDetails, setInitialCoachDetails] = useState(null);
     const [coachDetails, setCoachDetails] = useState(null);
