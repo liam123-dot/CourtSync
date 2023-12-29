@@ -8,6 +8,9 @@ on:
 jobs:
   deploy-test:
     runs-on: ubuntu-latest
+    name: Deploy to Test
+    environment:
+      name: Test
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -22,17 +25,17 @@ jobs:
       - name: Update Secret ID in test launch-script.sh
         run: |
           cd backend/API
-          sed -i 's/YourSecretId/env-testing/g' launch-script.sh
+          sed -i 's/YourSecretId/${{ secrets.AWS_SECRET_ID }}/g' launch-script.sh
           cd ../..
 
       - name: Sync with S3 test env
         run: |
-          aws s3 sync ./backend/API s3://courtsync-api-test
+          aws s3 sync ./backend/API ${{ secrets.AWS_API_S3_BUCKET }}}
 
       - name: Reboot EC2 Instances TEST
         run: |
           pip3 install -r update-requirements.txt
-          python3 UpdateInstancesTest.py
+          python3 ${{ secrets.AWS_EC2_REBOOT_SCRIPT }}}
 
       - name: Build and Deploy Test Website
         run: |
@@ -40,28 +43,36 @@ jobs:
           cp test_env.txt .env
           npm install
           npm run build
-          aws s3 sync build s3://test.courtsync.co.uk
+          aws s3 sync build ${{ secrets.AWS_WEBSITE_S3_BUCKET }}}
           cd ..
 
-      - uses: trstringer/manual-approval@v1
-        with:
-          secret: ${{ github.TOKEN }}
-          approvers: liam123-dot
+      - name: Revert Secret ID in test launch-script.sh
+        run: |
+          cd backend/API
+          sed -i 's/env-testing/YourSecretId/g' launch-script.sh
+          cd ../..
+  
+  deploy-prod:
+    name: Deploy to Production
+    environment:
+      name: Prod
 
+    runs-on: ubuntu-latest
+    steps:
       - name: update Secret ID in prod launch-script.sh
         run: |
           cd backend/API
-          sed -i 's/env-testing/env-production/g' launch-script.sh
+          sed -i 's/YourSecretId/${{secrets.AWS_SECRET_ID}}/g' launch-script.sh
           cd ../..
 
       - name: Sync with S3 production env
         run: |
-          aws s3 sync ./backend/API s3://courtsync-api-production     
+          aws s3 sync ./backend/API ${{ secrets.AWS_API_S3_BUCKET }}}
 
       - name: Reboot EC2 Instances PRODUCTION
         run: |
           pip3 install -r update-requirements.txt
-          python3 UpdateInstancesProd.py
+          python3 ${{ secrets.AWS_EC2_REBOOT_SCRIPT }}}
 
       - name: Build and Deploy Production Website
         run: |
@@ -69,6 +80,6 @@ jobs:
           cp prod_env.txt .env
           npm install
           npm run build
-          aws s3 sync build s3://courtsync.co.uk
+          aws s3 sync build ${{ secrets.AWS_WEBSITE_S3_BUCKET }}}
 
         
