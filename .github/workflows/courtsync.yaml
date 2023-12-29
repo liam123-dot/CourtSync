@@ -60,6 +60,9 @@ jobs:
       name: Prod
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+          
       - name: update Secret ID in prod launch-script.sh
         run: |
           cd backend/API
