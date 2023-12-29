@@ -52,13 +52,9 @@ jobs:
       - name: Sync with S3 production env
         run: |
           aws s3 sync ./backend/API s3://courtsync-api-production
-        environment:
-          name: production
-          url: ${{ steps.deploy.outputs.url }}
-
         env:
           name: production
-          url: ${{ steps.deploy.outputs.url }}
+          url: ${{ steps.deploy.outputs.url }}        
 
       - name: Reboot EC2 Instances PRODUCTION
         run: |
