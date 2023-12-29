@@ -43,7 +43,7 @@ jobs:
           aws s3 sync build s3://test.courtsync.co.uk
           cd ..
 
-      - name: Copy Code to Production
+      - name: update Secret ID in prod launch-script.sh
         run: |
           cd backend/API
           sed -i 's/env-testing/env-production/g' launch-script.sh
@@ -52,6 +52,10 @@ jobs:
       - name: Sync with S3 production env
         run: |
           aws s3 sync ./backend/API s3://courtsync-api-production
+
+        env:
+          name: production
+          url: ${{ steps.deploy.outputs.url }}
 
       - name: Reboot EC2 Instances PRODUCTION
         run: |
