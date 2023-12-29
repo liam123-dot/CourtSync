@@ -74,7 +74,7 @@ jobs:
         run: |
           cd backend/API
           cat launch-script.sh
-          sed -i 's/YourSecretId/${{vars.AWS_SECRET_ID}}/g' launch-script.sh
+          sed -i 's/env-testing/${{vars.AWS_SECRET_ID}}/g' launch-script.sh
           cat launch-script.sh
           cd ../..
 
