@@ -46,7 +46,7 @@ jobs:
       - name: Copy Code to Production
         run: |
           cd backend/API
-          sed -i 's/YourSecretId/env-production/g' launch-script.sh
+          sed -i 's/env-testing/env-production/g' launch-script.sh
           cd ../..
 
       - name: Sync with S3 production env
