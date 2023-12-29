@@ -1,5 +1,6 @@
 from flask import request, jsonify, Blueprint
 from datetime import datetime
+import json
 
 import logging
 
@@ -115,8 +116,11 @@ def calculate_lesson_cost(start_time, duration, coach_id):
     # If there are no pricing rules, return None
     if not pricing_rules:
         return None
+    print(f"pricing_rules: {json.dumps(pricing_rules, indent=4)}")
     
     pricing_rules = get_rules_for_date(start_time, pricing_rules)
+    
+    print(f"pricing_rules: {json.dumps(pricing_rules, indent=4)}")
     
     if len(pricing_rules['recurring']) > 0:
         # check if the start time is within any of the recurring rules

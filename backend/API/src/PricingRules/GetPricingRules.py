@@ -14,7 +14,6 @@ def get_pricing_rules(coach_id, start_time=None, end_time=None, include_default=
     """
     # Base SQL query
     sql = "SELECT * FROM PricingRules WHERE coach_id = %s"
-
     values = (coach_id,)
 
     # Additional conditions for time
@@ -32,28 +31,28 @@ def get_pricing_rules(coach_id, start_time=None, end_time=None, include_default=
 
     # Constructing the time conditions part of the query
     if time_conditions:
-        sql += " AND (" + " OR ".join(time_conditions)
-
-        if include_default:
+        sql += " AND (" + " OR ".join(time_conditions) + ")"
+    
+    # Include default rules if specified
+    if include_default:
+        if time_conditions:
+            # Add to existing conditions
+            sql += " OR (is_default = 1)"
+        else:
+            # No time conditions, add as a new condition
             sql += " OR is_default = 1"
-        
-        sql += ")"
-    elif include_default:
-        # Include default only if there are no time conditions
-        # sql += " AND is_default = 1"
-        pass
-    elif not include_default:
-        sql += " AND is_default = 0"
 
     # Exclude disabled rules unless include_disabled is True
     if not include_disabled:
-        sql += " AND enabled != 0"
-        
+        sql += " AND enabled = 1"
+
+    # Exclude passed one-time events unless include_passed is True
     if not include_passed:
-        sql += " AND NOT (period='one-time' AND end_time < UNIX_TIMESTAMP())"
+        sql += " AND NOT (period = 'one-time' AND end_time < UNIX_TIMESTAMP())"
 
     # Execute the query
-    return execute_query(sql, values, True)
+    return execute_query(sql, values)
+
 
 GetPricingRulesEndpoint = Blueprint('GetPricingRulesEndpoint', __name__)
 
