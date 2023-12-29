@@ -11,72 +11,83 @@ def get_invoices(coach_id, frequency="daily", status="pending", contact_email=No
     if not coach_id:
         raise Exception("Coach ID is required")
 
-    # Determine time grouping based on frequency
-    # if frequency == 'daily':
-    #     time_group = "DAYOFMONTH(FROM_UNIXTIME(start_time)) as day, MONTH(FROM_UNIXTIME(start_time)) as month, YEAR(FROM_UNIXTIME(start_time)) as year"
-    #     group_by = "day, month, year"
-    #     order_by = "year, month, day"
-    # elif frequency == 'weekly':
-    #     time_group = "WEEK(FROM_UNIXTIME(start_time)) as week, YEAR(FROM_UNIXTIME(start_time)) as year"
-    #     group_by = "week, year"
-    #     order_by = "year, week"
-    # elif frequency == 'monthly':
-    #     time_group = "MONTH(FROM_UNIXTIME(start_time)) as month, YEAR(FROM_UNIXTIME(start_time)) as year"
-    #     group_by = "month, year"
-    #     order_by = "year, month"
+    if status == 'upcoming':
+        sql = """
+            SELECT
+                Contacts.email as contact_email,
+                Contacts.name as contact_name,
+                Contacts.invoice_type as invoice_type,
+                Bookings.invoice_sent,
+                Bookings.paid,
+                Bookings.invoice_id,
+                COUNT(Bookings.booking_id) as bookings_count,
+                SUM(Bookings.cost) AS total_cost,
+                SUM(Bookings.extra_costs) AS total_extra_costs,
+                Bookings.invoice_cancelled as invoice_cancelled,
+                GROUP_CONCAT(Bookings.booking_id) as booking_ids
+            FROM Bookings
+            INNER JOIN Contacts ON Bookings.contact_id = Contacts.contact_id
+            WHERE (Bookings.start_time < UNIX_TIMESTAMP()
+            AND status='confirmed'
+            AND Bookings.invoice_sent = 0 AND Bookings.paid = 0 AND Bookings.invoice_cancelled = 0 AND Contacts.invoice_type != 'none'
 
-    # Prepare the SQL query
-    sql = f"""
-    SELECT
-        Contacts.email as contact_email,
-        Contacts.name as contact_name,
-        Contacts.invoice_type as invoice_type,
-        Bookings.invoice_sent,
-        Bookings.paid,
-        Bookings.invoice_id,
-        COUNT(Bookings.booking_id) as bookings_count,
-        SUM(Bookings.cost) AS total_cost,
-        SUM(Bookings.extra_costs) AS total_extra_costs,
-        Bookings.invoice_cancelled as invoice_cancelled,
-        GROUP_CONCAT(Bookings.booking_id) as booking_ids
-    FROM Bookings
-    INNER JOIN Contacts ON Bookings.contact_id = Contacts.contact_id
-    WHERE (Bookings.start_time < UNIX_TIMESTAMP()
-    AND Contacts.invoice_type != 'none'
-    AND status='confirmed'
-    """
-    
-    args = [coach_id]
-    # Adding contact email condition if provided
-    if contact_email:
-        sql += " AND Contacts.email = %s"
-        args.append(contact_email)
-
-    # Modify the query based on the status
-    if status == "upcoming":
-        sql += " AND Bookings.invoice_sent = 0 AND Bookings.paid = 0 AND Bookings.invoice_cancelled = 0"
+            ) AND Bookings.coach_id = %s
+            GROUP BY contact_email, contact_name, Bookings.invoice_sent, Bookings.paid, Bookings.invoice_id, Bookings.invoice_cancelled, Contacts.invoice_type
+        """
         
-    elif status == "pending":
-        sql += " AND Bookings.invoice_sent = 1 AND Bookings.paid = 0 AND Bookings.invoice_cancelled = 0"
-    elif status == "completed":
-        sql += " AND Bookings.invoice_sent = 1 AND Bookings.paid = 1"
-        sql += " OR Bookings.invoice_cancelled = 1 OR paid_from='outside stripe'"
-    
+    elif status == 'pending':
+        sql = """
+            SELECT
+                Contacts.email as contact_email,
+                Contacts.name as contact_name,
+                Contacts.invoice_type as invoice_type,
+                Bookings.invoice_sent,
+                Bookings.paid,
+                Bookings.invoice_id,
+                COUNT(Bookings.booking_id) as bookings_count,
+                SUM(Bookings.cost) AS total_cost,
+                SUM(Bookings.extra_costs) AS total_extra_costs,
+                Bookings.invoice_cancelled as invoice_cancelled,
+                GROUP_CONCAT(Bookings.booking_id) as booking_ids
+            FROM Bookings
+            INNER JOIN Contacts ON Bookings.contact_id = Contacts.contact_id
+            WHERE (Bookings.start_time < UNIX_TIMESTAMP()
+            AND status='confirmed'
+            AND Bookings.invoice_sent = 1 AND Bookings.paid = 0 AND Bookings.invoice_cancelled = 0 AND Contacts.invoice_type != 'none'
+
+            ) AND Bookings.coach_id = %s
+            GROUP BY contact_email, contact_name, Bookings.invoice_sent, Bookings.paid, Bookings.invoice_id, Bookings.invoice_cancelled, Contacts.invoice_type
+        """
         
-    sql += " ) AND Bookings.coach_id = %s"
+    elif status == 'completed':
 
-    sql += f" GROUP BY contact_email, contact_name, Bookings.invoice_sent, Bookings.paid, Bookings.invoice_id, Bookings.invoice_cancelled, Contacts.invoice_type"
-    sql += " LIMIT %s OFFSET %s"
-    args.extend([limit, offset])
-
+        # Prepare the SQL query
+        sql = f"""
+            SELECT
+                Contacts.email as contact_email,
+                Contacts.name as contact_name,
+                Contacts.invoice_type as invoice_type,
+                Bookings.invoice_sent,
+                Bookings.paid,
+                Bookings.invoice_id,
+                COUNT(Bookings.booking_id) as bookings_count,
+                SUM(Bookings.cost) AS total_cost,
+                SUM(Bookings.extra_costs) AS total_extra_costs,
+                Bookings.invoice_cancelled as invoice_cancelled,
+                GROUP_CONCAT(Bookings.booking_id) as booking_ids
+            FROM Bookings
+            INNER JOIN Contacts ON Bookings.contact_id = Contacts.contact_id
+            WHERE (Bookings.start_time < UNIX_TIMESTAMP()
+            AND status='confirmed'
+            AND (Bookings.invoice_sent = 1 AND Bookings.paid = 1 OR Bookings.invoice_cancelled = 1 OR paid_from='outside stripe')
+            ) AND Bookings.coach_id = %s
+            GROUP BY contact_email, contact_name, Bookings.invoice_sent, Bookings.paid, Bookings.invoice_id, Bookings.invoice_cancelled, Contacts.invoice_type
+            """    
+        
     # Execute the query
-    result = execute_query(sql, args)
-    
-    dates = get_dates()        
+    result = execute_query(sql, [coach_id, ])
     
     return result
-
-
 
 @GetInvoices2Blueprint.route("/invoices", methods=["GET"])
 def get_invoices_endpoint():
@@ -104,18 +115,19 @@ def get_invoices_endpoint():
     try:
         invoices = get_invoices(coach_id, frequency, status, contact_email, limit, offset)
         
-        for i in range(0, len(invoices)):        
-            invoice = invoices[i]
-            if 'send_date' not in invoice.keys():
-                invoice_type = invoice['invoice_type']
-                if invoice_type == 'default':
-                    invoice['invoice_type'] = coach['invoice_type']
+        if status == 'upcoming':
+            for i in range(0, len(invoices)):        
+                invoice = invoices[i]
+                if 'send_date' not in invoice.keys():
+                    invoice_type = invoice['invoice_type']
+                    if invoice_type == 'default':
+                        invoice['invoice_type'] = coach['invoice_type']
+                        
+                    invoices[i]['send_date'] = date_conversion[invoice['invoice_type']]
                     
-                invoices[i]['send_date'] = date_conversion[invoice['invoice_type']]
-                
-        # sort by send_date which is in the format dd/mm/yyyy
-        
-        invoices = sorted(invoices, key=lambda k: datetime.strptime(k['send_date'], '%d/%m/%Y'))
+            # sort by send_date which is in the format dd/mm/yyyy
+    
+            invoices = sorted(invoices, key=lambda k: datetime.strptime(k['send_date'], '%d/%m/%Y'))
         
         return jsonify(invoices=invoices, invoices_initialised=True), 200
     except Exception as e:
@@ -146,18 +158,18 @@ def get_invoices_between_time(coach_id, contact_email=None, invoice_id=None, pai
 
     # Prepare the SQL query
     sql = """
-    SELECT
-        Contacts.email as contact_email,
-        Contacts.name as contact_name,
-        Players.name as player_name,
-        Bookings.*
-    FROM Bookings
-    INNER JOIN Contacts ON Bookings.contact_id = Contacts.contact_id
-    INNER JOIN Players ON Bookings.player_id = Players.player_id
-    AND status='confirmed'
-    AND invoice_cancelled = 0
-    AND Bookings.start_time < UNIX_TIMESTAMP()
-    AND Bookings.coach_id = %s
+        SELECT
+            Contacts.email as contact_email,
+            Contacts.name as contact_name,
+            Players.name as player_name,
+            Bookings.*
+        FROM Bookings
+        INNER JOIN Contacts ON Bookings.contact_id = Contacts.contact_id
+        INNER JOIN Players ON Bookings.player_id = Players.player_id
+        AND status='confirmed'
+        AND invoice_cancelled = 0
+        AND Bookings.start_time < UNIX_TIMESTAMP()
+        AND Bookings.coach_id = %s
     """
     
     args = [coach_id, ]
@@ -220,7 +232,45 @@ def get_invoices_time_range_endpoint():
         return jsonify(invoices=invoices), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
+    
+@GetInvoices2Blueprint.route("/invoices/by-bookings/<booking_ids>", methods=["GET"])
+def get_invoice_from_booking_ids_endpoint(booking_ids):
+    
+    token = request.headers.get("Authorization")
+    
+    if not token:
+        return jsonify(error='Unauthorized'), 400
+    
+    coach = get_coach(token)
+    
+    if coach is None:
+        return jsonify(error='Unauthorized'), 400
+    
+    booking_ids = booking_ids.split(',')
+    
+    invoices = get_invoice_from_booking_ids(booking_ids, coach['coach_id'])
+    
+    return jsonify(invoices=invoices), 200
+    
+def get_invoice_from_booking_ids(booking_id_list, coach_id):
+    
+    sql = """
+        SELECT
+            Contacts.email as contact_email,
+            Contacts.name as contact_name,
+            Players.name as player_name,
+            Bookings.*
+        FROM Bookings
+        INNER JOIN Contacts ON Bookings.contact_id = Contacts.contact_id
+        INNER JOIN Players ON Bookings.player_id = Players.player_id
+        WHERE Bookings.coach_id=%s
+        AND Bookings.booking_id IN %s
+    """
+    
+    results = execute_query(sql, (coach_id, booking_id_list))
+    
+    return results
+    
 
 def get_dates():
     # Get the current date

@@ -170,18 +170,9 @@ function InvoiceRow(props) {
       // const [startEpoch, endEpoch] = getEpochRange(row);
 
       try {
-        const response = await axios.get(`${process.env.REACT_APP_API_URL}/invoices/time-range`, {
+        const response = await axios.get(`${process.env.REACT_APP_API_URL}/invoices/by-bookings/${row.booking_ids}`, {
           headers: {
             Authorization: localStorage.getItem('AccessToken') 
-          },
-          params: {
-            // start_time: startEpoch,
-            // end_time: endEpoch,
-            contact_email: row.contact_email,
-            paid: row.paid,
-            invoice_sent: row.invoice_sent,
-            invoice_id: row.invoice_id,
-            // Include other parameters if needed
           }
         });
         row.history = response.data.invoices; // Adjust according to the API response structure
