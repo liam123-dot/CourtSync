@@ -42,6 +42,7 @@ def get_invoices(coach_id, frequency="daily", status="pending", contact_email=No
     FROM Bookings
     INNER JOIN Contacts ON Bookings.contact_id = Contacts.contact_id
     WHERE (Bookings.start_time < UNIX_TIMESTAMP()
+    AND Contacts.invoice_type != 'none'
     AND status='confirmed'
     """
     

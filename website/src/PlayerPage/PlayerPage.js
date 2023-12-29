@@ -94,6 +94,7 @@ function ContactCard({ contact, fetchData }) {
                                 <>
                                     <Select value={updatingInvoiceType} onChange={(e) => setUpdatingInvoiceType(e.target.value)}>
                                         <MenuItem value="" disabled>Select Option</MenuItem>
+                                        <MenuItem value="none">None</MenuItem>
                                         <MenuItem value="default">Default</MenuItem>
                                         <MenuItem value="daily">Daily</MenuItem>
                                         <MenuItem value="weekly">Weekly</MenuItem>
