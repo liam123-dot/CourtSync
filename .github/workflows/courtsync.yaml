@@ -56,6 +56,10 @@ jobs:
           name: production
           url: ${{ steps.deploy.outputs.url }}
 
+        env:
+          name: production
+          url: ${{ steps.deploy.outputs.url }}
+
       - name: Reboot EC2 Instances PRODUCTION
         run: |
           pip3 install -r update-requirements.txt
