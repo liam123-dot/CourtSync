@@ -141,7 +141,7 @@ export default function CoachProfileSettings() {
             console.log('uploading')
     
             // 2. Use the pre-signed URL to upload the image to S3
-            const s3Response = await axios.put(presignedUrl, file, {
+            const s3Response = await axios.post(presignedUrl, file, {
                 headers: {
                     'Content-Type': file.type
                 }

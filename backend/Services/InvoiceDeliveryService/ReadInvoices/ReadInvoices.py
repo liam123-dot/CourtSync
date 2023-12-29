@@ -144,7 +144,7 @@ def get_bookings(cursor, invoice_type, coach_ids):
     AND Bookings.paid = 0
     AND Bookings.invoice_cancelled = 0
     AND Bookings.status = 'confirmed'
-    AND ((Bookings.coach_id IN %s AND Contacts.invoice_type=Coaches.invoice_type)
+    AND ((Bookings.coach_id IN %s AND (Contacts.invoice_type=Coaches.invoice_type OR Contacts.invoice_type='default'))
     OR Contacts.invoice_type=%s)
     """
 

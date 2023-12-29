@@ -1,10 +1,15 @@
 from flask import request, jsonify, Blueprint
+from dotenv import load_dotenv
+
+import os
+import boto3
 
 from src.Users.GetSelf.GetSelf import get_coach
 from src.Database.ExecuteQuery import execute_query
 
-import boto3
 client = boto3.client('s3')
+
+coach_profile_pictures_bucket = os.environ['COACH_PROFILE_PICTURES_BUCKET']
 
 UploadProfilePictureBlueprint = Blueprint('UploadProfilePictureBlueprint', __name__)
 
@@ -32,7 +37,7 @@ def get_upload_url(coach):
     return client.generate_presigned_url(
         'put_object', 
         Params={
-            'Bucket': 'coach-profile-pictures',
+            'Bucket': coach_profile_pictures_bucket,
             'Key': coach['slug']},
         ExpiresIn=3600
     )

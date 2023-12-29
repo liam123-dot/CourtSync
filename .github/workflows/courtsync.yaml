@@ -19,25 +19,51 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: eu-west-2 # Replace with your AWS region
 
-      - name: Update Secret ID in launch-script.sh
+      - name: Update Secret ID in test launch-script.sh
         run: |
           cd backend/API
           sed -i 's/YourSecretId/env-testing/g' launch-script.sh
           cd ../..
 
-      - name: Sync with S3
+      - name: Sync with S3 test env
         run: |
           aws s3 sync ./backend/API s3://courtsync-api-test
 
-      - name: Reboot EC2 Instances
+      - name: Reboot EC2 Instances TEST
         run: |
           pip3 install -r update-requirements.txt
-          python3 UpdateInstances.py
+          python3 UpdateInstancesTest.py
 
-      - name: Build and Deploy Website
+      - name: Build and Deploy Test Website
         run: |
           cd website
           cp test_env.txt .env
           npm install
           npm run build
           aws s3 sync build s3://test.courtsync.co.uk
+          cd ..
+
+      - name: Copy Code to Production
+        run: |
+          cd backend/API
+          sed -i 's/YourSecretId/env-production/g' launch-script.sh
+          cd ../..
+
+      - name: Sync with S3 production env
+        run: |
+          aws s3 sync ./backend/API s3://courtsync-api-production
+
+      - name: Reboot EC2 Instances PRODUCTION
+        run: |
+          pip3 install -r update-requirements.txt
+          python3 UpdateInstancesProd.py
+
+      - name: Build and Deploy Production Website
+        run: |
+          cd website
+          cp prod_env.txt .env
+          npm install
+          npm run build
+          aws s3 sync build s3://courtsync.co.uk
+
+        
