@@ -72,7 +72,7 @@ function CoachDashboard() {
                 <Route path="/:coachSlug" element={<CoachHomeScreen2/>} />
                 <Route path="/settings" element={<SettingsPage2/>} />
                 <Route path="/invoices" element={<InvoicePage/>} />
-                <Route path="/contacts" element={<PlayerPage/>} />
+                <Route path="/players" element={<PlayerPage/>} />
             </Routes>
         </div>
     )

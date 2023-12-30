@@ -1,12 +1,8 @@
 import boto3
 import time
-import os
-
 from src.Database.ExecuteQuery import execute_query
 
 client = boto3.client('s3')
-
-coach_profile_pictures_bucket = os.environ['COACH_PROFILE_PICTURES_BUCKET']
 
 def get_profile_picture_url(coach):
     if coach['profile_picture_url'] is None or coach['profile_picture_url_expiry'] < time.time():
@@ -21,7 +17,7 @@ def get_new_get_profile_url(coach):
     url = client.generate_presigned_url(
         'get_object',
         Params={
-            'Bucket': coach_profile_pictures_bucket,
+            'Bucket': 'coach-profile-pictures',
             'Key': coach['slug']
         },
         ExpiresIn=expiry_time

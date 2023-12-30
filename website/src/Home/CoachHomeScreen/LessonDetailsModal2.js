@@ -28,7 +28,7 @@ const style = {
     p: 4,
   };
 
-export const LessonCost = ({booking, forceExpanded=false, editable=false}) => {
+export const LessonCost = ({booking, forceExpanded=false}) => {
 
     const [expanded, setExpanded] = useState(forceExpanded);
     const [rulesLoaded, setRulesLoaded] = useState(false);
@@ -290,10 +290,7 @@ export default function LessonDetailsModal2({isOpen, onClose, booking}) {
                 
                 <CancelBooking
                     booking={booking}
-                    close={() => {
-                        setOnCancelProcess(false)
-                        onClose();
-                    }}
+                    close={() => setOnCancelProcess(false)}
                     onCancelProcess={onCancelProcess}
                     setOnCancelProcess={setOnCancelProcess}
                     cancelRepeat={cancelRepeats}

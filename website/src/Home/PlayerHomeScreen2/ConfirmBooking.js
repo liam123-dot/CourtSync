@@ -90,8 +90,6 @@ export default function ConfirmBooking() {
 
     const [contactEmailFound, setContactEmailFound] = useState(false);
 
-    const [foundContactEmail, setFoundContactEmail] = useState(''); // [contactEmail, setContactEmail
-
     const [contactName, setContactName] = useState('');
     const [contactEmail, setContactEmail] = useState('');
     const [contactPhoneNumber, setContactPhoneNumber] = useState('');
@@ -105,9 +103,6 @@ export default function ConfirmBooking() {
     const [verificationCode, setVerificationCode] = useState('');
     const [emailVerified, setEmailVerified] = useState(false);
 
-    const [isSendVerifyEmailLoading, setIsSendVerifyEmailLoading] = useState(false);
-    const [isCheckVerifyEmailCodeLoading, setIsCheckVerifyEmailCodeLoading] = useState(false);
-
     const [pricingData, setPricingData] = useState({});
 
     const [submitLoading, setSubmitLoading] = useState(false);
@@ -115,8 +110,6 @@ export default function ConfirmBooking() {
     const [lessonBooked, setLessonBooked] = useState(false);
 
     const [contactLoading, setContactLoading] = useState(false);
-
-    const navigate = useNavigate();
 
     const getPricing = async () => {
 
@@ -132,53 +125,33 @@ export default function ConfirmBooking() {
 
     }
 
-    useEffect(() => {
-
-      
-      if (contactEmailFound) {
-        
-        if (foundContactEmail !== contactEmail) {
-        
-          setEmailVerified(false)
-          setContactEmailFound(false)
-          setIsVerifyingEmail(false)
-        }
-      } else {
-        if (foundContactEmail === contactEmail && contactEmail !== '') {
-          setContactEmailFound(true)
-        }
-      }
-
-    }, [contactEmail])
-
     const getContact = async contactEmail => {
       setContactLoading(true);
-      setContactEmailFound(true);
-      setFoundContactEmail(contactEmail);       
-      try {
-              
-          const response = await axios.get(`${process.env.REACT_APP_API_URL}/${coachSlug}/contact/${contactEmail}`);
-          
-          const data = response.data;
+        try {
+                
+            const response = await axios.get(`${process.env.REACT_APP_API_URL}/${coachSlug}/contact/${contactEmail}`);
+            
+            const data = response.data;
 
-          console.log(data);
+            console.log(data);
 
-          setContactName(data.name);
-          setContactEmail(data.email);
-          setContactPhoneNumber(data.phone_number);
-          // data.players is an array objects, convert to array of strings from object['name']
-          const playerNames = data.players.map(player => player.name);
-          
-          setPossiblePlayerNames(playerNames);
-          setPlayerName(playerNames[0])
+            setContactName(data.name);
+            setContactEmail(data.email);
+            setContactEmailFound(true);                
+            setContactPhoneNumber(data.phone_number);
+            // data.players is an array objects, convert to array of strings from object['name']
+            const playerNames = data.players.map(player => player.name);
+            console.log(playerNames)
+            setPossiblePlayerNames(playerNames);
+            setPlayerName(playerNames[0])
+            setContactLoading(false);
+            return true
+
+        } catch (error) {
+            console.log(error);
+        } finally {
           setContactLoading(false);
-          return true
-
-      } catch (error) {
-          console.log(error);
-      } finally {
-        setContactLoading(false);
-      }
+        }
       setContactLoading(false);
         return false
     }
@@ -186,8 +159,6 @@ export default function ConfirmBooking() {
     const getContactDetails = async () => {
         setLoading(true);
         const contactEmail = localStorage.getItem('contactEmail');
-
-        console.log(contactEmail)
                 
         if (contactEmail) {
             getContact(contactEmail);
@@ -219,8 +190,6 @@ export default function ConfirmBooking() {
     const handleVerifyEmail = async () => {
         // Logic to send verification code
 
-        setIsSendVerifyEmailLoading(true);
-
         try {
 
             const response = await axios.post(`${process.env.REACT_APP_API_URL}/contacts/verify-email`, {
@@ -235,12 +204,9 @@ export default function ConfirmBooking() {
         }
 
         setIsVerifyingEmail(true);
-        setIsSendVerifyEmailLoading(false);
     };
 
     const handleVerifyEmailCode = async () => {
-
-      setIsCheckVerifyEmailCodeLoading(true);
 
         try {
 
@@ -251,9 +217,6 @@ export default function ConfirmBooking() {
 
             showPopup('Success, Email verified');
             setEmailVerified(true);
-            localStorage.setItem('contactEmail', contactEmail);
-            setContactEmailFound(true);
-            setFoundContactEmail(contactEmail);
 
             const getContactSuccess = await getContact(contactEmail);
 
@@ -267,8 +230,6 @@ export default function ConfirmBooking() {
         } catch (error) {
             console.log(error)
         }
-
-        setIsCheckVerifyEmailCodeLoading(false);
 
     }
 
@@ -295,22 +256,12 @@ export default function ConfirmBooking() {
             setLessonBooked(true);
 
         } catch (error) {
-            if (error.response) {
-              if (error.response.data) {
-                if (error.response.data.message === "Booking overlaps with another booking") {
-                  showPopup("This slot has been taken, please select another.");
-                  navigate(-1);
-                }
-              }
-              
-            }
+            console.log(error)
         }
 
         setSubmitLoading(false);
 
     }
-
-    console.log(contactEmailFound, isVerifyingEmail, emailVerified)
 
     const waiting = !(emailVerified || contactEmailFound)
 
@@ -325,9 +276,6 @@ export default function ConfirmBooking() {
                   <Grid container spacing={2} fullWidth xs={12}>
                     { !contactEmailFound && isVerifyingEmail && !emailVerified ? (
                       <Grid item xs={12}>
-                        <Typography>
-                          Please enter the verification code sent to your email: {contactEmail}.
-                        </Typography>
                         <TextField
                           label="Verification Code"
                           type="text"
@@ -360,22 +308,7 @@ export default function ConfirmBooking() {
                           fullWidth
                           sx={{ mt: 3 }}
                         >
-                          {!isVerifyingEmail ? (
-                            isSendVerifyEmailLoading ? (
-                              <CircularProgress/>
-                            ): (
-                              <Typography>
-                                Verify Email
-                              </Typography>
-                            )): (
-                              isCheckVerifyEmailCodeLoading ? (
-                                <CircularProgress/>
-                              ): (
-                                <Typography>
-                                  Submit Code
-                                </Typography>
-                              )
-                          )}
+                          {!isVerifyingEmail ? "Verify Email" : "Submit Code"}
                         </Button>
                       </Grid>
                     )}

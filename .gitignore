@@ -245,4 +245,3 @@ backend/Containers/k8s/local/database-secrets-yaml.yaml
 backend/API/.env.testing
 backend/API/.env
 backend/API/.env.production
-backend/API/.env.staging

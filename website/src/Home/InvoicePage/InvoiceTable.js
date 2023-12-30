@@ -17,7 +17,7 @@ import axios from 'axios';
 import CircularProgress from '@mui/material/CircularProgress';
 import CloseIcon from '@mui/icons-material/Close';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import { useTheme, useMediaQuery, Tab } from '@mui/material';
+import { useTheme, useMediaQuery } from '@mui/material';
 import {LessonCost} from '../CoachHomeScreen/LessonDetailsModal2'
 import ConfirmationDialog from '../ConfirmationDialog';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -66,8 +66,9 @@ const getEpochRange = (row) => {
   return [startDate.getTime() / 1000, endDate.getTime() / 1000]; // Convert to epoch
 };
 
+
 function InvoiceRow(props) {
-  const { row, tab } = props;
+  const { row } = props;
   const [open, setOpen] = React.useState(false);
   const [historyLoaded, setHistoryLoaded] = React.useState(false);
 
@@ -167,12 +168,21 @@ function InvoiceRow(props) {
 
   const loadHistory = async () => {
     if (!historyLoaded) {
-      // const [startEpoch, endEpoch] = getEpochRange(row);
+      const [startEpoch, endEpoch] = getEpochRange(row);
 
       try {
-        const response = await axios.get(`${process.env.REACT_APP_API_URL}/invoices/by-bookings/${row.booking_ids}`, {
+        const response = await axios.get(`${process.env.REACT_APP_API_URL}/invoices/time-range`, {
           headers: {
             Authorization: localStorage.getItem('AccessToken') 
+          },
+          params: {
+            start_time: startEpoch,
+            end_time: endEpoch,
+            contact_email: row.contact_email,
+            paid: row.paid,
+            invoice_sent: row.invoice_sent,
+            invoice_id: row.invoice_id,
+            // Include other parameters if needed
           }
         });
         row.history = response.data.invoices; // Adjust according to the API response structure
@@ -184,22 +194,22 @@ function InvoiceRow(props) {
     }
   };
 
-  const handleExpand = () => {
-    setOpen(!open);
-    loadHistory();
-  }
+  console.log(row)
 
   return (
     <React.Fragment>
-      <TableRow 
-        sx={{ 
-          '& > *': { borderBottom: 'unset' }, 
-          cursor: 'pointer' 
-        }} 
-        onClick={handleExpand}
-      >        
+      <TableRow sx={{ '& > *': { borderBottom: 'unset' } }}>
         <TableCell>
-          {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}          
+          <IconButton
+            aria-label="expand row"
+            size="small"
+            onClick={() => {
+              setOpen(!open);
+              loadHistory();
+            }}
+          >
+            {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+          </IconButton>
         </TableCell>
         <TableCell component="th" scope="row">
           {row.contact_name}
@@ -207,21 +217,8 @@ function InvoiceRow(props) {
         {!isSmallScreen && <TableCell align="right">{row.contact_email}</TableCell>}
         <TableCell align="right">{row.bookings_count}</TableCell>
         {!isSmallScreen && <TableCell align="right">£{(row.total_cost / 100.0).toFixed(2)}</TableCell>}
-        {
-          (tab !== 'upcoming') && (
-            <>
-              {!isSmallScreen && <TableCell align="right">{row.invoice_sent ? 'Yes' : 'No'}</TableCell>}
-              {!isSmallScreen && <TableCell align="right">{row.paid ? 'Yes' : 'No'}</TableCell>}
-            </>
-          )
-        }
-        {
-          tab === 'upcoming' && (
-            <TableCell align="right">
-              {row.send_date}
-            </TableCell>
-          )
-        }
+        {!isSmallScreen && <TableCell align="right">{row.invoice_sent ? 'Yes' : 'No'}</TableCell>}
+        {!isSmallScreen && <TableCell align="right">{row.paid ? 'Yes' : 'No'}</TableCell>}
         {/* Additional cells for actions like marking paid or deleting, only if invoice is not cancelled */}
         {!row.invoice_cancelled && (
           <>
@@ -233,10 +230,7 @@ function InvoiceRow(props) {
                 ) : (
                   <IconButton
                     aria-label="confirm action"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      setConfirmMarkPaidOpen(true)
-                    }}
+                    onClick={() => setConfirmMarkPaidOpen(true)}
                     sx={{ color: 'green' }} // Reduced margin
                   >
                     <CheckCircleIcon />
@@ -252,10 +246,7 @@ function InvoiceRow(props) {
                 ) : (
                   <IconButton
                     aria-label="delete invoice"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      setConfirmDeleteOpen(true);
-                    }}
+                    onClick={() => setConfirmDeleteOpen(true)}
                     sx={{ color: 'red' }}
                   >
                     <CloseIcon />
@@ -265,13 +256,6 @@ function InvoiceRow(props) {
             )}
           </>
         )}
-        {
-          row.invoice_cancelled && (
-            <TableCell align="right" size="small">
-              Cancelled
-            </TableCell>
-          )
-        }
       </TableRow>
       <TableRow>
       <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={isSmallScreen ? 4 : 8}>
@@ -348,7 +332,7 @@ InvoiceRow.propTypes = {
   }).isRequired,
 };
 
-export default function InvoiceTable({data, tab}) {
+export default function InvoiceTable({data}) {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -362,23 +346,13 @@ export default function InvoiceTable({data, tab}) {
             { !isSmallScreen && <TableCell align="right">Contact Email</TableCell> }
             <TableCell align="right">Lesson Count</TableCell>
             { !isSmallScreen && <TableCell align="right">Total Cost</TableCell> }
-            {
-              !isSmallScreen && tab === 'upcoming' && (
-                <TableCell align="right">Sending Date</TableCell>
-              )
-            }
-            { tab !=='upcoming' && (
-              <>
-                { !isSmallScreen && <TableCell align="right">Invoice Sent</TableCell> }
-                { !isSmallScreen && <TableCell align="right">Paid</TableCell> }
-              </>
-            )            
-            }
+            { !isSmallScreen && <TableCell align="right">Invoice Sent</TableCell> }
+            { !isSmallScreen && <TableCell align="right">Paid</TableCell> }
           </TableRow>
         </TableHead>
         <TableBody>
           {data.map((row, index) => {
-            return <InvoiceRow key={index} row={row} tab={tab} />
+            return <InvoiceRow key={index} row={row} />
           })}
         </TableBody>
       </Table>

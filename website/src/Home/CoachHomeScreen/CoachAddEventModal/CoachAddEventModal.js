@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Modal from '@mui/material/Modal';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import styled from '@emotion/styled';
 import CoachAddLesson from './CoachAddLesson';
 import CoachAddEvent from './CoachAddEvent';
 

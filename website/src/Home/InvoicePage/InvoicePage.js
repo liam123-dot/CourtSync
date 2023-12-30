@@ -115,7 +115,7 @@ export default function InvoicePage() {
 
     return !isInitialLoad ? (
         invoicesInitialised ? (
-            <Box sx={{width: '100%', height: '100%', display: 'flex' }}>
+            <Box sx={{ borderTop: '4px solid #000', width: '100%', height: '100%', display: 'flex' }}>
                 <Box sx={{ flex: 1 }}>
                     <Box sx={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between' }}>
                             <Tabs 
@@ -130,13 +130,21 @@ export default function InvoicePage() {
                                 <Tab value="upcoming" label="Upcoming" />
                             </Tabs>
                         </Box>
-                    {isInvoicesLoading ? (
-                        <CircularProgress/>
-                    ):(
-                        <InvoiceDataContext.Provider value={{ fetchInvoiceData, view, statusView }}>                    
-                            <InvoiceTable data={data} tab={statusView}/>
-                        </InvoiceDataContext.Provider>
-                    )}                    
+                    {
+                        statusView === 'upcoming' && (
+                            <Box bgcolor="primary.main" color="primary.contrastText" p={2} borderRadius={3}>
+                                <Typography 
+                                        variant={isSmallScreen ? 'body1' : 'h6'} 
+                                        align="center"
+                                >
+                                    Invoices to be sent on {calculateNextInvoiceDate().toLocaleDateString()}
+                                </Typography>
+                            </Box>
+                        )
+                    }
+                    <InvoiceDataContext.Provider value={{ fetchInvoiceData, view, statusView }}>
+                        <InvoiceTable data={data} />
+                    </InvoiceDataContext.Provider>
                 </Box>
             </Box>
         ) : (

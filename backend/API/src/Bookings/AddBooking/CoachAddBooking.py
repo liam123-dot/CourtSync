@@ -1,6 +1,5 @@
 from flask import request, jsonify, Blueprint
 import time
-import json
 import logging
 
 logging.basicConfig(level=logging.DEBUG)
@@ -58,13 +57,10 @@ def coach_add_booking():
     contact = get_contact_by_id(player['contact_id'])
     
     if not repeats:
-                
-        lesson_cost, rules = calculate_lesson_cost(start_time, duration, coach['coach_id'])
         
-        print(f"lesson_cost: {lesson_cost}")
-        print(f"rules: {json.dumps(rules, indent=4)}")
+        lesson_cost, rules = calculate_lesson_cost(start_time, duration, coach['coach_id'])
 
-        hash = insert_booking(player_id, player['contact_id'], start_time, lesson_cost, rules, duration, coach, int(time.time()))
+        hash = insert_booking(player_id, player['contact_id'], start_time, lesson_cost, rules, duration, coach['coach_id'], int(time.time()))
         send_confirmation_emails_booked_by_coach(
             contact['email'],
             start_time,
@@ -81,7 +77,7 @@ def coach_add_booking():
             player['contact_id'],
             start_time,
             duration,
-            coach,
+            coach['coach_id'],
             int(time.time()),
             repeats_until,
             repeats_frequency

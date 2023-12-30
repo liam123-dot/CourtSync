@@ -11,7 +11,6 @@ import { Backdrop, CircularProgress } from '@mui/material';
 
 import { usePopup } from '../../Notifications/PopupContext';
 import { RefreshTimetableProvider } from './RefreshTimetableContext';
-import CoachAddModal from './CoachAddModal/CoachAddModal'
 
 export default function CoachHomeScreen2() {
 
@@ -237,9 +236,9 @@ export default function CoachHomeScreen2() {
                     onClose={() => setIsCoachEventDetailsModalOpen(false)}
                     coachEvent={selectedCoachEvent}
                 />
-                <CoachAddModal
-                    open={isAddEventModalOpen}
-                    handleClose={() => setIsAddEventModalOpen(false)}
+                <CoachAddEventModal
+                    isOpen={isAddEventModalOpen}
+                    onClose={() => setIsAddEventModalOpen(false)}
                 />
                 <WorkingHoursModal      
                     isOpen={isWorkingHoursModalOpen}

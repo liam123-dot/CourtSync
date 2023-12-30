@@ -86,8 +86,7 @@ export default function DateTimeDurationSelector({
     setSelectedDuration,
     selectedTime,
     setSelectedTime,
-    coachSlug,
-    checkDates = false
+    coachSlug
 }) {
 
     const handleDurationChange = (e) => {
@@ -100,8 +99,6 @@ export default function DateTimeDurationSelector({
 
     const [durations, setDurations] = useState([]);
     const [availableStartTimes, setAvailableStartTimes] = useState();
-
-    const [availableDates, setAvailableDates] = useState({}); // [dayjs, dayjs, ...
 
     const getCoachDurations = async () => {
             
@@ -127,6 +124,7 @@ export default function DateTimeDurationSelector({
             console.log(error);
         }
     
+        
     }
 
     const getAvailableStartTimes = async () => {
@@ -157,37 +155,9 @@ export default function DateTimeDurationSelector({
         }
     }
 
-    const checkAvailableDates = async () => {
-        
-        try {
-
-            const response = await axios.get(`${process.env.REACT_APP_API_URL}/timetable/${coachSlug}/check-days`);
-
-            setAvailableDates(response.data.results);
-
-        } catch (error) {
-            console.log(error);
-        }
-
-    }
-
-    const shouldDisableDate = (date) => {
-
-        if (!checkDates) return false;
-
-        // keys in available dates are in yyyy-mm-dd format
-
-        const formattedDate = date.format('YYYY-MM-DD');
-
-        return !availableDates[formattedDate];
-
-    }
-
-    useEffect(() => {      
+    useEffect(() => {
+                
         getCoachDurations();
-        if (checkDates) {
-            checkAvailableDates();
-        }
     }, [])  
     useEffect(() => {
 
@@ -206,7 +176,6 @@ export default function DateTimeDurationSelector({
                     onChange={handleDateChange}
                     format="DD/MM/YYYY"
                     minDate={dayjs().startOf('day')}
-                    shouldDisableDate={shouldDisableDate}
                 />
             </FormControl>
             {durations.length > 0 && (
@@ -217,7 +186,7 @@ export default function DateTimeDurationSelector({
                         onChange={handleDurationChange}
                         label="Select a Duration"
                     >
-                        <MenuItem value="" disabled>
+                        <MenuItem value="">
                             <em>Select a duration</em>
                         </MenuItem>
                         {durations.map(duration => (

@@ -5,7 +5,7 @@ client = boto3.client('ses')
 def send_email(localFrom, toAddresses, subject, bodyText, bodyHTMl):
 
     response = client.send_email(
-        Source=f"Courtsync <{localFrom}@courtsync.co.uk>",
+        Source=f"{localFrom}@courtsync.co.uk",
         Destination={
             'ToAddresses': toAddresses
         },

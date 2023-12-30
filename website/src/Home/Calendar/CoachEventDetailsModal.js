@@ -76,7 +76,7 @@ export default function CoachEventDetailsModal({ isOpen, onClose, coachEvent }) 
                 <Typography variant="h6" gutterBottom>
                     Coach Event Details
                 </Typography>
-                <Typography variant="body1">Title: {coachEvent.inner_title}</Typography>
+                <Typography variant="body1">Coach Name: {coachEvent.inner_title}</Typography>
                 <Typography variant="body1">Description: {coachEvent.description}</Typography>
                 <Typography variant="body1">Status: {coachEvent.status}</Typography>
                 <Typography variant="body1">Start Time: {new Date(coachEvent.start_time * 1000).toLocaleString('en-GB')}</Typography>
@@ -96,7 +96,7 @@ export default function CoachEventDetailsModal({ isOpen, onClose, coachEvent }) 
                         <Button variant="contained" onClick={() => {
                             setShowConfirmation(true);
                             setCancelRepeats(false);
-                        }}>Cancel Event</Button>
+                        }}>Cancel</Button>
 
                         {coachEvent.repeat_id && (
                             <Button variant="contained" onClick={() => {

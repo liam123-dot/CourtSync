@@ -1,9 +1,8 @@
 version = 0.1
-
 [default.deploy.parameters]
-stack_name = "InvoiceDelivery-test"
+stack_name = "InvoiceDelivery-TEST"
+resolve_s3 = true
+s3_prefix = "InvoiceDelivery-TEST"
 region = "eu-west-2"
-profile = "courtsync"
 capabilities = "CAPABILITY_IAM"
 image_repositories = []
-s3_bucket = "invoicedelivery-test"

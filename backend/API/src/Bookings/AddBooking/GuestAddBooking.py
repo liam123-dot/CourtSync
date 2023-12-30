@@ -76,7 +76,7 @@ def add_booking(slug):
         
         contact, player = get_contact_and_player(player_name, contact_name, contact_email, contact_phone_number, coach_id)
         
-        lesson_hash = insert_booking(player['player_id'], contact['contact_id'], start_time, cost, rules, duration, coach, booking_time)
+        lesson_hash = insert_booking(player['player_id'], contact['contact_id'], start_time, cost, rules, duration, coach_id, booking_time)
         
         if not lesson_hash:
             return jsonify(message="Error inserting booking"), 500

@@ -103,7 +103,7 @@ export default function NavigationBar() {
             setValue(0);
         } else if (location.pathname.startsWith('/dashboard/invoices')) {
             setValue(1);
-        } else if (location.pathname.startsWith('/dashboard/contacts')) {
+        } else if (location.pathname.startsWith('/dashboard/players')) {
             setValue(2);
         } else if (location.pathname.startsWith('/dashboard/settings')) {
             setValue(3);
@@ -143,8 +143,8 @@ const drawer = (
             <ListItem button component={Link} to="/dashboard/invoices">
                 <ListItemText primary="Invoices" />
             </ListItem>
-            <ListItem button component={Link} to="/dashboard/contacts">
-                <ListItemText primary="Contacts" />
+            <ListItem button component={Link} to="/dashboard/players">
+                <ListItemText primary="Players" />
             </ListItem>
             <ListItem button component={Link} to="/dashboard/settings?tab=profile">
                 <ListItemText primary="Settings" />
@@ -156,13 +156,12 @@ const drawer = (
 return (
     <Box sx={{ flexGrow: 1 }}>
         <Tooltip title={blockTabs ? "Settings page needs to be completed" : ""}>
-        <Box sx={{
+            <Box sx={{
                 display: 'flex', 
                 flexDirection: 'row', 
                 alignItems: 'center', 
                 justifyContent: 'space-between',
                 padding: '0 20px',
-                borderBottom: '1px solid #ddd' // Add a border at the bottom
             }}>
                 <IconButton
                     color="inherit"
@@ -174,10 +173,10 @@ return (
                     <MenuIcon />
                 </IconButton>
                 <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
-                    <Tabs value={value} onChange={handleChange} >
+                    <Tabs value={value} onChange={handleChange}>
                         {renderTab("Timetable", `/dashboard${timetableLink}`, 0)}
                         {renderTab("Invoices", "/dashboard/invoices", 1)}
-                        {renderTab("Contacts", "/dashboard/contacts", 2)}
+                        {renderTab("Players", "/dashboard/players", 2)}
                         {renderTab("Settings", "/dashboard/settings?tab=profile", 3)}                    
                     </Tabs>
                 </Box>

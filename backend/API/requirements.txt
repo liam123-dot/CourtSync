@@ -9,4 +9,3 @@ s3transfer
 awscrt
 boto3
 stripe
-ics

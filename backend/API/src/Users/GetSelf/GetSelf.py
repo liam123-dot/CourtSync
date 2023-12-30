@@ -69,7 +69,7 @@ def get_attributes(coach_id):
     
     results['name'] = f"{results['first_name']} {results['last_name']}"
     
-    results['stripe_account_set_up'] = check_stripe(results)
+    results['coach_setup'] = check_stripe(results)
 
     results['coach_url'] = construct_coach_url(results)
 
@@ -79,13 +79,14 @@ def check_stripe(coach):
     if coach['stripe_account'] is None:
         return False
     
-    if not coach['stripe_account_set_up']:
+    if coach['stripe_account_set_up'] is False:
         setup_complete = check_stripe_api(coach)
         if setup_complete:
             sql = "UPDATE Coaches SET stripe_account_set_up = TRUE WHERE coach_id = %s"
             execute_query(sql, (coach['coach_id'],), False)
             return True
         return False
+    
     else:
         return True
     

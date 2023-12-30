@@ -1,12 +1,11 @@
-import React, { useState, useEffect, useRef, useContext } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
-import { Button, Card, CardContent, CardActions, Grid, TextField, Typography, CircularProgress, Divider, Box, IconButton, TextareaAutosize, Switch, FormControlLabel, Modal } from '@mui/material';
+import { Button, Card, CardContent, CardActions, Grid, TextField, Typography, CircularProgress, Divider, Box, IconButton, TextareaAutosize, Switch, FormControlLabel } from '@mui/material';
 import { Save as SaveIcon, Edit as EditIcon, Cancel as CancelIcon, Logout as LogoutIcon } from '@mui/icons-material';
 import ProfileButton from "../../SidePanel/ProfilePicture";
 import { usePopup } from "../../Notifications/PopupContext";
 import { useNavigate } from 'react-router-dom';
-import InfoComponent from "../../Home/InfoComponent";
-// 
+
 export default function CoachProfileSettings() {
     const [initialCoachDetails, setInitialCoachDetails] = useState(null);
     const [coachDetails, setCoachDetails] = useState(null);
@@ -17,7 +16,7 @@ export default function CoachProfileSettings() {
     const [isEditing, setIsEditing] = useState(false);
 
     const [coachLink, setCoachLink] = useState('');
-    const [coachSetUp, setCoachSetUp] = useState(true);
+    const [coachSetUp, setCoachSetUp] = useState(false);
 
     const [isImageUploading, setIsImageUploading] = useState(false);
     
@@ -26,10 +25,6 @@ export default function CoachProfileSettings() {
 
     const [isSaving, setIsSaving] = useState(false);
     const navigate = useNavigate();
-
-    const [bookingScope, setBookingScope] = useState(null); // ['public', 'private'
-
-    const [updatedBookingScope, setUpdatedBookingScope] = useState(null); // ['public', 'private'
 
     const {showPopup} = usePopup();
 
@@ -62,7 +57,6 @@ export default function CoachProfileSettings() {
                     'Authorization': localStorage.getItem('AccessToken')
                 }}
             )
-            submitBookingScope(updatedBookingScope);
             console.log(response);
             showPopup('Success');
             setIsEditing(false);
@@ -89,11 +83,11 @@ export default function CoachProfileSettings() {
             setCoachDetails(data);
             setInitialCoachDetails(data);
             
-            setCoachLink(`${process.env.REACT_APP_WEBSITE_URL}/#/${data.slug}`);
+            setCoachLink(`${process.env.REACT_APP_WEBSITE_URL}/#${data.slug}`);
+            setCoachSetUp(data.coach_setup);
 
             setShowEmailPublicly(data.show_email_publicly);
             setShowPhoneNumberPublicly(data.show_phone_number_publicly);
-            setBookingScope(data.booking_scope);
 
         } catch (error) {
             console.error("Error fetching coach details", error);
@@ -120,10 +114,6 @@ export default function CoachProfileSettings() {
         }
     };
 
-    useEffect(() => {
-        setUpdatedBookingScope(bookingScope);
-    }, [bookingScope])
-
     const handleImageUpload = async (file) => {
 
         const contentType = file.type;
@@ -147,7 +137,7 @@ export default function CoachProfileSettings() {
             console.log('uploading')
     
             // 2. Use the pre-signed URL to upload the image to S3
-            const s3Response = await axios.post(presignedUrl, file, {
+            const s3Response = await axios.put(presignedUrl, file, {
                 headers: {
                     'Content-Type': file.type
                 }
@@ -185,61 +175,12 @@ export default function CoachProfileSettings() {
             [name]: value
         }));
     };
-    
-    const submitBookingScope = async (localScope) => {
-
-        try {
-            const response = await axios.put(`${process.env.REACT_APP_API_URL}/user/me/booking_scope`, {
-                value: localScope
-            }, {
-                headers: {
-                    'Authorization': localStorage.getItem('AccessToken')
-                }
-            });
-            
-            setBookingScope(localScope);
-
-        } catch (error) {
-            console.log(error);
-        }
-
-    }
-
-    const BookingScopeComponent = ({updatedScope, setUpdatedScope}) => {
-
-        return (
-            <Box sx={{border: '1px solid #ddd'}}>
-                <Typography sx={{display: 'flex'}}>
-                    How far in the future can players book
-                    <InfoComponent message={"On your player booking page, this restricts how far in the future players can see your availablity and book in singular lessons."}/>
-                </Typography>
-                {isEditing ? (
-                    <Typography variant="body2">
-                        <TextField
-                            type="number"
-                            inputProps={{ min: 1, max: 4 }}
-                            value={updatedScope}
-                            onChange={e => setUpdatedScope(e.target.value)}
-                        />
-                        Weeks
-                    </Typography>
-                ):(
-                    <Typography variant="body2">
-                        <strong>{bookingScope} Weeks</strong>
-                    </Typography>
-                )}
-            </Box>
-        )
-    }
 
     return !isLoading ? (
         <Box sx={{ maxWidth: 800, mx: 'auto', my: 4 }}>
             <Card variant="outlined">
                 <CardContent>
-                    <Typography variant="h6" gutterBottom>
-                        Your Profile
-                        <InfoComponent message={"All information on your profile is shown to players when they book lessons with you."}/>                        
-                    </Typography>
+                    <Typography variant="h6" gutterBottom>Your Profile</Typography>
                     <Box sx={{ my: 2, textAlign: 'center' }}>
                         {!isImageUploading ? 
                         <ProfileButton imageUrl={coachDetails?.profile_picture_url} size={200} onClick={triggerFileInput}/>
@@ -295,7 +236,6 @@ export default function CoachProfileSettings() {
                                         {showPhoneNumberPublicly && <Typography variant="body2"><strong>Phone:</strong> {coachDetails.phone_number}</Typography>}
                                     </Box>
                                 )}
-                                <BookingScopeComponent updatedScope={updatedBookingScope} setUpdatedScope={setUpdatedBookingScope}/>
                                 <Box sx={{ mt: 2 }}>
                                     {coachSetUp ? (
                                         <Typography variant="body1">

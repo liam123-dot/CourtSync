@@ -16,11 +16,9 @@ def hash_booking(contact_id, start_time, booking_time):
     return hashed_value
 
     
-def insert_booking(player_id, contact_id, start_time, cost, rules, duration, coach, booking_time, repeat_id=None):
+def insert_booking(player_id, contact_id, start_time, cost, rules, duration, coach_id, booking_time, repeat_id=None):
     
     hashed_value = hash_booking(contact_id, start_time, booking_time)
-    
-    coach_id = coach['coach_id']
     
     if repeat_id:
         sql = "INSERT INTO Bookings(player_id, contact_id, start_time, cost, duration, coach_id, hash, repeat_id) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"

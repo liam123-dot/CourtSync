@@ -29,7 +29,4 @@ def get_players(coach_id):
     
     results = execute_query(sql, (coach_id,), is_get_query=True)
     
-    # sort by player name
-    results = sorted(results, key=lambda k: k['name'])
-    
     return results
