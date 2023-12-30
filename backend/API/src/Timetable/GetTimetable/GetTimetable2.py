@@ -184,9 +184,14 @@ def get_repeating_bookings(coach_id, from_time, to_time):
     
     to_be_added = []
     
-    for cron in collect_by_cron.keys():
-        to_be_added.extend(collect_by_cron[cron]['lessons'])
+    # iterate through all the cron jobs and remove the lessons with a 
+    # booking id that isn't -1
     
+    for cron in collect_by_cron.keys():
+        for lesson in collect_by_cron[cron]['lessons']:
+            if lesson['booking_id'] == -1:
+                to_be_added.append(lesson)
+        
     return to_be_added
 
 def calculate_expected_count(from_time, to_time, cron_job):
@@ -236,7 +241,6 @@ def fill_in_blanks(cron, cron_data, from_time, to_time):
     print(json.dumps(cron_dict, indent=4))
     
     for key in cron_dict.keys():
-        print(key)
         if cron_dict[key] is None:
             cron_dict[key] = copy.deepcopy(cron_data['template'])
             cron_dict[key]['booking_id'] = -1            
