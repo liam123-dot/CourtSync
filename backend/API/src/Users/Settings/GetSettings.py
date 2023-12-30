@@ -45,7 +45,7 @@ def check_settings():
     
     durations = check_durations(coach['coach_id'])
     pricing_rules = check_pricing_rules(coach['coach_id'])
-    working_hours = check_working_hours(coach['coach_id'])
+    working_hours = check_working_hours(coach['coach_id'])    
     invoicing_ready = coach['stripe_account_set_up']
     
     return jsonify(
@@ -53,7 +53,7 @@ def check_settings():
         pricing_rules=pricing_rules,
         working_hours=working_hours,
         invoices=invoicing_ready,
-        any=durations and pricing_rules and working_hours
+        any=durations and pricing_rules and working_hours and invoicing_ready
     ), 200
     
 @GetSettingsBlueprint.route('/coach/<slug>/ready', methods=['GET'])

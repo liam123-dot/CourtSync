@@ -10,6 +10,7 @@ import PricingSettings from "./Pages/AdvancedSettings/PricingSettings/PricingSet
 import WorkingHoursSettingsHosting from "./Pages/AdvancedSettings/WorkingHoursSettingsHosting";
 
 import axios from "axios";
+import CalendarSyncPage from "./Pages/AdvancedSettings/CalendarSync/CalendarSyncPage";
 
 const SettingsLabelsContext = createContext();
 
@@ -27,6 +28,7 @@ export default function SettingsPage2() {
       { label: "Duration", component: <DurationSelector />, endpointName: "durations", url: 'durations' },
       { label: "Pricing", component: <PricingSettings />, endpointName: "pricing_rules", url: 'pricing' },
       { label: "Working Hours", component: <WorkingHoursSettingsHosting />, endpointName: "working_hours", url: 'workingHours'},
+      { label: "Calendar Sync", component: <CalendarSyncPage/>, url: 'calendarSync'}
     ]);
   
     const handleTabChange = (event, newValue) => {

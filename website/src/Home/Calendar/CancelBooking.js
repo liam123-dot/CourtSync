@@ -1,15 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Button, TextField, Typography, Dialog, DialogActions, DialogContent, DialogTitle, Box } from '@mui/material';
+import { Button, TextField, Typography, Dialog, DialogActions, DialogContent, DialogTitle, Box, CircularProgress } from '@mui/material';
 import { usePopup } from '../../Notifications/PopupContext';
 import { useRefreshTimetable } from '../CoachHomeScreen/RefreshTimetableContext';
 
 export default function CancelBooking({ booking, close, onCancelProcess, setOnCancelProcess, cancelRepeat }) {
     const [cancellationNote, setCancellationNote] = useState('');
     const { refresh } = useRefreshTimetable();
+    const [isLoading, setIsLoading] = useState(false);
     const {showPopup} = usePopup();
 
     const cancelLesson = async () => {
+        setIsLoading(true);
         try {
             const response = await axios.post(
                 `${process.env.REACT_APP_API_URL}/timetable/booking/${booking.booking_id}/cancel?cancel_repeats=${cancelRepeat}`,
@@ -19,11 +21,12 @@ export default function CancelBooking({ booking, close, onCancelProcess, setOnCa
             console.log(response);
             setOnCancelProcess(false);
             showPopup('Booking cancelled successfully');
-            refresh();
+            refresh(true);
             close();
         } catch (error) {
             console.log(error);
         }
+        setIsLoading(false);
     };
 
     useEffect(() => {
@@ -52,7 +55,11 @@ export default function CancelBooking({ booking, close, onCancelProcess, setOnCa
                     Cancel
                 </Button>
                 <Button onClick={cancelLesson} variant="contained" color="primary">
-                    Confirm
+                    {
+                        isLoading ?
+                            <CircularProgress size={24} /> :
+                            'Confirm'
+                    }
                 </Button>
             </DialogActions>
         </Dialog>

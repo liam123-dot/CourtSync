@@ -22,7 +22,7 @@ export default function InvoicingSettings() {
                     headers: { 'Authorization': localStorage.getItem('AccessToken') }
                 });
                 const data = response.data;
-                setHasStripeAccount(!!data.stripe_account);
+                setHasStripeAccount(data.stripe_account);
                 setInvoiceType(data.invoice_type || '');
                 setAccountFullySetup(data.stripe_account_set_up);
                 setIsInitialLoading(false);
@@ -74,11 +74,13 @@ export default function InvoicingSettings() {
             });
             
             console.log(response)
-            // window.location.href = response.data.url;
+            window.location.href = response.data.url;
 
         } catch (error) {
+            showPopup(error.response.data.error)
             console.error(error);
         }
+        setShowBackdrop(false)
 
     }
 
@@ -101,21 +103,7 @@ export default function InvoicingSettings() {
                     <strong>Connect a Stripe account and set invoice regularity to enable invoicing.</strong>
                 </Typography>
             )}
-
-            <FormControl fullWidth margin="normal">
-                How often would you like invoices to be sent:
-                <Select value={invoiceType} onChange={(e) => setInvoiceType(e.target.value)}>
-                    <MenuItem value="" disabled>Select Option</MenuItem>
-                    <MenuItem value="daily">Daily</MenuItem>
-                    <MenuItem value="weekly">Weekly</MenuItem>
-                    <MenuItem value="monthly">Monthly</MenuItem>
-                </Select>
-            </FormControl>
-
             <Box sx={{display: 'flex', flexDirection: 'column', mt: 2}}>
-                <Button variant="contained" onClick={handleSave} sx={{ mt: 2, maxWidth: '250px' }}>
-                    {isLoading.save ? <CircularProgress size={24} /> : 'Save'}
-                </Button>
 
                 {!hasStripeAccount && (
                     <Box>
@@ -146,6 +134,20 @@ export default function InvoicingSettings() {
                     </Box>
                 )
             }
+
+            <FormControl fullWidth margin="normal">
+                How often would you like invoices to be sent:
+                <Select value={invoiceType} onChange={(e) => setInvoiceType(e.target.value)}>
+                    <MenuItem value="" disabled>Select Option</MenuItem>
+                    <MenuItem value="daily">Daily</MenuItem>
+                    <MenuItem value="weekly">Weekly</MenuItem>
+                    <MenuItem value="monthly">Monthly</MenuItem>
+                </Select>
+            </FormControl>
+            <Button variant="contained" onClick={handleSave} sx={{ mt: 2, maxWidth: '250px' }}>
+                {isLoading.save ? <CircularProgress size={24} /> : 'Save'}
+            </Button>
+
             <Backdrop open={showBackdrop} sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
                 <CircularProgress color="inherit" />
             </Backdrop>

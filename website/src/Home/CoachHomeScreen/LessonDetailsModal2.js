@@ -28,7 +28,7 @@ const style = {
     p: 4,
   };
 
-export const LessonCost = ({booking, forceExpanded=false}) => {
+export const LessonCost = ({booking, forceExpanded=false, editable=false}) => {
 
     const [expanded, setExpanded] = useState(forceExpanded);
     const [rulesLoaded, setRulesLoaded] = useState(false);
@@ -67,11 +67,7 @@ export const LessonCost = ({booking, forceExpanded=false}) => {
         }
         
     }, [expanded, rulesLoaded])
-    
-    useEffect(() => {
-        console.log(loadedRules);
-    }, [loadedRules])
-    
+        
     return !loading ? (loadedRules && (
         <Accordion
         expanded={expanded}
@@ -148,7 +144,7 @@ export default function LessonDetailsModal2({isOpen, onClose, booking}) {
     const [onCancelProcess, setOnCancelProcess] = useState(false);
     const [cancelRepeats, setCancelRepeats] = useState(false);
 
-    console.log(booking);
+    console.log(booking)
     
     return booking && (
         <Modal
@@ -215,11 +211,21 @@ export default function LessonDetailsModal2({isOpen, onClose, booking}) {
                                         Repeat Frequency: {booking.repeat_frequency}
                                     </Typography>
                                 </ListItem>
-                                <ListItem divider>
-                                    <Typography>
-                                        Repeat Until: {new Date(booking.repeat_until * 1000).toLocaleDateString('en-GB')}
-                                    </Typography>
-                                </ListItem>
+                                {
+                                    booking.repeat_until ? (
+                                        <ListItem divider>
+                                            <Typography>
+                                                Repeat Until: {new Date(booking.repeat_until * 1000).toLocaleDateString('en-GB')}
+                                            </Typography>
+                                        </ListItem>
+                                    ): (
+                                        <ListItem divider>
+                                            <Typography>
+                                                Repeat Indefinitely
+                                            </Typography>
+                                        </ListItem>
+                                    )
+                                }
                             </>
                         )
                     }
@@ -290,7 +296,10 @@ export default function LessonDetailsModal2({isOpen, onClose, booking}) {
                 
                 <CancelBooking
                     booking={booking}
-                    close={() => setOnCancelProcess(false)}
+                    close={() => {
+                        setOnCancelProcess(false)
+                        onClose();
+                    }}
                     onCancelProcess={onCancelProcess}
                     setOnCancelProcess={setOnCancelProcess}
                     cancelRepeat={cancelRepeats}

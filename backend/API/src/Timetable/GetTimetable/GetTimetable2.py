@@ -1,5 +1,8 @@
 from flask import Blueprint, request, jsonify
 from datetime import datetime, timedelta
+import calendar
+import json
+import copy
 
 from src.Bookings.GetBookings.GetBookings import get_bookings
 from src.CoachEvents.GetCoachEvents import get_coach_events
@@ -68,6 +71,8 @@ def format_working_hours(coach_id):
             
     return business_hours
 
+
+
 @GetTimetable2Blueprint.route('/timetable', methods=['GET'])
 def get_timetable_endpoint():
     
@@ -95,8 +100,12 @@ def get_timetable_endpoint():
     all.extend(bookings)
     all.extend(coach_events)
     
+    repeating_bookings = get_repeating_bookings(coach['coach_id'], from_time, to_time)
+    repeating_bookings = format_bookings(repeating_bookings)
+    all.extend(repeating_bookings)
+    
     return jsonify(
-        events=all,
+        events=all,        
         businessHours=format_working_hours(coach['coach_id'])
     ), 200
     
@@ -113,6 +122,7 @@ def get_working_hours_endpoint():
     results = execute_working_hours_query(coach['coach_id'])
     
     return jsonify(results), 200
+
 def execute_working_hours_query(coach_id):
     
     sql = "SELECT working_hour_id, day_of_week, start_time, end_time FROM WorkingHours WHERE coach_id=%s"
@@ -120,3 +130,165 @@ def execute_working_hours_query(coach_id):
     results = execute_query(sql, (coach_id, ))
         
     return results
+
+def get_repeating_bookings(coach_id, from_time, to_time):
+    
+    from_time = int(from_time)
+    to_time = int(to_time)
+    
+    sql = """
+        SELECT 
+            Bookings.*,
+            Contacts.name as contact_name,
+            Contacts.email as contact_email,
+            Contacts.phone_number as contact_phone_number,
+            Players.name as player_name,
+            RepeatRules.repeat_id,
+            RepeatRules.cron,
+            RepeatRules.start_time as repeat_start_time
+        FROM RepeatRules
+        INNER JOIN Bookings ON Bookings.repeat_id=RepeatRules.repeat_id
+        INNER JOIN Contacts ON Bookings.contact_id=Contacts.contact_id
+        INNER JOIN Players ON Bookings.player_id=Players.player_id
+        WHERE RepeatRules.coach_id=%s
+        AND RepeatRules.is_active=1
+    """
+
+    results = execute_query(sql, (coach_id, ))
+    
+    collect_by_cron = {}
+    
+    for result in results:
+        if result['cron'] not in collect_by_cron.keys():                        
+            repeat_start_time = result['repeat_start_time']
+            if from_time < repeat_start_time:
+                from_time = repeat_start_time
+            collect_by_cron[result['cron']] = {
+                'lessons': [],
+                'expected_count': calculate_expected_count(from_time, to_time, result['cron']),
+                'template': result,
+                'from_time': from_time,
+                'to_time': to_time
+            }
+        if result['start_time'] >= from_time and result['start_time'] <= to_time:            
+            collect_by_cron[result['cron']]['lessons'].append(result)
+            
+    for cron in collect_by_cron.keys():
+        
+        cron_data = collect_by_cron[cron]
+        expected_count = cron_data['expected_count']
+        actual_count = len(cron_data['lessons'])        
+                
+        if expected_count != actual_count:
+            cron_data['lessons'] = fill_in_blanks(cron, cron_data, cron_data['from_time'], cron_data['to_time'])
+    
+    to_be_added = []
+    
+    for cron in collect_by_cron.keys():
+        to_be_added.extend(collect_by_cron[cron]['lessons'])
+    
+    return to_be_added
+
+def calculate_expected_count(from_time, to_time, cron_job):
+    # Split cron_job into its components
+    minute, hour, day_of_month, month, day_of_week = cron_job.split()
+
+    # Convert epoch seconds to datetime objects
+    start_date = datetime.fromtimestamp(from_time)
+    end_date = datetime.fromtimestamp(to_time)
+
+    count = 0
+    current_date = start_date
+
+    while current_date <= end_date:
+        if is_cron_match(current_date, minute, hour, day_of_month, month, day_of_week):
+            count += 1
+        current_date += timedelta(minutes=1)
+
+    return count
+
+def is_cron_match(date, minute, hour, dom, month, dow):
+    # Convert '*' to the appropriate value for comparison
+    minute = date.minute if minute == '*' else int(minute)
+    hour = date.hour if hour == '*' else int(hour)
+    dom = date.day if dom == '*' else int(dom)
+    month = date.month if month == '*' else int(month)
+    dow = date.weekday() if dow == '*' else int(dow)
+
+    # Check if the date matches the cron job
+    return (date.minute == minute and 
+            date.hour == hour and 
+            (date.day == dom or dom > calendar.monthrange(date.year, date.month)[1]) and 
+            date.month == month and 
+            date.weekday() == dow)
+    
+def fill_in_blanks(cron, cron_data, from_time, to_time):
+    
+    print(json.dumps(cron_data, indent=4))
+    
+    cron_execution_times = get_cron_execution_times(from_time, to_time, cron)
+    cron_dict = {int(time.timestamp()): None for time in cron_execution_times}
+
+    for lesson in cron_data['lessons']:
+        if lesson['start_time'] in cron_dict.keys():
+            cron_dict[lesson['start_time']] = lesson    
+    
+    print(json.dumps(cron_dict, indent=4))
+    
+    for key in cron_dict.keys():
+        print(key)
+        if cron_dict[key] is None:
+            cron_dict[key] = copy.deepcopy(cron_data['template'])
+            cron_dict[key]['booking_id'] = -1            
+            cron_dict[key]['start_time'] = key
+            cron_dict[key]['status'] = 'confirmed'
+            cron_dict[key]['paid'] = False
+            cron_dict[key]['message_from_couch'] = None
+            cron_dict[key]['message_from_player'] = None
+            cron_dict[key]['hash'] = -1
+            cron_dict[key]['invoice_sent'] = False
+            cron_dict[key]['time_invoice_sent'] = None
+            cron_dict[key]['invoice_id'] = None
+            cron_dict[key]['paid_from'] = None
+            cron_dict[key]['invoice_cancelled'] = False
+            cron_dict[key]['send_date'] = None
+            print(json.dumps(cron_dict[key], indent=4))
+            
+    print(json.dumps(cron_dict, indent=4))
+        
+    return list(cron_dict.values())
+
+def get_cron_execution_times(start_epoch, end_epoch, cron_expression):
+    # Split the cron expression
+    minute, hour, day_of_month, month, day_of_week = cron_expression.split()
+    
+    # Convert start and end epochs to datetime
+    start_datetime = datetime.fromtimestamp(start_epoch)
+    end_datetime = datetime.fromtimestamp(end_epoch)
+
+    # List to hold all the matching times
+    execution_times = []
+
+    current_datetime = start_datetime
+    while current_datetime <= end_datetime:
+        if matches_cron(current_datetime, minute, hour, day_of_month, month, day_of_week):
+            execution_times.append(current_datetime)
+
+        # Increment by one minute
+        current_datetime += timedelta(minutes=1)
+
+    return execution_times
+
+def matches_cron(dt, minute, hour, dom, month, dow):
+    # Function to check if a datetime matches the cron expression
+    if minute != '*' and dt.minute != int(minute):
+        return False
+    if hour != '*' and dt.hour != int(hour):
+        return False
+    if dom != '*' and dt.day != int(dom):
+        return False
+    if month != '*' and dt.month != int(month):
+        return False
+    if dow != '*' and dt.weekday() != int(dow):
+        return False
+    return True

@@ -55,7 +55,7 @@ function SidePanel({imageUrl}) {
 
     const [options, setOptions] = useState({
         'Invoices': '/dashboard/invoices',
-        'Players': '/dashboard/players',
+        'Players': '/dashboard/contacts',
         'Settings': '/settings',
     });
 

@@ -14,53 +14,30 @@ def create_repeating_lesson(
         contact_id,
         start_time,
         duration,
-        coach_id,
+        coach,
         booking_time,
-        repeat_until,
-        repeat_frequency
+        repeat_frequency,
+        repeat_until=None
     ):
     
-    end_time = start_time + duration*60
+    coach_id = coach['coach_id']
     
-    start_date = datetime.fromtimestamp(start_time)
-    end_date = datetime.fromtimestamp(end_time)
+    lesson_cost, rules = calculate_lesson_cost(start_time, duration, coach_id)
     
-    repeat_hash = create_repeat_rule(repeat_until, repeat_frequency)
+    repeat_hash = create_repeat_rule(start_time, repeat_frequency, repeat_until=repeat_until, coach_id=coach_id)
     repeat_rule = get_repeat_rule_by_hash(repeat_hash)
+    
+    insert_booking(
+        player_id,
+        contact_id,
+        start_time,
+        lesson_cost,
+        rules,
+        duration,
+        coach,
+        booking_time,
+        repeat_id=repeat_rule['repeat_id']
+    )
         
     logging.debug('repeat_rule made')
-        
-    while start_date.timestamp() <= repeat_until:
-        
-        logging.debug('making first')
-        
-        lesson_cost, rules = calculate_lesson_cost(start_time, duration, coach_id)
-        
-        logging.debug(f"lesson_cost: {lesson_cost}")
-        logging.debug(f"rules: {rules}")
-        
-        insert_booking(
-            player_id,
-            contact_id,
-            start_date.timestamp(),
-            lesson_cost,
-            rules,
-            duration,
-            coach_id,
-            booking_time,
-            repeat_rule['repeat_id']
-        )
-        
-        if repeat_frequency == 'daily':
-            start_date = start_date + timedelta(days=1)
-            end_date = end_date + timedelta(days=1)
-        elif repeat_frequency == 'weekly':
-            start_date = start_date + timedelta(weeks=1)
-            end_date = end_date + timedelta(weeks=1)
-        elif repeat_frequency == 'fortnightly':
-            start_date = start_date + timedelta(weeks=2)
-            end_date = end_date + timedelta(weeks=2)
-        elif repeat_frequency == 'monthly':
-            start_date = start_date + timedelta(weeks=4)
-            end_date = end_date + timedelta(weeks=4)
         

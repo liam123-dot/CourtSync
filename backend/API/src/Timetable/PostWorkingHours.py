@@ -24,8 +24,9 @@ def update_working_hours():
     
     username = coach['coach_id']
 
-    if not check_working_hours_valid(working_hours, username):
-        return jsonify(message='Proposed working hours overlap with future booking'), 400
+    working_hours_valid, booking = check_working_hours_valid(working_hours, username)
+    if not working_hours_valid:
+        return jsonify(message='Proposed working hours overlap with future booking', booking=booking), 400
 
     update_or_insert_working_hours(working_hours, username)
     return jsonify(message='Success'), 200
@@ -72,14 +73,15 @@ def check_for_update(working_hour_id, existing_working_hours):
     return False
  
 def check_working_hours_valid(working_hours, coach_id):
+    return True, None
     current_time = time.time()
     sql = "SELECT start_time, duration FROM Bookings WHERE coach_id=%s and start_time>%s"
     results = execute_query(sql, (coach_id, int(current_time)))
 
     for booking in results:
         if not check_booking_valid(minutes_into_day(booking['start_time']), booking['duration'], working_hours[str(get_day_of_week_from_epoch(booking['start_time']))]):
-            return False
-    return True
+            return False, booking
+    return True, None
 
 def get_day_of_week_from_epoch(epoch_time):
     # Convert the epoch time to a datetime object

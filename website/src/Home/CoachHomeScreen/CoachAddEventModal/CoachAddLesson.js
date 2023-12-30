@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import ChooseDateTimeComponent from "../../ChooseDateTimeComponent";
 import axios from "axios";
 import { useRefreshTimetable } from "../RefreshTimetableContext";
 import ShowOverlappingEvents from "./ShowOverlappingEvents";
@@ -151,7 +150,7 @@ export default function CoachAddLesson ({closeModal}) {
                 }
             })
 
-            refresh();
+            refresh(true);
             closeModal();
 
         } catch (error) {

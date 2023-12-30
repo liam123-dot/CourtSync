@@ -68,6 +68,8 @@ def check_overlaps_endpoint():
         
     except ValueError as e:
         return jsonify(message=f"Invalid value: {e}"), 400
+    except TypeError as e:
+        return jsonify(message=f"Invalid type: {e}"), 400
     
     if from_time is None or to_time is None:
         return {'message': 'from or to not provided'}, 400

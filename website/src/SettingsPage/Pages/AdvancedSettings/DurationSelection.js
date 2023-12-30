@@ -5,18 +5,25 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import Checkbox from '@mui/material/Checkbox';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faInfo } from '@fortawesome/free-solid-svg-icons';
+import Dialog from '@mui/material';
 
 import { usePopup } from '../../../Notifications/PopupContext';
 import { useSettingsLabels } from '../../SettingsPage2';
+import { Typography } from '@mui/material';
 
 export default function DurationSelector() {
     const [selectedDurations, setSelectedDurations] = useState([]);
     const [isSaving, setIsSaving] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [bookingScope, setBookingScope] = useState();
     const { showPopup } = usePopup();
     const { refreshLabels } = useSettingsLabels();
 
-    const durations = [30, 60, 90, 120]
+    const durations = [15, 30, 45, 60, 75 ,90, 105, 120]
 
     const toggleDuration = (duration) => {
         const updatedDurations = selectedDurations.includes(duration)
@@ -40,8 +47,27 @@ export default function DurationSelector() {
         setIsLoading(false);
     };
 
+    const getBookingScope = async () => {
+
+        try {
+
+            // const response = await axios.get(`${process.env.REACT_APP_API_URL}/features/booking-scope`, {
+            //     headers: {
+            //         Authorization: localStorage.getItem('AccessToken')
+            //     }
+            // });
+
+            // setBookingScope(response.data.bookingScope);
+
+        } catch (error) {
+            console.log(error);
+        }
+
+    }
+
     useEffect(() => {
         getDurations();
+        getBookingScope();
     }, []);
 
     const handleSave = async () => {
@@ -62,7 +88,13 @@ export default function DurationSelector() {
 
     return (
         <Box>
-            <p>Lessons can only be booked at the durations you select</p>
+            <Tooltip title="Lessons can only be booked at the durations you select">
+                <IconButton
+                    onClick={() => setShowDescription(!showDescription)}
+                >
+                    <FontAwesomeIcon icon={faInfo} />
+                </IconButton>  
+            </Tooltip>
             <Box>
                 {!isLoading && durations.map(duration => (
                     <FormControlLabel
@@ -79,6 +111,14 @@ export default function DurationSelector() {
                 {
                     isLoading && <CircularProgress />
                 }
+                {/* <Typography>Booking Scope (in weeks): </Typography>
+                <TextField
+                    type="number"
+                    value={bookingScope}
+                    onChange={setBookingScope}
+                    label="Number of Weeks"
+                    variant="outlined"
+                /> */}
             </Box>
     
             <Button onClick={handleSave} variant="contained" color="primary">

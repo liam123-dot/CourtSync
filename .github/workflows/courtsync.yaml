@@ -4,10 +4,17 @@ on:
   push:
     paths:
       - '**'
+      
+concurrency: 
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  test-build-deploy:
+  deploy-test:
     runs-on: ubuntu-latest
+    name: Deploy to Test
+    environment:
+      name: Test
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -17,27 +24,79 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: eu-west-2 # Replace with your AWS region
+          aws-region: eu-west-2 # Replace with your AWS region          
 
-      - name: Update Secret ID in launch-script.sh
+      - name: Update Secret ID in test launch-script.sh
         run: |
           cd backend/API
-          sed -i 's/YourSecretId/env-testing/g' launch-script.sh
+          sed -i 's/YourSecretId/${{ vars.AWS_SECRET_ID }}/g' launch-script.sh
           cd ../..
 
-      - name: Sync with S3
+      - name: Sync with S3 test env
         run: |
-          aws s3 sync ./backend/API s3://courtsync-api-test
+          aws s3 sync ./backend/API ${{ vars.AWS_API_S3_BUCKET }}
 
-      - name: Reboot EC2 Instances
+      - name: Reboot EC2 Instances TEST
         run: |
           pip3 install -r update-requirements.txt
-          python3 update.py
+          python3 ${{ vars.AWS_EC2_REBOOT_SCRIPT }}
 
-      - name: Build and Deploy Website
+      - name: Build and Deploy Test Website
         run: |
           cd website
           cp test_env.txt .env
           npm install
           npm run build
-          aws s3 sync build s3://test.courtsync.co.uk
+          aws s3 sync build ${{ vars.AWS_WEBSITE_S3_BUCKET }}
+          cd ..
+
+      - name: Revert Secret ID in test launch-script.sh
+        run: |
+          cd backend/API
+          sed -i 's/${{vars.AWS_SECRET_ID}}/YourSecretId/g' launch-script.sh
+          cd ../..
+  
+  deploy-prod:
+    needs: deploy-test
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    environment:
+      name: Prod
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up AWS CLI
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-2 # Replace with your AWS region       
+
+      - name: update Secret ID in prod launch-script.sh
+        run: |
+          cd backend/API
+          cat launch-script.sh
+          sed -i 's/YourSecretId/${{vars.AWS_SECRET_ID}}/g' launch-script.sh
+          cat launch-script.sh
+          cd ../..
+
+      - name: Sync with S3 production env
+        run: |
+          aws s3 sync ./backend/API ${{ vars.AWS_API_S3_BUCKET }}
+
+      - name: Reboot EC2 Instances PRODUCTION
+        run: |
+          pip3 install -r update-requirements.txt
+          python3 ${{ vars.AWS_EC2_REBOOT_SCRIPT }}
+
+      - name: Build and Deploy Production Website
+        run: |
+          cd website
+          cp prod_env.txt .env
+          npm install
+          npm run build
+          aws s3 sync build ${{ vars.AWS_WEBSITE_S3_BUCKET }}
+
+        

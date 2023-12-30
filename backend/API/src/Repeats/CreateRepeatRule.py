@@ -1,17 +1,25 @@
+from datetime import datetime
+
 import hashlib
 import time
 
 from src.Database.ExecuteQuery import execute_query
 
-def create_repeat_rule(
-    repeat_until,
-    repeat_frequency
-):
-    hash = hash_repeat_rule(repeat_until, repeat_frequency)
+def create_repeat_rule(start_time, repeat_frequency, coach_id, repeat_until=None):
+    # Generate the cron expression
+    cron_expression = generate_cron_expression(start_time, repeat_frequency)
     
-    sql = "INSERT INTO RepeatRules(repeat_until, repeat_frequency, hash) VALUES (%s, %s, %s)"
+    hash = hash_repeat_rule(start_time, repeat_frequency, time.time())
     
-    execute_query(sql, args=(repeat_until, repeat_frequency, hash), is_get_query=False)
+    if repeat_until is not None:
+        # Include cron_expression in the SQL query
+        sql = "INSERT INTO RepeatRules(start_time, repeat_until, repeat_frequency, cron, hash, coach_id) VALUES (%s, %s, %s, %s, %s, %s)"
+        
+        execute_query(sql, args=(start_time, repeat_until, repeat_frequency, cron_expression, hash, coach_id), is_get_query=False)
+    else:
+        sql = "INSERT INTO RepeatRules(start_time, repeat_frequency, cron, hash, coach_id) VALUES (%s, %s, %s, %s, %s)"
+        
+        execute_query(sql, args=(start_time, repeat_frequency, cron_expression, hash, coach_id), is_get_query=False)
     
     return hash
     
@@ -25,14 +33,23 @@ def get_repeat_rule_by_id(rule_id):
     
     return execute_query(sql, args=(rule_id,), is_get_query=True)[0]
 
-def hash_repeat_rule(repeat_until, repeat_frequency):
-    # Create a new sha256 hash object
-    hash_object = hashlib.sha256()
+def generate_cron_expression(start_time, repeat_frequency):
+    # Convert start_time from epoch to a datetime object
+    start_datetime = datetime.fromtimestamp(start_time)
+    
+    # Minute and hour from the start_time
+    minute = start_datetime.minute
+    hour = start_datetime.hour
 
-    # Update the hash object with the bytes of the string
-    hash_object.update(f"{repeat_until}-{repeat_frequency}-{time.time()}".encode())
+    # Day of week for weekly, date for daily or fortnightly
+    if repeat_frequency == 'daily':
+        cron_day = '*'
+    elif repeat_frequency == 'weekly':
+        cron_day = f"{start_datetime.weekday()}"
 
-    # Get the hexadecimal representation of the digest
-    hashed_value = hash_object.hexdigest()
+    return f"{minute} {hour} * * {cron_day}"
 
-    return hashed_value
+
+def hash_repeat_rule(start_time, repeat_frequency, current_time):
+    hash_input = f"{start_time}-{repeat_frequency}-{current_time}".encode()
+    return hashlib.sha256(hash_input).hexdigest()

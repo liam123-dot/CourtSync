@@ -3,6 +3,9 @@ import axios from "axios";
 import { Button, Checkbox, FormControlLabel, Grid, TextField, Typography, Box, CircularProgress } from '@mui/material';
 import { Save as SaveIcon, HourglassEmpty as SpinnerIcon } from '@mui/icons-material';
 import { usePopup } from "../../../Notifications/PopupContext";
+import { IconButton, Tooltip } from '@mui/material';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faInfo } from '@fortawesome/free-solid-svg-icons';
 
 export default function WorkingHoursSettings({refreshLabels, refreshTimetable}) {
 
@@ -126,9 +129,13 @@ export default function WorkingHoursSettings({refreshLabels, refreshTimetable}) 
 
     return (
         <Box sx={{ p: 2, maxWidth: '80%', margin: '0 auto' }}>
-        <Typography variant="subtitle1">
-                Set the start and end times for each day. No lessons can be booked by players outside these times.
-            </Typography>
+            <Tooltip title="Set the start and end times for each day. No lessons can be booked by players outside these times.">
+                <IconButton
+                    onClick={() => setShowDescription(!showDescription)}
+                >
+                    <FontAwesomeIcon icon={faInfo} />
+                </IconButton>  
+            </Tooltip>
             <Grid container spacing={2} sx={{ mt: 2 }}>
                 {workingHours.map((hour, index) => (
                     <Grid item xs={12} key={index} sx={{ display: 'flex', alignItems: 'center' }}>

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { Box, Button, TextField, FormControlLabel, Checkbox, Typography } from '@mui/material';
+import { Box, Button, TextField, FormControlLabel, Checkbox, Typography, CircularProgress } from '@mui/material';
 import { usePopup } from "../Notifications/PopupContext";
 
 export default function CreateContact({ setOpen, fetchData }) {
@@ -8,21 +8,25 @@ export default function CreateContact({ setOpen, fetchData }) {
     const [contactEmail, setContactEmail] = useState("");
     const [contactPhoneNumber, setContactPhoneNumber] = useState("");
     const [isPlayerICoach, setIsPlayerICoach] = useState(false);
+    const [errorMessage, setErrorMessage] = useState(null);
+    const [isSubmitLoading, setIsSubmitLoading] = useState(false);
 
     const { showPopup } = usePopup();
 
     const submitContact = async () => {
+        setErrorMessage(null);
         const names = contactName.split(' ');
         if (names.length < 2) {
-          showPopup("Please enter both a first and last name.");
-          return;
+            setErrorMessage("Please enter both a first and last name.");
+            return;
         }
-      
+        
+        setIsSubmitLoading(true);
         const capitalizedNames = names.map(
           name => name.charAt(0).toUpperCase() + name.slice(1)
         );
         const fullName = capitalizedNames.join(' ');
-              try {
+        try {
             const response = await axios.post(
                 `${process.env.REACT_APP_API_URL}/contact`,
                 {
@@ -44,6 +48,7 @@ export default function CreateContact({ setOpen, fetchData }) {
         } catch (error) {
             console.log(error);
         }
+        setIsSubmitLoading(false);
     };
 
     const handleNameChange = (e) => {
@@ -105,11 +110,28 @@ export default function CreateContact({ setOpen, fetchData }) {
                     label="Is a player"
                     sx={{ mb: 2 }}
                 />
+                {
+                    errorMessage && (
+                        <Typography color="error" sx={{ mb: 2 }}>{errorMessage}</Typography>
+                    )
+                }
+            </Box>
+            <Box sx={{
+                display: 'flex',
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                width: '100%'
+            
+            }}>
                 <Button variant="contained" color="primary" onClick={submitContact} sx={{ mb: 1 }}>
-                    Submit
+                    {
+                        isSubmitLoading ? <CircularProgress color="inherit" /> : "Create Contact"
+                    }
+                </Button>
+                <Button variant="outlined" onClick={() => setOpen(false)}>
+                    Cancel
                 </Button>
             </Box>
-            <Button variant="outlined" onClick={() => setOpen(false)}>Cancel</Button>
         </Box>
     );
 }

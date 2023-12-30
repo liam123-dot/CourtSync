@@ -44,7 +44,7 @@ def validate_parameters(localFrom, recipients, subject, bodyText, bodyHTML):
     if 'body' not in bodyHTML:
         return False, "bodyHTML must have a body tag"
 
-    return True, None
+    return True, None   
 
 
 def send_email(localFrom, recipients, subject, bodyText, bodyHTML):

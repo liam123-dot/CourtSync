@@ -1,13 +1,19 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { Box, Button, TextField, Typography, FormControl } from '@mui/material';
+import { Box, Button, TextField, Typography, FormControl, CircularProgress } from '@mui/material';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faInfo } from '@fortawesome/free-solid-svg-icons';
+import IconButton from '@mui/material/IconButton';
 
-export default function CreatePlayer({ contactId, setOpen, fetchData }) {
+export default function CreatePlayer({ contactId, setOpen, setContainerOpen, fetchData }) {
     const [playerName, setPlayerName] = useState("");
+    const [isCreatePlayerLoading, setIsCreatePlayerLoading] = useState(false);
+    const [showDescription, setShowDescription] = useState(false);
 
     const submitPlayer = async (e) => {
         e.preventDefault();
-    
+        setIsCreatePlayerLoading(true);
+
         const nameParts = playerName.split(' ');
         if (nameParts.length < 2) {
             alert("Please enter a first name and a surname.");
@@ -23,11 +29,13 @@ export default function CreatePlayer({ contactId, setOpen, fetchData }) {
                 },
             })
     
-            fetchData();
+            await fetchData(false);
             setOpen(false);
+            setContainerOpen(true);
         } catch (error) {
             console.log(error)
         }
+        setIsCreatePlayerLoading(false);
     }
 
     const handleNameChange = (e) => {
@@ -44,10 +52,17 @@ export default function CreatePlayer({ contactId, setOpen, fetchData }) {
             width: 300,
             margin: '20px auto'
         }}>
+            <IconButton
+                onClick={() => setShowDescription(!showDescription)}
+            >
+                <FontAwesomeIcon icon={faInfo} />
+            </IconButton>    
             <FormControl component="form" onSubmit={submitPlayer} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <Typography variant="body1">
-                    Player names are used to create lessons and ensure invoices and other important information is sent to the correct place
-                </Typography>
+                {showDescription && (
+                    <Typography variant="body1">
+                        Player names are used to create lessons and ensure invoices and other important information is sent to the correct place
+                    </Typography>
+                )}
                 <TextField
                     label="Player Name"
                     type="text"
@@ -56,7 +71,7 @@ export default function CreatePlayer({ contactId, setOpen, fetchData }) {
                     variant="outlined"
                 />
                 <Button type="submit" variant="contained" color="primary">
-                    Submit
+                    {isCreatePlayerLoading ? <CircularProgress/> : "Submit"}
                 </Button>
             </FormControl>
             <Button onClick={() => setOpen(false)} sx={{ mt: 1 }}>Cancel</Button>
