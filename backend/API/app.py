@@ -3,8 +3,11 @@ from flask import request
 import boto3
 import time
 import json
+import os
 
 client = boto3.client('sqs')
+
+QUEUE_URL = os.environ.get('LOGGING_QUEUE_URL')
 
 app, db_connection = create_app()
 
@@ -51,7 +54,7 @@ def log_request(response):
     # Send message to SQS queue
     st = time.time()
     send_message_response = client.send_message(
-        QueueUrl='https://sqs.eu-west-2.amazonaws.com/925465361057/Request-Queue-test',
+        QueueUrl=QUEUE_URL,
         MessageBody=json.dumps(message_body)
     )
     et = time.time()

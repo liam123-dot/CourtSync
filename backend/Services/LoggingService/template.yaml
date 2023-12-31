@@ -17,7 +17,7 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       VisibilityTimeout: 900
-      QueueName: Request-Queue-test
+      QueueName: LoggingQueue-test
   
   LogRequestsFunction:
     Type: AWS::Serverless::Function
