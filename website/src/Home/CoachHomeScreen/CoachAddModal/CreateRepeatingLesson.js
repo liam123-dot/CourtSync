@@ -8,8 +8,9 @@ import ChooseDateComponent from './ChooseDateComponent';
 
 import { calculateStartAndEndTime } from './TimeFunctions';
 import { useRefreshTimetable } from '../RefreshTimetableContext';
+import { usePopup } from '../../../Notifications/PopupContext';
 
-export default function CreateRepeatingLesson() {
+export default function CreateRepeatingLesson({onClose}) {
 
     const [startDate, setStartDate] = useState(null);
     const [startTime, setStartTime] = useState('');
@@ -28,6 +29,7 @@ export default function CreateRepeatingLesson() {
     const [isSubmitLoading, setIsSubmitLoading] = useState(false);
 
     const { refresh } = useRefreshTimetable();
+    const { showPopup } = usePopup();
 
     const getPlayers = async () => {
 
@@ -73,6 +75,8 @@ export default function CreateRepeatingLesson() {
             });
 
             refresh(true);
+            onClose();
+            showPopup('Repeating Lessons Successfully Created');
 
         } catch (error) {
             console.log(error);

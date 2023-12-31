@@ -53,7 +53,7 @@ export default function CoachAddModal({ open, handleClose }) {
             </Tabs>
             <Box sx={{ p: 2, width: '100%' }}>
               {tabValue === 0 && <CreateSingleLesson onClose={handleClose} />}
-              {tabValue === 1 && <CreateRepeatingLesson />}
+              {tabValue === 1 && <CreateRepeatingLesson onClose={handleClose} />}
               {tabValue === 2 && <CreateSingleEvent />}
               {tabValue === 3 && <CreateRepeatingEvent />}
             </Box>

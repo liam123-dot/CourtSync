@@ -1,5 +1,6 @@
 import React, { useState, useEffect, createContext } from 'react';
 import axios from 'axios';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Tab from '@mui/material/Tab';
@@ -11,8 +12,14 @@ import { Backdrop, CircularProgress, useMediaQuery, useTheme } from '@mui/materi
 export const InvoiceDataContext = createContext(null);
 
 export default function InvoicePage() {
+
+    const location = useLocation(); // Use useLocation to get the current URL
+    const navigate = useNavigate(); // Use useNavigate to navigate to a new URL
+    const queryParams = new URLSearchParams(location.search);
+    const initialTab = queryParams.get('tab') || 'upcoming'; // Get 'tab' parameter or default to 'upcoming'
+
     const [view, setView] = useState('daily');
-    const [statusView, setStatusView] = useState('upcoming'); // ['completed', 'pending']
+    const [statusView, setStatusView] = useState(initialTab); // ['completed', 'pending']
     const [data, setData] = useState([]);
 
     const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -89,6 +96,7 @@ export default function InvoicePage() {
     // Handle tab change
     const handleTabChange = (event, newValue) => {
         setStatusView(newValue);
+        navigate(`${location.pathname}?tab=${newValue}`);
     };
 
     const calculateNextInvoiceDate = () => {

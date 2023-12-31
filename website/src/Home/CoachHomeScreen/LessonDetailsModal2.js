@@ -36,6 +36,8 @@ export const LessonCost = ({booking, forceExpanded=false, editable=false}) => {
     const [loading, setLoading] = useState(false); // [true, false
     const [totalCost, setTotalCost] = useState(0);
 
+    const [showDefault, setShowDefault] = useState(false);
+
     const durationInHours = Math.floor(booking.duration_minutes / 60);
     const durationInMinutes = booking.duration_minutes % 60;
         
@@ -54,6 +56,7 @@ export const LessonCost = ({booking, forceExpanded=false, editable=false}) => {
                 setLoadedRules(response.data.rules);
                 setTotalCost(response.data.cost);
             } catch (error) {
+                setShowDefault(true);
                 console.error(error);
             }
             setLoading(false);
@@ -65,74 +68,78 @@ export const LessonCost = ({booking, forceExpanded=false, editable=false}) => {
             getRules();
             
         }
+
+        console.log(booking)
         
     }, [expanded, rulesLoaded])
-        
-    return !loading ? (loadedRules && (
-        <Accordion
-        expanded={expanded}
-        onChange={() => setExpanded(!expanded)}
-        sx={{width: '100%'}}
-        >
 
-            <AccordionSummary
-                id="panel1a-header"
-                expandIcon={<ExpandMoreIcon />}
+    if (showDefault) {
+        return (
+            <Typography>
+                Cost: £{(booking.cost / 100.0).toFixed(2)}
+            </Typography>
+        )
+    }
+
+    return !loading ? (
+        loadedRules && (
+            <Accordion
+                expanded={expanded}
+                onChange={() => setExpanded(!expanded)}
+                sx={{width: '100%'}}
+            >
+                <AccordionSummary
+                    id="panel1a-header"
+                    expandIcon={<ExpandMoreIcon />}
                 >
-                <Typography sx={{width: '100%'}}>
-                    Lesson Cost:
-                </Typography>
-                <Typography sx={{color: 'text.secondary', marginLeft: 'auto'}}>
-                    £{(totalCost / 100.0).toFixed(2)}
-                </Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-
-                {!rulesLoaded && (
-                    <CircularProgress/>
+                    <Typography sx={{width: '100%'}}>
+                        Lesson Cost:
+                    </Typography>
+                    <Typography sx={{color: 'text.secondary', marginLeft: 'auto'}}>
+                        £{(totalCost / 100.0).toFixed(2)}
+                    </Typography>
+                </AccordionSummary>
+                <AccordionDetails>
+                    {!rulesLoaded && (
+                        <CircularProgress/>
                     )}
-                <Typography>
-                    {loadedRules && loadedRules.hourly && (
-                        <>
-                            <div>Hourly Rate: £{(loadedRules.hourly.rate / 100.0).toFixed(2)}</div>
-                            <div style={{
-                                color: 'grey.500', // For lighter grey color
-                                fontSize: 'small', // For smaller text
-                                fontStyle: 'italic' // For italic text
-                            }}>Duration: {durationInHours}H{durationInMinutes !== 0 && `: ${durationInMinutes}M`}</div>
-                        </>
-                    )}                                      
-                    {/* {data.hourly && <div>Hourly rate: £{(data.hourly / 100.0).toFixed(2)}</div>} */}
-                    {/* {data.extra && <div>Extra: £{(data.extra / 100.0).toFixed(2)}</div>} */}
-                </Typography>
-                <Typography>
-                    {loadedRules && loadedRules.extra && loadedRules.extra.length > 0 && (
-                        <div>
-                            Extra Costs:
-                            {loadedRules.extra.map((rule, index) => (
-                                <Typography 
-                                key={index} 
-                                variant="body2" 
-                                sx={{ 
-                                    color: 'text.secondary', 
-                                    fontStyle: 'italic' 
-                                }}
-                                >
-                                    {rule.label}: £{(rule.rate / 100.0).toFixed(2)}
-                                </Typography>
-                            ))}
-                        </div>
-                        )
-                    }
-                                                              
-                </Typography>
-
-            </AccordionDetails>
-
-        </Accordion>
-    ) ): (
+                    <Typography>
+                        {loadedRules && loadedRules.hourly && (
+                            <>
+                                <div>Hourly Rate: £{(loadedRules.hourly.rate / 100.0).toFixed(2)}</div>
+                                <div style={{
+                                    color: 'grey.500', // For lighter grey color
+                                    fontSize: 'small', // For smaller text
+                                    fontStyle: 'italic' // For italic text
+                                }}>Duration: {durationInHours}H{durationInMinutes !== 0 && `: ${durationInMinutes}M`}</div>
+                            </>
+                        )}
+                    </Typography>
+                    <Typography>
+                        {loadedRules && loadedRules.extra && loadedRules.extra.length > 0 && (
+                            <div>
+                                Extra Costs:
+                                {loadedRules.extra.map((rule, index) => (
+                                    <Typography 
+                                        key={index} 
+                                        variant="body2" 
+                                        sx={{ 
+                                            color: 'text.secondary', 
+                                            fontStyle: 'italic' 
+                                        }}
+                                    >
+                                        {rule.label}: £{(rule.rate / 100.0).toFixed(2)}
+                                    </Typography>
+                                ))}
+                            </div>
+                        )}
+                    </Typography>
+                </AccordionDetails>
+            </Accordion>
+        )
+    ) : (
         <CircularProgress/>
-    )   
+    )
     
 }
 
@@ -284,7 +291,7 @@ export default function LessonDetailsModal2({isOpen, onClose, booking}) {
                     <ConfirmationDialog
                         open={confirmCancelOpen}
                         title="Cancel Booking"
-                        message={!cancelRepeats ? "Are you sure you want to cancel this booking?" : "Are you sure you want to cancel this booking and all future bookings?"}
+                        message={!cancelRepeats ? "Are you sure you want to cancel this booking?" : "Are you sure you want to cancel this lesson and all repeated lessons after this one?"}
                         onCancel={() => setConfirmCancelOpen(false)}
                         onConfirm={() => {
                             setConfirmCancelOpen(false);

@@ -10,11 +10,21 @@ export default function CancelBooking({ booking, close, onCancelProcess, setOnCa
     const [isLoading, setIsLoading] = useState(false);
     const {showPopup} = usePopup();
 
+    const handleCancel = () => {
+
+        if (cancelRepeat) {
+            cancelRepeatsLesson();
+        } else {
+            cancelLesson();
+        }
+
+    }
+
     const cancelLesson = async () => {
         setIsLoading(true);
         try {
             const response = await axios.post(
-                `${process.env.REACT_APP_API_URL}/timetable/booking/${booking.booking_id}/cancel?cancel_repeats=${cancelRepeat}`,
+                `${process.env.REACT_APP_API_URL}/timetable/booking/${booking.booking_id}/cancel`,
                 { message_to_player: cancellationNote },
                 { headers: { 'Authorization': localStorage.getItem('AccessToken') } }
             );
@@ -27,6 +37,20 @@ export default function CancelBooking({ booking, close, onCancelProcess, setOnCa
             console.log(error);
         }
         setIsLoading(false);
+    };
+
+    const cancelRepeatsLesson = async () => {
+
+        try  {
+            const response = await axios.post(
+                `${process.env.REACT_APP_API_URL}/timetable/repeats/${booking.repeat_id}/cancel`,
+                { message_to_player: cancellationNote },
+                { headers: { 'Authorization': localStorage.getItem('AccessToken') } }
+            )
+        } catch (error) {
+            console.log(error);
+        }
+
     };
 
     useEffect(() => {
@@ -54,7 +78,7 @@ export default function CancelBooking({ booking, close, onCancelProcess, setOnCa
                 <Button onClick={close} color="secondary">
                     Cancel
                 </Button>
-                <Button onClick={cancelLesson} variant="contained" color="primary">
+                <Button onClick={handleCancel} variant="contained" color="primary">
                     {
                         isLoading ?
                             <CircularProgress size={24} /> :

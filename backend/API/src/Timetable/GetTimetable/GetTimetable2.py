@@ -145,7 +145,8 @@ def get_repeating_bookings(coach_id, from_time, to_time):
             Players.name as player_name,
             RepeatRules.repeat_id,
             RepeatRules.cron,
-            RepeatRules.start_time as repeat_start_time
+            RepeatRules.start_time as repeat_start_time,
+            RepeatRules.repeat_until as repeat_until
         FROM RepeatRules
         INNER JOIN Bookings ON Bookings.repeat_id=RepeatRules.repeat_id
         INNER JOIN Contacts ON Bookings.contact_id=Contacts.contact_id
@@ -163,6 +164,8 @@ def get_repeating_bookings(coach_id, from_time, to_time):
             repeat_start_time = result['repeat_start_time']
             if from_time < repeat_start_time:
                 from_time = repeat_start_time
+            if result['repeat_until'] is not None and to_time > result['repeat_until']:            
+                to_time = result['repeat_until']
             collect_by_cron[result['cron']] = {
                 'lessons': [],
                 'expected_count': calculate_expected_count(from_time, to_time, result['cron']),
@@ -256,6 +259,7 @@ def fill_in_blanks(cron, cron_data, from_time, to_time):
             cron_dict[key]['paid_from'] = None
             cron_dict[key]['invoice_cancelled'] = False
             cron_dict[key]['send_date'] = None
+            cron_dict[key]['based_of'] = cron_data['template']['booking_id']
             print(json.dumps(cron_dict[key], indent=4))
             
     print(json.dumps(cron_dict, indent=4))
