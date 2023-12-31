@@ -43,10 +43,8 @@ def get_pricing_rules_endpoint():
     
     if not coach:
         return jsonify({'error': 'No coach found'}), 400
-    
-    include_default = request.args.get('include_default', 'True').lower() == 'true'
-    
-    pricing_rules = get_pricing_rules(coach['coach_id'], include_default=include_default)
+        
+    pricing_rules = get_pricing_rules(coach['coach_id'])
     
     if pricing_rules is None:
         return jsonify({'error': 'No pricing rules found'}), 400

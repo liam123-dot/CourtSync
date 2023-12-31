@@ -153,11 +153,7 @@ def insert_one_time_pricing_rule(
     if all_day:
         start_time = date_to_epoch(date)
         end_time = start_time + 86399
-    else:
-        if start_time:
-            start_time = datetime_to_epoch(start_time)
-        if end_time:
-            end_time = datetime_to_epoch(end_time)
+
         
     sql = "INSERT INTO PricingRules (coach_id, rate, label, start_time, end_time, all_day, type, period, days) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
     execute_query(sql, (coach_id, rate, label, start_time, end_time, all_day, type, period, None), is_get_query=False)
