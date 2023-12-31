@@ -36,12 +36,18 @@ def get_db_connection():
     )
 
 def lambda_handler(event, context):
+    print(event)
     connection = get_db_connection()
     
     for record in event['Records']:
         payload = json.loads(record["body"])
         request = payload['request']
         response = payload['response']
+        
+        if 'headers' in request.keys():
+            if 'User-Agent' in request['headers'].keys():
+                if request['headers']['User-Agent'] == 'ELB-HealthChecker/2.0':
+                    return {'statusCode': 200}
         
         method = request['method']
         path = request['full_path'].split('?')[0]
@@ -53,42 +59,77 @@ def lambda_handler(event, context):
 
         with connection.cursor() as cursor:
             # Insert log entry into the database
-            sql = "INSERT INTO Logs(method, endpoint, status_code, duration) VALUES (%s, %s, %s, %s)"
-            cursor.execute(sql, (method, path, status_code, duration))
-            inserted_id = cursor.lastrowid  # Get the ID of the inserted row
-            connection.commit()
                         
-            payload['request']['data'] = json.loads(payload['request']['data'])
-            payload['response']['data'] = json.loads(payload['response']['data'])
+            payload['request']['data'] = json.loads(payload['request']['data'])            
+            try:
+                payload['response']['data'] = json.loads(payload['response']['data'])
+            except json.decoder.JSONDecodeError:
+                payload['response']['data'] = {
+                    'message': payload['response']['data']
+                }
             
             if 'Authorization' in payload['request']['headers']:
                 token = payload['request']['headers']['Authorization']
-                try:
-                    response = cognito_client.get_user(AccessToken=token)
-                    user_id = response['Username']
-                    
-                    payload['request']['Requester'] = {
-                        'type': 'User',
-                        'id': user_id
-                    }
-                    
-                except cognito_client.exceptions.NotAuthorizedException:
-                    payload['request']['Requester'] = {
-                        'type': 'Unauthorized',
-                        'id': 'Unauthorized'
-                    }
+                
+                user = get_user(cursor, token)
+                                
+                payload['request']['Requester'] = user                                                
+                
             else:
                 payload['request']['Requester'] = {
                     'type': 'Anonymous',
                     'id': 'Anonymous'
                 }
-                    
+                
+            requester = payload['request']['Requester']
+            
+            if requester['type'] == 'Coach':
+                                    
+                sql = "INSERT INTO Logs(method, endpoint, status_code, duration, type, coach_id, name, email) VALUES (%s, %s, %s, %s, 'Coach', %s, %s, %s)"
+                cursor.execute(sql, (method, path, status_code, duration, requester['id'], requester['name'], requester['email']))
+                inserted_id = cursor.lastrowid  # Get the ID of the inserted row
+                connection.commit()
+                
+            else:
+                
+                sql = "INSERT INTO Logs(method, endpoint, status_code, duration, type) VALUES (%s, %s, %s, %s, 'Anonymous')"
+                cursor.execute(sql, (method, path, status_code, duration))
+                inserted_id = cursor.lastrowid
             
             # Upload the request and response to S3
             s3_key = f'{inserted_id}.json'
             s3_client.put_object(Bucket=S3_BUCKET, Key=s3_key, Body=json.dumps(payload))
+            
+        connection.commit()
+        connection.close()
     
     return {
         'statusCode': 200,
         'body': json.dumps({'message': 'Log processed', 'insertedId': inserted_id})
     }
+
+
+def get_user(cursor, token):
+    response = cognito_client.get_user(AccessToken=token)
+    try:
+        response = cognito_client.get_user(AccessToken=token)
+        user_id = response['Username']
+        
+        sql = "SELECT name, email FROM Coaches WHERE coach_id = %s"
+        
+        cursor.execute(sql, (user_id))
+        
+        result = cursor.fetchone()
+        
+        return {
+            'type': 'Coach',
+            'id': user_id,
+            'name': result[0],
+            'email': result[1]
+        }
+        
+    except cognito_client.exceptions.NotAuthorizedException:
+        return {
+            'type': 'Anonymous',
+            'id': 'Anonymous'
+        }

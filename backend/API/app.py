@@ -21,6 +21,10 @@ def log_request(response):
     now = time.time()
     duration = now - request.start
     
+    if 'User-Agent' in request.headers.keys():
+        if request.headers['User-Agent'] == 'ELB-HealthChecker/2.0':
+            return response
+    
     # Prepare the message body
     message_body = {
         'request': {
