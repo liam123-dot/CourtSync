@@ -8,21 +8,34 @@ from src.Bookings.GetBooking import get_booking
 from src.Database.ExecuteQuery import execute_query
 from src.Users.GetSelf.GetSelf import get_coach
 
-def get_pricing_rules(coach_id):
+def get_pricing_rules(coach_id, include_default=False):
     """
     Retrieves enabled pricing rules for the given coach_id. Automatically includes default rules, 
     excludes past one-time events, and ensures that the rules are enabled.
     """
     # Base SQL query
-    sql = """
-    SELECT * FROM PricingRules 
-    WHERE 
-        coach_id = %s AND 
-        enabled = 1 AND 
-        (is_default = 1 OR
-        NOT (period = 'one-time' AND end_time < UNIX_TIMESTAMP()))
+    if include_default:
+        
+        sql = """
+        SELECT * FROM PricingRules 
+        WHERE 
+            coach_id = %s AND 
+            enabled = 1 AND 
+            (is_default = 1 OR
+            NOT (period = 'one-time' AND end_time < UNIX_TIMESTAMP()))
+        """
+        values = (coach_id,)
+        
+    else:
+        sql = """
+        SELECT * FROM PricingRules
+            WHERE
+            coach_id = %s AND
+            enabled = 1 AND
+            (NOT (period = 'one-time' AND end_time < UNIX_TIMESTAMP())) AND is_default=0
     """
-    values = (coach_id,)
+        values = (coach_id,)
+        
 
     # Execute the query
     return execute_query(sql, values)

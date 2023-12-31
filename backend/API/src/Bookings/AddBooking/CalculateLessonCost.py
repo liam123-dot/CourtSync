@@ -82,7 +82,7 @@ def calculate_lesson_cost_from_token():
     if not coach:
         return jsonify({'error': 'No coach found'}), 400
     
-    pricing_rules = get_pricing_rules(coach['coach_id'])
+    pricing_rules = get_pricing_rules(coach['coach_id'], include_default=True)
     
     if not pricing_rules:
         return jsonify({'error': 'No pricing rules found'}), 400
@@ -111,7 +111,7 @@ def calculate_lesson_cost(start_time, duration, coach_id):
     }
     
     # Get the pricing rules for the coach
-    pricing_rules = get_pricing_rules(coach_id)
+    pricing_rules = get_pricing_rules(coach_id, include_default=True)
     
     # If there are no pricing rules, return None
     if not pricing_rules:
