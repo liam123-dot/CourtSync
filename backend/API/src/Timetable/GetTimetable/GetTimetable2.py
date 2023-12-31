@@ -116,6 +116,7 @@ def get_timetable_endpoint():
     
     repeating_bookings = get_repeating_bookings(coach['coach_id'], from_time, to_time)
     repeating_bookings = format_bookings(repeating_bookings)
+    print(f"repeating_bookings: {repeating_bookings}")
     all.extend(repeating_bookings)
     
     return jsonify(
@@ -254,9 +255,7 @@ def fill_in_blanks(cron, cron_data, from_time, to_time):
     for lesson in cron_data['lessons']:
         if lesson['start_time'] in cron_dict.keys():
             cron_dict[lesson['start_time']] = lesson    
-    
-    print(json.dumps(cron_dict, indent=4))
-    
+        
     for key in cron_dict.keys():
         if cron_dict[key] is None:
             cron_dict[key] = copy.deepcopy(cron_data['template'])
@@ -273,10 +272,7 @@ def fill_in_blanks(cron, cron_data, from_time, to_time):
             cron_dict[key]['paid_from'] = None
             cron_dict[key]['invoice_cancelled'] = False
             cron_dict[key]['send_date'] = None
-            cron_dict[key]['based_of'] = cron_data['template']['booking_id']
-            print(json.dumps(cron_dict[key], indent=4))
-            
-    print(json.dumps(cron_dict, indent=4))
+            cron_dict[key]['based_of'] = cron_data['template']['booking_id']            
         
     return list(cron_dict.values())
 
