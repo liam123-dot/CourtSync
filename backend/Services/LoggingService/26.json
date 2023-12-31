@@ -1,0 +1,44 @@
+{
+    "request": {
+        "remote_addr": "127.0.0.1",
+        "method": "GET",
+        "scheme": "http",
+        "full_path": "/user/me/coach_url?",
+        "headers": {
+            "Host": "localhost:8000",
+            "Connection": "keep-alive",
+            "Sec-Ch-Ua": "\"Not_A Brand\";v=\"8\", \"Chromium\";v=\"120\", \"Google Chrome\";v=\"120\"",
+            "Accept": "application/json, text/plain, */*",
+            "Sec-Ch-Ua-Mobile": "?0",
+            "Authorization": "eyJraWQiOiJQN1VkNUdpQ3RtVWYrZmNEUEFaR1l2bXNUd0lIbjljWndUNUFrRzlhdHZjPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiI2ZDQzZDNmZi0zNzk4LTQyNjgtOGFiYS0xN2E2ZDhlMWE5YTgiLCJpc3MiOiJodHRwczpcL1wvY29nbml0by1pZHAuZXUtd2VzdC0yLmFtYXpvbmF3cy5jb21cL2V1LXdlc3QtMl9Cdjh4a1ZFY2oiLCJjbGllbnRfaWQiOiIybXZya252cTdzbzNvbGViZ2g4cDNzdXFyOCIsIm9yaWdpbl9qdGkiOiIzNGRiM2M0NC0xNzVkLTQ1MmUtOWM5My0xZmU1YmNmYTA4MTIiLCJldmVudF9pZCI6IjFmYTIxNmIyLTI4NzEtNDczYy05NjMzLWUyYWQxNmY1ZjI1ZSIsInRva2VuX3VzZSI6ImFjY2VzcyIsInNjb3BlIjoiYXdzLmNvZ25pdG8uc2lnbmluLnVzZXIuYWRtaW4iLCJhdXRoX3RpbWUiOjE3MDQwNDI4MTEsImV4cCI6MTcwNDEzMTc2OSwiaWF0IjoxNzA0MDQ1MzY5LCJqdGkiOiI0N2ZkNWU3Ny00ODNiLTRjYjktYWEyMy1hMTRhNTA4NGIzZTEiLCJ1c2VybmFtZSI6IjZkNDNkM2ZmLTM3OTgtNDI2OC04YWJhLTE3YTZkOGUxYTlhOCJ9.dWOsc-UQ-odIHb9fKgXM2EwUYfQeYqivGApo1blJcZUeHzVzB_bXpO8wJYBdwHc4hWHcokLHhyOiyBvDH7IPZ99kXos3WhBfNKz73FfGYnH3c5hFN3LopVgYBqSqZ3TfKI-PSG4dXpMQgk9hAS9Zz64sVLHRC5-xvY5E7wsrNPfzXUuyyI--5CHP9E2zaYgWsyKuNhhM_ERLogEFwxL9RIBuxnZpeQkeRE4r4cPDTAya3KA_bmzlpOPDHzfUp4QPQF0oex1Cbp8aypfTqa3YhKmjucR9wT_oxOQkPNdvnEt3eV04AlKhG0TLnC8iqdxSKQq7-w-JhpaS1Jrn6MUyNQ",
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Sec-Ch-Ua-Platform": "\"macOS\"",
+            "Origin": "http://localhost:3000",
+            "Sec-Fetch-Site": "same-site",
+            "Sec-Fetch-Mode": "cors",
+            "Sec-Fetch-Dest": "empty",
+            "Referer": "http://localhost:3000/",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Accept-Language": "en-GB,en-US;q=0.9,en;q=0.8"
+        },
+        "data": {},
+        "args": {},
+        "request_time": 1704045523.642987,
+        "Requester": {
+            "type": "User",
+            "id": "6d43d3ff-3798-4268-8aba-17a6d8e1a9a8"
+        }
+    },
+    "response": {
+        "status": "200 OK",
+        "status_code": 200,
+        "headers": {
+            "Content-Type": "application/json",
+            "Content-Length": "61"
+        },
+        "data": {
+            "coach_url": "https://test.courtsync.co.uk/#/Liam-Buchanan"
+        }
+    },
+    "duration": 0.045773983001708984
+}

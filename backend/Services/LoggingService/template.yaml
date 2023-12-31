@@ -1,0 +1,41 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Notification Service for CourtSync
+
+Globals:
+  Function:
+    Timeout: 900
+    Environment:
+      Variables:
+        SECRET_NAME: env-testing
+    Architectures:
+      - arm64
+
+Resources:
+  MyQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      VisibilityTimeout: 900
+      QueueName: Request-Queue-test
+  
+  LogRequestsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./src
+      Handler: LogRequest.lambda_handler
+      Runtime: python3.9
+      Policies:
+        - AmazonSQSFullAccess
+        - SecretsManagerReadWrite
+        - AmazonS3FullAccess
+      Events:
+        MySQSTrigger:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt MyQueue.Arn
+            BatchSize: 10
+Outputs:
+  MyQueueUrl:  # Add this block
+    Description: "URL of the SQS queue"
+    Value: !GetAtt MyQueue.QueueUrl
