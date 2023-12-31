@@ -98,7 +98,7 @@ export default function CreateRepeatingLesson({onClose}) {
         let summary = `Lesson scheduled`;
 
         if (selectedPlayer) {
-            summary += ` with ${selectedPlayer.player_name}`;
+            summary += ` with ${selectedPlayer.name}`;
         }
 
         if (startDate && startTime && endTime) {

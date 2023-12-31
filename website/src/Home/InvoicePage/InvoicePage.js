@@ -99,28 +99,6 @@ export default function InvoicePage() {
         navigate(`${location.pathname}?tab=${newValue}`);
     };
 
-    const calculateNextInvoiceDate = () => {
-        const today = new Date();
-        const day = today.getDay();
-        const date = today.getDate();
-        const month = today.getMonth();
-        const year = today.getFullYear();
-    
-        let nextInvoiceDate = new Date(year, month, date);
-    
-        if (view === 'daily') {
-            nextInvoiceDate.setDate(date + 1);
-        } else if (view === 'weekly') {
-            const daysUntilNextMonday = (7 - day + 1) % 7;
-            nextInvoiceDate.setDate(date + daysUntilNextMonday);
-        } else if (view === 'monthly') {
-            nextInvoiceDate.setMonth(month + 1);
-            nextInvoiceDate.setDate(1);
-        }
-    
-        return nextInvoiceDate;
-    }
-
     return !isInitialLoad ? (
         invoicesInitialised ? (
             <Box sx={{width: '100%', height: '100%', display: 'flex' }}>

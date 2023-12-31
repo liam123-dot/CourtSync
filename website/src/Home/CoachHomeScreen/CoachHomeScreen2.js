@@ -3,9 +3,10 @@ import axios from 'axios'
 
 import FullCalendar from '@fullcalendar/react'
 import timeGridPlugin from '@fullcalendar/timegrid'
+import dayGridPlugin from '@fullcalendar/daygrid'
+import momentTimezonePlugin from '@fullcalendar/moment-timezone'
 import LessonDetailsModal2 from './LessonDetailsModal2'
 import CoachEventDetailsModal from '../Calendar/CoachEventDetailsModal';
-import CoachAddEventModal from './CoachAddEventModal/CoachAddEventModal';
 import WorkingHoursModal from './WorkingHoursModal';
 import { Backdrop, CircularProgress } from '@mui/material';
 
@@ -196,7 +197,7 @@ export default function CoachHomeScreen2() {
             </Backdrop>
             <FullCalendar
                 height={'100%'}
-                plugins={[timeGridPlugin]}
+                plugins={[dayGridPlugin, timeGridPlugin, momentTimezonePlugin]}
                 initialView='timeGridWeek'
                 firstDay={1}
                 events={bookings}
@@ -224,6 +225,7 @@ export default function CoachHomeScreen2() {
                 headerToolbar={headerToolbarConfig}
                 eventClick={handleEventClick}
                 datesSet={handleDateRangeChange}
+                timeZone="Europe/London"
             />
 
             <RefreshTimetableProvider refresh={refresh}>

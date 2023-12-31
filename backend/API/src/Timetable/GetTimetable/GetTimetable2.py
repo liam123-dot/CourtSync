@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 import calendar
 import json
 import copy
+import pytz
 
 from src.Bookings.GetBookings.GetBookings import get_bookings
 from src.CoachEvents.GetCoachEvents import get_coach_events
@@ -12,11 +13,24 @@ from src.Users.GetSelf.GetSelf import get_coach
 GetTimetable2Blueprint = Blueprint('GetTimetable2Blueprint', __name__)
 
 def format_bookings(bookings):
+    london_tz = pytz.timezone('Europe/London')
+
     for booking in bookings:
-        start_time = datetime.fromtimestamp(booking['start_time'])
-        booking['start'] = start_time.strftime('%Y-%m-%dT%H:%M:%SZ')
+        print('check here')
+        print(booking['start_time'])
+
+        # Convert epoch to London timezone-aware datetime
+        start_time = datetime.fromtimestamp(booking['start_time'], london_tz)
+        print(start_time)
+
+        # Format the start time
+        booking['start'] = start_time.strftime('%Y-%m-%dT%H:%M:%S')
+        print(booking['start'])
+
+        # Calculate and format the end time
         end_time = start_time + timedelta(minutes=booking['duration'])
-        booking['end'] = end_time.strftime('%Y-%m-%dT%H:%M:%SZ')
+        booking['end'] = end_time.strftime('%Y-%m-%dT%H:%M:%S')
+
         booking['duration_minutes'] = booking['duration']
         booking['backgroundColor'] = 'lightgrey' if booking['status'] == 'cancelled' else ''
         booking['type'] = 'booking'
