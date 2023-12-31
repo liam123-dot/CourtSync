@@ -33,6 +33,8 @@ def coach_add_booking():
     
     data = request.json
     
+    print(f"Coach add booking request received with data: {data}")
+    
     try:
         
         # TODO need to check attributes are not null
@@ -49,6 +51,9 @@ def coach_add_booking():
                 repeats_until = data.get('repeatsUntil', None)
             else:
                 repeats_until = None
+        else:
+            repeats_until = None
+            repeats_frequency = None
         
         
     except KeyError as e:
