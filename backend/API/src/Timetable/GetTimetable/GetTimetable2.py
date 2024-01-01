@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from datetime import datetime, timedelta
 import calendar
+import croniter
 import json
 import copy
 import pytz
@@ -146,10 +147,10 @@ def execute_working_hours_query(coach_id):
         
     return results
 
-def get_repeating_bookings(coach_id, from_time, to_time):
+def get_repeating_bookings(coach_id, initial_from_time, initial_to_time):
     
-    from_time = int(from_time)
-    to_time = int(to_time)
+    initial_from_time = int(initial_from_time)
+    initial_to_time = int(initial_to_time)
     
     sql = """
         SELECT 
@@ -175,12 +176,16 @@ def get_repeating_bookings(coach_id, from_time, to_time):
     collect_by_cron = {}
     
     for result in results:
+        from_time = initial_from_time
+        to_time = initial_to_time
+        
         if result['cron'] not in collect_by_cron.keys():                        
             repeat_start_time = result['repeat_start_time']
             if from_time < repeat_start_time:
                 from_time = repeat_start_time
             if result['repeat_until'] is not None and to_time > result['repeat_until']:            
                 to_time = result['repeat_until']
+                
             collect_by_cron[result['cron']] = {
                 'lessons': [],
                 'expected_count': calculate_expected_count(from_time, to_time, result['cron']),
@@ -188,15 +193,24 @@ def get_repeating_bookings(coach_id, from_time, to_time):
                 'from_time': from_time,
                 'to_time': to_time
             }
+        else:
+            from_time = collect_by_cron[result['cron']]['from_time']
+            to_time = collect_by_cron[result['cron']]['to_time']
+        
         if result['start_time'] >= from_time and result['start_time'] <= to_time:            
             collect_by_cron[result['cron']]['lessons'].append(result)
+            
+    print(f"collected by cron: {collect_by_cron.keys()}")
             
     for cron in collect_by_cron.keys():
         
         cron_data = collect_by_cron[cron]
         expected_count = cron_data['expected_count']
         actual_count = len(cron_data['lessons'])        
-                
+        
+        print(cron)
+        print(f"expected_count: {expected_count}, actual_count: {actual_count}")
+        
         if expected_count != actual_count:
             cron_data['lessons'] = fill_in_blanks(cron, cron_data, cron_data['from_time'], cron_data['to_time'])
     
@@ -212,9 +226,10 @@ def get_repeating_bookings(coach_id, from_time, to_time):
         
     return to_be_added
 
+
 def calculate_expected_count(from_time, to_time, cron_job):
     # Split cron_job into its components
-    minute, hour, day_of_month, month, day_of_week = cron_job.split()
+    print(f"calculate_expected_count: {from_time}, {to_time}, {cron_job}")
 
     # Convert epoch seconds to datetime objects
     start_date = datetime.fromtimestamp(from_time)
@@ -224,11 +239,40 @@ def calculate_expected_count(from_time, to_time, cron_job):
     current_date = start_date
 
     while current_date <= end_date:
-        if is_cron_match(current_date, minute, hour, day_of_month, month, day_of_week):
+        if does_datetime_satisfy_cron(current_date, cron_job):
+            print(current_date)
             count += 1
         current_date += timedelta(minutes=1)
 
     return count
+
+def parse_cron_field(field, max_value):
+    if field == "*":
+        return set(range(max_value))
+    parts = set()
+    for part in field.split(','):
+        if '-' in part:
+            start, end = map(int, part.split('-'))
+            parts.update(range(start, end + 1))
+        else:
+            parts.add(int(part))
+    return parts
+
+def does_datetime_satisfy_cron(dt, cron_expression):
+    fields = cron_expression.split()
+    if len(fields) != 5:
+        raise ValueError("Invalid cron expression")
+
+    minutes = parse_cron_field(fields[0], 60)
+    hours = parse_cron_field(fields[1], 24)
+    days = parse_cron_field(fields[2], 32)
+    months = parse_cron_field(fields[3], 13)
+    weekdays = parse_cron_field(fields[4], 7)
+
+    if dt.minute in minutes and dt.hour in hours and dt.day in days and dt.month in months and dt.weekday() in weekdays:
+        return True
+    return False
+
 
 def is_cron_match(date, minute, hour, dom, month, dow):
     # Convert '*' to the appropriate value for comparison
@@ -238,12 +282,16 @@ def is_cron_match(date, minute, hour, dom, month, dow):
     month = date.month if month == '*' else int(month)
     dow = date.weekday() if dow == '*' else int(dow)
 
-    # Check if the date matches the cron job
-    return (date.minute == minute and 
-            date.hour == hour and 
-            (date.day == dom or dom > calendar.monthrange(date.year, date.month)[1]) and 
-            date.month == month and 
-            date.weekday() == dow)
+    # Adjusted logic for day of month and day of week
+    dom_match = True if dom == '*' else (date.day == dom or dom > calendar.monthrange(date.year, date.month)[1])
+    dow_match = True if dow == '*' else date.weekday() == dow
+
+    # The job runs if both time and either day of month or day of week match
+    return (date.minute == minute and
+            date.hour == hour and
+            date.month == month and
+            (dom_match or dow_match))
+
     
 def fill_in_blanks(cron, cron_data, from_time, to_time):
     
@@ -254,7 +302,9 @@ def fill_in_blanks(cron, cron_data, from_time, to_time):
 
     for lesson in cron_data['lessons']:
         if lesson['start_time'] in cron_dict.keys():
-            cron_dict[lesson['start_time']] = lesson    
+            cron_dict[lesson['start_time']] = lesson
+            
+    print(f"cron_dict: {cron_dict}")
         
     for key in cron_dict.keys():
         if cron_dict[key] is None:
@@ -273,6 +323,8 @@ def fill_in_blanks(cron, cron_data, from_time, to_time):
             cron_dict[key]['invoice_cancelled'] = False
             cron_dict[key]['send_date'] = None
             cron_dict[key]['based_of'] = cron_data['template']['booking_id']            
+        
+    print(f"cron_dict: {cron_dict}")
         
     return list(cron_dict.values())
 

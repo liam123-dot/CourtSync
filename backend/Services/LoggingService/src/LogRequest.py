@@ -1,5 +1,6 @@
 import pymysql
 import boto3
+import time
 import json
 import os
 
@@ -85,15 +86,15 @@ def lambda_handler(event, context):
             
             if requester['type'] == 'Coach':
                                     
-                sql = "INSERT INTO Logs(method, endpoint, status_code, duration, type, coach_id, name, email) VALUES (%s, %s, %s, %s, 'Coach', %s, %s, %s)"
-                cursor.execute(sql, (method, path, status_code, duration, requester['id'], requester['name'], requester['email']))
+                sql = "INSERT INTO Logs(method, endpoint, status_code, duration, type, coach_id, request_time) VALUES (%s, %s, %s, %s, 'Coach', %s, %s)"
+                cursor.execute(sql, (method, path, status_code, duration, requester['id'], request['request_time']))
                 inserted_id = cursor.lastrowid  # Get the ID of the inserted row
                 connection.commit()
                 
             else:
                 
-                sql = "INSERT INTO Logs(method, endpoint, status_code, duration, type) VALUES (%s, %s, %s, %s, 'Anonymous')"
-                cursor.execute(sql, (method, path, status_code, duration))
+                sql = "INSERT INTO Logs(method, endpoint, status_code, duration, type, request_time) VALUES (%s, %s, %s, %s, 'Anonymous', %s)"
+                cursor.execute(sql, (method, path, status_code, duration, request['request_time']))
                 inserted_id = cursor.lastrowid
             
             # Upload the request and response to S3
@@ -110,7 +111,6 @@ def lambda_handler(event, context):
 
 
 def get_user(cursor, token):
-    response = cognito_client.get_user(AccessToken=token)
     try:
         response = cognito_client.get_user(AccessToken=token)
         user_id = response['Username']
@@ -123,9 +123,7 @@ def get_user(cursor, token):
         
         return {
             'type': 'Coach',
-            'id': user_id,
-            'name': result[0],
-            'email': result[1]
+            'id': user_id
         }
         
     except cognito_client.exceptions.NotAuthorizedException:
