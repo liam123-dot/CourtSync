@@ -15,15 +15,6 @@ import { usePopup } from '../../Notifications/PopupContext';
 import { RefreshTimetableProvider } from './RefreshTimetableContext';
 import CoachAddModal from './CoachAddModal/CoachAddModal';
 
-const fetchTimetable = async ({ queryKey }) => {
-    const [_, fromTime, toTime] = queryKey;
-    const response = await axios.get(`${process.env.REACT_APP_API_URL}/timetable?fromTime=${fromTime}&toTime=${toTime}`, {
-        headers: {
-            Authorization: localStorage.getItem("AccessToken"),
-        },
-    })    
-    return response.data;
-};
 
 export default function CoachHomeScreen2() {
     const [link, setLink] = useState(null);
@@ -41,6 +32,27 @@ export default function CoachHomeScreen2() {
     const [showCancelled, setShowCancelled] = useState(false);
     
     const queryClient = useQueryClient();
+
+    const createFetchTimetable = (isCurrentWeek) => {
+        return async ({ queryKey }) => {
+            const [_, fromTime, toTime] = queryKey;
+    
+            if (!isCurrentWeek) {
+                const data = queryClient.getQueryData(queryKey);
+                if (data) {
+                    return data;
+                }
+            }
+    
+            const response = await axios.get(`${process.env.REACT_APP_API_URL}/timetable?fromTime=${fromTime}&toTime=${toTime}`, {
+                headers: {
+                    Authorization: localStorage.getItem("AccessToken"),
+                },
+            });
+            return response.data;
+        };
+    };
+    
     
     const calculateDates = (fromTime, toTime, before) => {
 
@@ -58,10 +70,10 @@ export default function CoachHomeScreen2() {
             }
         }
 
-    };
+    };    
     const { data, isLoading, isError, error } = useQuery(
         ['timetable', dateRange.start, dateRange.end],
-        fetchTimetable,
+        createFetchTimetable(true),
         {
             enabled: !!dateRange.start && !!dateRange.end, // Fetch only if dateRange is set
             onSuccess: (data) => {
@@ -75,7 +87,7 @@ export default function CoachHomeScreen2() {
 
     const {} = useQuery(
         ['timetable', calculateDates(dateRange.start, dateRange.end, true).start, calculateDates(dateRange.start, dateRange.end, true).end],
-        fetchTimetable,
+        createFetchTimetable(false),
         {
             enabled: !!dateRange.start && !!dateRange.end, // Fetch only if dateRange is set
             onSuccess: (data) => {
@@ -89,7 +101,7 @@ export default function CoachHomeScreen2() {
 
     const {} = useQuery(
         ['timetable', calculateDates(dateRange.start, dateRange.end, false).start, calculateDates(dateRange.start, dateRange.end, false).end],
-        fetchTimetable,
+        createFetchTimetable(false),
         {
             enabled: !!dateRange.start && !!dateRange.end, // Fetch only if dateRange is set
             onSuccess: (data) => {
