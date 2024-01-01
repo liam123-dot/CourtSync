@@ -1,198 +1,118 @@
-import React, {useEffect, useState, useRef} from 'react'
-import axios from 'axios'
+import React, { useEffect, useRef, useState } from 'react';
+import axios from 'axios';
+import { useQuery, useQueryClient } from 'react-query';
 
-import FullCalendar from '@fullcalendar/react'
-import timeGridPlugin from '@fullcalendar/timegrid'
-import dayGridPlugin from '@fullcalendar/daygrid'
-import momentTimezonePlugin from '@fullcalendar/moment-timezone'
-import LessonDetailsModal2 from './LessonDetailsModal2'
+import FullCalendar from '@fullcalendar/react';
+import timeGridPlugin from '@fullcalendar/timegrid';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import momentTimezonePlugin from '@fullcalendar/moment-timezone';
+import LessonDetailsModal2 from './LessonDetailsModal2';
 import CoachEventDetailsModal from '../Calendar/CoachEventDetailsModal';
 import WorkingHoursModal from './WorkingHoursModal';
 import { Backdrop, CircularProgress } from '@mui/material';
 
 import { usePopup } from '../../Notifications/PopupContext';
 import { RefreshTimetableProvider } from './RefreshTimetableContext';
-import CoachAddModal from './CoachAddModal/CoachAddModal'
+import CoachAddModal from './CoachAddModal/CoachAddModal';
+
+const fetchTimetable = async ({ queryKey }) => {
+    const [_, fromTime, toTime] = queryKey;
+    const response = await axios.get(`${process.env.REACT_APP_API_URL}/timetable?fromTime=${fromTime}&toTime=${toTime}`, {
+        headers: {
+            Authorization: localStorage.getItem("AccessToken"),
+        },
+    })    
+    return response.data;
+};
 
 export default function CoachHomeScreen2() {
-
-    const [bookings, setBookings] = useState([])
     const [link, setLink] = useState(null);
-
-    const [isLessonDetailsModalOpen, setIsLessonDetailsModalOpen] = useState(false)
-    const [selectedBooking, setSelectedBooking] = useState(null)
-
-    const [isCoachEventDetailsModalOpen, setIsCoachEventDetailsModalOpen] = useState(false)
-    const [selectedCoachEvent, setSelectedCoachEvent] = useState(null)
-
-    const [isAddEventModalOpen, setIsAddEventModalOpen] = useState(false)
-    const [isWorkingHoursModalOpen, setIsWorkingHoursModalOpen] = useState(false)
-
-    const [eventsLoading, setEventsLoading] = useState(false);
-
+    const [isLessonDetailsModalOpen, setIsLessonDetailsModalOpen] = useState(false);
+    const [selectedBooking, setSelectedBooking] = useState(null);
+    const [isCoachEventDetailsModalOpen, setIsCoachEventDetailsModalOpen] = useState(false);
+    const [selectedCoachEvent, setSelectedCoachEvent] = useState(null);
+    const [isAddEventModalOpen, setIsAddEventModalOpen] = useState(false);
+    const [isWorkingHoursModalOpen, setIsWorkingHoursModalOpen] = useState(false);
     const [businessHours, setBusinessHours] = useState([]);
-
     const [headerToolbarConfig, setHeaderToolbarConfig] = useState({});
-
     const { showPopup } = usePopup();
-    const bookingsCache = useRef({}); // Cache for storing bookings data
-    const calendarRef = useRef(null); // Ref to calendar component
-
+    const calendarRef = useRef(null);
     const [dateRange, setDateRange] = useState({ start: null, end: null });
-
     const [showCancelled, setShowCancelled] = useState(false);
 
-    const handleCopy = async () => {
-        await navigator.clipboard.writeText(link);
-        showPopup("Link copied to clipboard");
-    };
+    const queryClient = useQueryClient();
 
-    const fetchData = async (fromTime, toTime, force=false) => {
-        const cacheKey = `${fromTime}-${toTime}`;
-        if (!force && bookingsCache.current[cacheKey]) {
-            // Use cached data if available
-            setBookings(bookingsCache.current[cacheKey]);
-            setEventsLoading(false);
-            return;
-        }
-
-        setEventsLoading(true);
-
-        try {
-            const response = await axios.get(`${process.env.REACT_APP_API_URL}/timetable?fromTime=${fromTime}&toTime=${toTime}&showCancelled=${showCancelled}`,
-            {
-                headers: {
-                    Authorization: localStorage.getItem('AccessToken'),
-                }
-            })
-            const data = response.data;
-
-            const events = data.events;
-            const businessHours = data.businessHours;
-            
-            setBusinessHours(businessHours);
-
-            bookingsCache.current[cacheKey] = events; // Update cache
-            setBookings(events);
-        } catch (error) {
-            console.log(error)
-        }
-
-        setEventsLoading(false);
-
-    }
-
-        // Function to determine the toolbar layout
-        const determineToolbarLayout = () => {
-            if (window.innerWidth < 768) {
-                // Configuration for small screens
-                return {
-                    left: 'prev,next today',
-                    center: 'title',
-                    right: 'addEvent toggleCancelled',
-                };
-            } else {
-                // Configuration for larger screens
-                return {
-                    left: 'prev,next today',
-                    center: 'title',
-                    right: 'timeGridWeek,timeGridDay addEvent workingHours customLink toggleCancelled',
-                };
+    const { data, isLoading, isError, error } = useQuery(
+        ['timetable', dateRange.start, dateRange.end],
+        fetchTimetable,
+        {
+            enabled: !!dateRange.start && !!dateRange.end, // Fetch only if dateRange is set
+            onSuccess: (data) => {
+                setBusinessHours(data.businessHours);
+            },
+            onError: (error) => {
+                console.error(error);
             }
+        }
+    );
+
+    useEffect(() => {
+        const updateToolbarConfig = () => {
+            setHeaderToolbarConfig({
+                left: 'prev,next today',
+                center: 'title',
+                right: window.innerWidth < 768 ? 'timeGridDay' : 'timeGridWeek,timeGridDay addEvent workingHours customLink toggleCancelled',
+            });
         };
 
-        useEffect(() => {
-            const updateToolbarConfig = () => {
-                setHeaderToolbarConfig(determineToolbarLayout());
-            };
-    
-            window.addEventListener('resize', updateToolbarConfig);
-            updateToolbarConfig(); // Set initial config
-    
-            return () => window.removeEventListener('resize', updateToolbarConfig);
-        }, []);
+        window.addEventListener('resize', updateToolbarConfig);
+        updateToolbarConfig();
+
+        return () => window.removeEventListener('resize', updateToolbarConfig);
+    }, []);
+
+    useEffect(() => {
+        const getLink = async () => {
+            const response = await axios.get(`${process.env.REACT_APP_API_URL}/user/me/coach_url`, {
+                headers: {
+                    Authorization: localStorage.getItem("AccessToken"),
+                },
+            });
+            setLink(response.data.coach_url);
+        };
+
+        getLink();
+    }, []);
 
     const handleEventClick = (clickInfo) => {
         const data = clickInfo.event.extendedProps;
-        const type = data.type;
-        if (type === 'booking') {
+        if (data.type === 'booking') {
             setSelectedBooking(data);
             setIsLessonDetailsModalOpen(true);
         } else {
             setSelectedCoachEvent(data);
             setIsCoachEventDetailsModalOpen(true);
         }
-    }
-
-    useEffect (() => {
-        if (dateRange.start === null || dateRange.end === null) return;
-
-        fetchData(dateRange.start, dateRange.end, true)
-
-    }, [dateRange, showCancelled])
-
-    useEffect(() => {
-        const getLink = async () => {
-          const response = await axios.get(
-            `${process.env.REACT_APP_API_URL}/user/me/coach_url`,
-            {
-              headers: {
-                Authorization: localStorage.getItem("AccessToken"),
-              },
-            }
-          );
-          setLink(response.data.coach_url);
-        };
-    
-        getLink();
-      }, []);
-
-      useEffect(() => {
-        const updateCalendarView = () => {
-            if (calendarRef.current) {
-                const calendarApi = calendarRef.current.getApi();
-                const currentView = calendarApi.view.type; // Get the current view type
-    
-                // Decide whether to switch to 'timeGridDay' or 'timeGridWeek'
-                if (window.innerWidth < 768 && currentView !== 'timeGridDay') {
-                    calendarApi.changeView('timeGridDay');
-                } else if (window.innerWidth >= 768 && currentView !== 'timeGridWeek') {
-                    calendarApi.changeView('timeGridWeek');
-                }
-            }
-        };
-    
-        window.addEventListener('resize', updateCalendarView);
-        updateCalendarView(); // Call on initial load
-    
-        return () => window.removeEventListener('resize', updateCalendarView);
-    }, []);
-    
-
-    const toggleShowCancelled = () => {
-        setShowCancelled(!showCancelled);
     };
 
     const handleDateRangeChange = (info) => {
-        // Convert info.start and info.end to timestamps
         const startTimestamp = new Date(info.start).getTime() / 1000;
         const endTimestamp = new Date(info.end).getTime() / 1000;
         setDateRange({ start: startTimestamp, end: endTimestamp });
     };
 
-    const refresh = (force = false) => {
+    const toggleShowCancelled = () => {
+        setShowCancelled(!showCancelled);
+    };
 
-        fetchData(dateRange.start, dateRange.end, force)
-
-    }
+    const handleCopy = async () => {
+        await navigator.clipboard.writeText(link);
+        showPopup("Link copied to clipboard");
+    };
 
     return (
-
         <>
-            <Backdrop
-                sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-                open={eventsLoading}
-            >
+            <Backdrop sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }} open={isLoading}>
                 <CircularProgress color="inherit" />
             </Backdrop>
             <FullCalendar
@@ -200,7 +120,7 @@ export default function CoachHomeScreen2() {
                 plugins={[dayGridPlugin, timeGridPlugin, momentTimezonePlugin]}
                 initialView='timeGridWeek'
                 firstDay={1}
-                events={bookings}
+                events={data?.events || []}
                 ref={calendarRef}
                 customButtons={{
                     addEvent: {
@@ -213,7 +133,7 @@ export default function CoachHomeScreen2() {
                     },
                     customLink: {
                         text: 'Link for Players',
-                        click: () => handleCopy(),
+                        click: handleCopy,
                     },
                     toggleCancelled: {
                         text: showCancelled ? 'Hide Cancelled' : 'Show Cancelled',
@@ -228,7 +148,7 @@ export default function CoachHomeScreen2() {
                 timeZone="Europe/London"
             />
 
-            <RefreshTimetableProvider refresh={refresh}>
+            <RefreshTimetableProvider refresh={() => queryClient.refetchQueries(['timetable'])}>
                 <LessonDetailsModal2
                     isOpen={isLessonDetailsModalOpen}
                     onClose={() => setIsLessonDetailsModalOpen(false)}
@@ -243,14 +163,11 @@ export default function CoachHomeScreen2() {
                     open={isAddEventModalOpen}
                     handleClose={() => setIsAddEventModalOpen(false)}
                 />
-                <WorkingHoursModal      
+                <WorkingHoursModal
                     isOpen={isWorkingHoursModalOpen}
                     onClose={() => setIsWorkingHoursModalOpen(false)}
                 />
             </RefreshTimetableProvider>
         </>
-
-
-    )
-
+    );
 }

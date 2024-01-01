@@ -1,0 +1,8 @@
+version = 0.1
+[default.deploy.parameters]
+stack_name = "LoggingService"
+region = "eu-west-2"
+profile = "courtsync"
+capabilities = "CAPABILITY_IAM"
+image_repositories = []
+s3_bucket = "logging-service-repo-prod"

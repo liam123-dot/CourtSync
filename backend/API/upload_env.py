@@ -23,10 +23,10 @@ def upload_to_secrets_manager(secret_name, secret_value):
         return response
 
 # Path to your .env file
-env_file_path = '.env'
+env_file_path = '.env.production'
 
 # The name of the secret in AWS Secrets Manager
-secret_name = 'env-testing'
+secret_name = 'env-production'
 
 # Convert .env to JSON
 env_json = env_to_json(env_file_path)
