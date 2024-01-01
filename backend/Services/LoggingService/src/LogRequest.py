@@ -73,7 +73,7 @@ def lambda_handler(event, context):
                 token = payload['request']['headers']['Authorization']
                 
                 user = get_user(cursor, token)
-                                
+                                ##
                 payload['request']['Requester'] = user                                                
                 
             else:
@@ -81,7 +81,7 @@ def lambda_handler(event, context):
                     'type': 'Anonymous',
                     'id': 'Anonymous'
                 }
-                
+                #
             requester = payload['request']['Requester']
             
             if requester['type'] == 'Coach':

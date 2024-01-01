@@ -39,9 +39,26 @@ export default function CoachHomeScreen2() {
     const calendarRef = useRef(null);
     const [dateRange, setDateRange] = useState({ start: null, end: null });
     const [showCancelled, setShowCancelled] = useState(false);
-
+    
     const queryClient = useQueryClient();
+    
+    const calculateDates = (fromTime, toTime, before) => {
 
+        const length = toTime - fromTime;
+
+        if (before) {
+            return {
+                start: fromTime - length,
+                end: fromTime,
+            }
+        } else {
+            return {
+                start: toTime,
+                end: toTime + length,
+            }
+        }
+
+    };
     const { data, isLoading, isError, error } = useQuery(
         ['timetable', dateRange.start, dateRange.end],
         fetchTimetable,
@@ -56,6 +73,34 @@ export default function CoachHomeScreen2() {
         }
     );
 
+    const {} = useQuery(
+        ['timetable', calculateDates(dateRange.start, dateRange.end, true).start, calculateDates(dateRange.start, dateRange.end, true).end],
+        fetchTimetable,
+        {
+            enabled: !!dateRange.start && !!dateRange.end, // Fetch only if dateRange is set
+            onSuccess: (data) => {
+                setBusinessHours(data.businessHours);
+            },
+            onError: (error) => {
+                console.error(error);
+            }
+        }
+    );
+
+    const {} = useQuery(
+        ['timetable', calculateDates(dateRange.start, dateRange.end, false).start, calculateDates(dateRange.start, dateRange.end, false).end],
+        fetchTimetable,
+        {
+            enabled: !!dateRange.start && !!dateRange.end, // Fetch only if dateRange is set
+            onSuccess: (data) => {
+                setBusinessHours(data.businessHours);
+            },
+            onError: (error) => {
+                console.error(error);
+            }
+        }
+    );
+    
     useEffect(() => {
         const updateToolbarConfig = () => {
             setHeaderToolbarConfig({
