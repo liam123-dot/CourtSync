@@ -3,6 +3,10 @@
 # Update system and install Python
 sudo yum update -y
 sudo yum install python3 -y
+sudo yum install cronie
+sudo systemctl start crond
+sudo systemctl enable crond
+
 python3 -m venv myenv
 source myenv/bin/activate
 
