@@ -5,6 +5,12 @@ sudo yum update -y
 sudo yum install python3 -y
 sudo yum install cronie -y
 
+# Install Redis
+sudo yum install redis -y
+sudo systemctl start redis
+sudo systemctl enable redis
+
+# Setup Python environment
 python3 -m venv myenv
 source myenv/bin/activate
 
@@ -30,9 +36,9 @@ if [ -n "$SECRET_STRING" ]; then
     export $(echo "$SECRET_STRING" | jq -r "to_entries|map(\"\(.key)=\(.value|tostring)\")|.[]" | xargs)
 fi
 
-sudo chmod +x ./upload_logs.sh
-crontab -l 2>/dev/null | { cat; echo "* * * * * ./upload_logs.sh"; } | crontab -
+# Start Celery Worker in the background
+celery -A app.celery worker --loglevel=info
 
-# Start the server
+# Start the server with Gunicorn
 echo "Starting server"
 gunicorn app:app -w 5 -b 0.0.0.0:8000
