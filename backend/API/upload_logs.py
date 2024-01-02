@@ -23,3 +23,4 @@ if __name__ == "__main__":
     S3_PATH = "logs/"
 
     upload_files_to_s3(LOG_DIR, S3_BUCKET, S3_PATH)
+#
