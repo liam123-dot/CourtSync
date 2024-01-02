@@ -5,9 +5,6 @@ sudo yum update -y
 sudo yum install python3 -y
 sudo yum install cronie -y
 
-sudo systemctl start crond
-sudo systemctl enable crond
-
 python3 -m venv myenv
 source myenv/bin/activate
 
@@ -33,8 +30,8 @@ if [ -n "$SECRET_STRING" ]; then
     export $(echo "$SECRET_STRING" | jq -r "to_entries|map(\"\(.key)=\(.value|tostring)\")|.[]" | xargs)
 fi
 
-sudo chmod +x upload_logs.sh
-(crontab -l 2>/dev/null; echo "* * * * *  sudo ./upload_logs.sh") | crontab -
+sudo chmod +x ./upload_logs.sh
+crontab -l 2>/dev/null | { cat; echo "* * * * * ./upload_logs.sh"; } | crontab -
 
 # Start the server
 echo "Starting server"
