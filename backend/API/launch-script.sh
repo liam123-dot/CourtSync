@@ -3,12 +3,13 @@
 # Update system and install Python
 sudo yum update -y
 sudo yum install python3 -y
-sudo yum install cronie -y
 
-# Install Redis
-sudo yum install redis -y
-sudo systemctl start redis
-sudo systemctl enable redis
+# Install docker
+sudo yum install -y docker
+sudo service docker start
+sudo systemctl enable docker
+
+sudo docker run -d --name redis -p 6379:6379 redis
 
 # Setup Python environment
 python3 -m venv myenv
