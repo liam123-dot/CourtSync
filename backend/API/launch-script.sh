@@ -37,7 +37,7 @@ if [ -n "$SECRET_STRING" ]; then
 fi
 
 # Start Celery Worker in the background
-celery -A app.celery worker --loglevel=info
+celery -A app.celery worker --loglevel=info --detach
 
 # Start the server with Gunicorn
 echo "Starting server"
