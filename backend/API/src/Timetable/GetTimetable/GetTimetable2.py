@@ -1,7 +1,6 @@
 from flask import Blueprint, request, jsonify
 from datetime import datetime, timedelta
 import calendar
-import croniter
 import json
 import copy
 import pytz
@@ -9,6 +8,7 @@ import pytz
 from src.Bookings.GetBookings.GetBookings import get_bookings
 from src.CoachEvents.GetCoachEvents import get_coach_events
 from src.Database.ExecuteQuery import execute_query
+from src.Logs.WriteLog import write_log
 from src.Users.GetSelf.GetSelf import get_coach
 
 GetTimetable2Blueprint = Blueprint('GetTimetable2Blueprint', __name__)
@@ -17,16 +17,16 @@ def format_bookings(bookings):
     london_tz = pytz.timezone('Europe/London')
 
     for booking in bookings:
-        print('check here')
-        print(booking['start_time'])
+        write_log('check here')
+        write_log(booking['start_time'])
 
         # Convert epoch to London timezone-aware datetime
         start_time = datetime.fromtimestamp(booking['start_time'], london_tz)
-        print(start_time)
+        write_log(start_time)
 
         # Format the start time
         booking['start'] = start_time.strftime('%Y-%m-%dT%H:%M:%S')
-        print(booking['start'])
+        write_log(booking['start'])
 
         # Calculate and format the end time
         end_time = start_time + timedelta(minutes=booking['duration'])
@@ -91,6 +91,8 @@ def format_working_hours(coach_id):
 @GetTimetable2Blueprint.route('/timetable', methods=['GET'])
 def get_timetable_endpoint():
     
+    write_log('get_timetable_endpoint')
+    
     token = request.headers.get('Authorization')
     
     if not token:
@@ -117,7 +119,7 @@ def get_timetable_endpoint():
     
     repeating_bookings = get_repeating_bookings(coach['coach_id'], from_time, to_time)
     repeating_bookings = format_bookings(repeating_bookings)
-    print(f"repeating_bookings: {repeating_bookings}")
+    write_log(f"repeating_bookings: {repeating_bookings}")
     all.extend(repeating_bookings)
     
     return jsonify(
@@ -127,10 +129,11 @@ def get_timetable_endpoint():
     
 @GetTimetable2Blueprint.route('/timetable/working-hours', methods=['GET'])
 def get_working_hours_endpoint():
-    
+        
     token = request.headers.get('Authorization')
     
     coach = get_coach(token)
+    
     
     if not coach:
         return jsonify({'error': 'Invalid token'}), 400
@@ -200,7 +203,7 @@ def get_repeating_bookings(coach_id, initial_from_time, initial_to_time):
         if result['start_time'] >= from_time and result['start_time'] <= to_time:            
             collect_by_cron[result['cron']]['lessons'].append(result)
             
-    print(f"collected by cron: {collect_by_cron.keys()}")
+    write_log(f"collected by cron: {collect_by_cron.keys()}")
             
     for cron in collect_by_cron.keys():
         
@@ -208,8 +211,8 @@ def get_repeating_bookings(coach_id, initial_from_time, initial_to_time):
         expected_count = cron_data['expected_count']
         actual_count = len(cron_data['lessons'])        
         
-        print(cron)
-        print(f"expected_count: {expected_count}, actual_count: {actual_count}")
+        write_log(cron)
+        write_log(f"expected_count: {expected_count}, actual_count: {actual_count}")
         
         if expected_count != actual_count:
             cron_data['lessons'] = fill_in_blanks(cron, cron_data, cron_data['from_time'], cron_data['to_time'])
@@ -229,7 +232,7 @@ def get_repeating_bookings(coach_id, initial_from_time, initial_to_time):
 
 def calculate_expected_count(from_time, to_time, cron_job):
     # Split cron_job into its components
-    print(f"calculate_expected_count: {from_time}, {to_time}, {cron_job}")
+    write_log(f"calculate_expected_count: {from_time}, {to_time}, {cron_job}")
 
     # Convert epoch seconds to datetime objects
     start_date = datetime.fromtimestamp(from_time)
@@ -240,7 +243,7 @@ def calculate_expected_count(from_time, to_time, cron_job):
 
     while current_date <= end_date:
         if does_datetime_satisfy_cron(current_date, cron_job):
-            print(current_date)
+            write_log(current_date)
             count += 1
         current_date += timedelta(minutes=1)
 
@@ -295,7 +298,7 @@ def is_cron_match(date, minute, hour, dom, month, dow):
     
 def fill_in_blanks(cron, cron_data, from_time, to_time):
     
-    print(json.dumps(cron_data, indent=4))
+    write_log(json.dumps(cron_data, indent=4))
     
     cron_execution_times = get_cron_execution_times(from_time, to_time, cron)
     cron_dict = {int(time.timestamp()): None for time in cron_execution_times}
@@ -304,7 +307,7 @@ def fill_in_blanks(cron, cron_data, from_time, to_time):
         if lesson['start_time'] in cron_dict.keys():
             cron_dict[lesson['start_time']] = lesson
             
-    print(f"cron_dict: {cron_dict}")
+    write_log(f"cron_dict: {cron_dict}")
         
     for key in cron_dict.keys():
         if cron_dict[key] is None:
@@ -324,7 +327,7 @@ def fill_in_blanks(cron, cron_data, from_time, to_time):
             cron_dict[key]['send_date'] = None
             cron_dict[key]['based_of'] = cron_data['template']['booking_id']            
         
-    print(f"cron_dict: {cron_dict}")
+    write_log(f"cron_dict: {cron_dict}")
         
     return list(cron_dict.values())
 

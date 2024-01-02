@@ -88,22 +88,23 @@ def lambda_handler(event, context):
                 }
                 #
             requester = payload['request']['Requester']
+            log_id = payload['log_id']
             
             if requester['type'] == 'Coach':
                                     
-                sql = "INSERT INTO Logs(method, endpoint, status_code, duration, type, coach_id, request_time) VALUES (%s, %s, %s, %s, 'Coach', %s, %s)"
-                cursor.execute(sql, (method, path, status_code, duration, requester['id'], request['request_time']))
+                sql = "INSERT INTO Logs(method, endpoint, status_code, duration, type, coach_id, request_time, log_id) VALUES (%s, %s, %s, %s, 'Coach', %s, %s, %s)"
+                cursor.execute(sql, (method, path, status_code, duration, requester['id'], request['request_time'], log_id))
                 inserted_id = cursor.lastrowid  # Get the ID of the inserted row
                 connection.commit()
                 
             else:
                 
-                sql = "INSERT INTO Logs(method, endpoint, status_code, duration, type, request_time) VALUES (%s, %s, %s, %s, 'Anonymous', %s)"
-                cursor.execute(sql, (method, path, status_code, duration, request['request_time']))
+                sql = "INSERT INTO Logs(method, endpoint, status_code, duration, type, request_time, log_id) VALUES (%s, %s, %s, %s, 'Anonymous', %s, %s)"
+                cursor.execute(sql, (method, path, status_code, duration, request['request_time'], log_id))
                 inserted_id = cursor.lastrowid
             
             # Upload the request and response to S3
-            s3_key = f'{inserted_id}.json'
+            s3_key = f'requests/{inserted_id}.json'
             s3_client.put_object(Bucket=S3_BUCKET, Key=s3_key, Body=json.dumps(payload))
             
         connection.commit()

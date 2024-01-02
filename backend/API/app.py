@@ -17,7 +17,14 @@ def health_check():
 
 @app.before_request
 def start_timer():
-    request.start = time.time()    
+    # Record the start time of the request
+    request.start = time.time()
+
+    # Generate a unique ID for the request based on time and route
+    request_id = f"{request.start}-{request.endpoint}"
+    print(f"Request ID: {request_id}")
+    request.request_id = request_id
+
 
 @app.after_request
 def log_request(response):
@@ -46,7 +53,8 @@ def log_request(response):
             'headers': {k: v for k, v in response.headers.items()},
             'data': response.get_data(as_text=True)
         },
-        'duration': duration
+        'duration': duration,
+        'log_id': request.request_id
     }
 
     # Filtering sensitive headers or data if necessary

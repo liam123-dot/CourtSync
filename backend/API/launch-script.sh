@@ -28,6 +28,8 @@ if [ -n "$SECRET_STRING" ]; then
     export $(echo "$SECRET_STRING" | jq -r "to_entries|map(\"\(.key)=\(.value|tostring)\")|.[]" | xargs)
 fi
 
+(crontab -l 2>/dev/null; echo "1 * * * * ./upload_logs.sh") | crontab -
+
 # Start the server
 echo "Starting server"
 gunicorn app:app -w 5 -b 0.0.0.0:8000
