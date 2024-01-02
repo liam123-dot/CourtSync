@@ -48,7 +48,7 @@ def upload_log(message_body, request_id):
             MessageBody=json.dumps(message_body)
         )
         print(f"Log uploaded successfully: {response}")
-        s3_client.upload_file(f"logs/{request_id}.log", "logging-data-test", "logs/" + request_id)
+        s3_client.upload_file(f"logs/{request_id}.log", "logging-data-test", f"logs/{request_id}.log")
         os.remove(f"logs/{request_id}.log")
     except Exception as e:
         print(f"Error uploading log: {e}")
