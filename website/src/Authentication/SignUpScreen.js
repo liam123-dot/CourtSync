@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 /** @jsxImportSource @emotion/react */
-import { Container, Form, Input, Button, titleStyle, Spinner } from './styles';
+import { Container, TextField, Button, CircularProgress, Typography, Box } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useParams } from "react-router-dom";
 
@@ -118,34 +118,111 @@ export default function SignUpScreen() {
     }, [])
 
     return validHash ? (
-        <Container>
-            <h1 css={titleStyle}>Coach Sign Up</h1>
-            {signUpErrorMessage && <div style={{ color: 'red', marginBottom: '10px' }}>{signUpErrorMessage}</div>}
-            <Form onSubmit={handleSubmit}>
-                <Input name="first_name" value={formData.first_name} placeholder="First Name" onChange={handleInputChange} disabled/>
-                {errors.first_name && <div style={{ color: 'red' }}>{errors.first_name}</div>}
-                <Input name="last_name" value={formData.last_name} placeholder="Last Name" onChange={handleInputChange} disabled/>
-                {errors.last_name && <div style={{ color: 'red' }}>{errors.last_name}</div>}
-                <Input name="email" value={formData.email} placeholder="Email" onChange={handleInputChange} disabled/>
-                {errors.email && <div style={{ color: 'red' }}>{errors.email}</div>}
-                <Input name="phone_number" value={formData.phone_number} placeholder="Phone Number" onChange={handleInputChange} disabled/>
-                {errors.phone_number && <div style={{ color: 'red' }}>{errors.phone_number}</div>}
-                <Input type="password" name="password" placeholder="Password" onChange={handleInputChange} />
-                {errors.password && <div style={{ color: 'red' }}>{errors.password}</div>}
-                <Input type="password" name="confirm_password" placeholder="Confirm Password" onChange={handleInputChange} />
-                {errors.confirm_password && <div style={{ color: 'red' }}>{errors.confirm_password}</div>}
-                <Button type="submit">
-                    {signUpLoading ? <Spinner /> : "Sign Up"}
-                </Button>
-
-
-            </Form>
-
+        <Container maxWidth="xs">
+            <Box sx={{ mt: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <Typography component="h1" variant="h5">Coach Sign Up</Typography>
+                {signUpErrorMessage && <Typography color="error">{signUpErrorMessage}</Typography>}
+                <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
+                    <TextField
+                        margin="normal"
+                        fullWidth
+                        name="first_name"
+                        label="First Name"
+                        type="text"
+                        id="first_name"
+                        autoComplete="fname"
+                        value={formData.first_name}
+                        onChange={handleInputChange}
+                        error={!!errors.first_name}
+                        helperText={errors.first_name}
+                        disabled
+                    />
+                    <TextField
+                        margin="normal"
+                        fullWidth
+                        name="last_name"
+                        label="Last Name"
+                        type="text"
+                        id="last_name"
+                        autoComplete="lname"
+                        value={formData.last_name}
+                        onChange={handleInputChange}
+                        error={!!errors.last_name}
+                        helperText={errors.last_name}
+                        disabled
+                    />
+                    <TextField
+                        margin="normal"
+                        fullWidth
+                        name="email"
+                        label="Email"
+                        type="email"
+                        id="email"
+                        autoComplete="email"
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        error={!!errors.email}
+                        helperText={errors.email}
+                        disabled
+                    />
+                    <TextField
+                        margin="normal"
+                        fullWidth
+                        name="phone_number"
+                        label="Phone Number"
+                        type="tel"
+                        id="phone_number"
+                        autoComplete="tel"
+                        value={formData.phone_number}
+                        onChange={handleInputChange}
+                        error={!!errors.phone_number}
+                        helperText={errors.phone_number}
+                        disabled
+                    />
+                    <TextField
+                        margin="normal"
+                        fullWidth
+                        name="password"
+                        label="Password"
+                        type="password"
+                        id="password"
+                        value={formData.password}
+                        onChange={handleInputChange}
+                        error={!!errors.password}
+                        helperText={errors.password}
+                    />
+                    <TextField
+                        margin="normal"
+                        fullWidth
+                        name="confirm_password"
+                        label="Confirm Password"
+                        type="password"
+                        id="confirm_password"
+                        value={formData.confirm_password}
+                        onChange={handleInputChange}
+                        error={!!errors.confirm_password}
+                        helperText={errors.confirm_password}
+                    />
+                    <Button
+                        type="submit"
+                        fullWidth
+                        variant="contained"
+                        color="primary"
+                        sx={{ mt: 3, mb: 2 }}
+                        disabled={signUpLoading}
+                    >
+                        {signUpLoading ? <CircularProgress size={24} /> : "Sign Up"}
+                    </Button>
+                </Box>
+            </Box>
         </Container>
-    ): (
-        <div>
-            Invalid Hash
-        </div>
-    )
+    ) : (
+        <Container maxWidth="xs" style={{ marginTop: '20px' }}>
+            <Typography variant="h6" align="center">
+                Invalid Hash
+            </Typography>
+        </Container>
+    );
+    
 
 }

@@ -61,7 +61,12 @@ def lambda_handler(event, context):
         with connection.cursor() as cursor:
             # Insert log entry into the database
                         
-            payload['request']['data'] = json.loads(payload['request']['data'])            
+            try:
+                payload['request']['data'] = json.loads(payload['request']['data'])            
+            except json.decoder.JSONDecodeError:
+                payload['request']['data'] = {
+                    'message': payload['request']['data']
+                }
             try:
                 payload['response']['data'] = json.loads(payload['response']['data'])
             except json.decoder.JSONDecodeError:

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { usePopup } from '../Notifications/PopupContext';
+import { Button, TextField, Container, Box, Typography } from '@mui/material';
 
 export default function ContactSales() {
     const [firstName, setFirstName] = useState('');
@@ -8,9 +9,7 @@ export default function ContactSales() {
     const [email, setEmail] = useState('');
     const [phoneNumber, setPhoneNumber] = useState('');
     const [message, setMessage] = useState('');
-
     const [errorMessage, setErrorMessage] = useState(null);
-
     const { showPopup } = usePopup();
 
     const handleSubmit = async (event) => {
@@ -23,93 +22,83 @@ export default function ContactSales() {
             console.log(response.data);
             setErrorMessage(null);
             showPopup('Success');
-            window.location.href = process.env.REACT_APP_WEBSITE_URL; // Navigate to the website URL
+            window.location.href = process.env.REACT_APP_WEBSITE_URL;
         } catch (error) {
             console.error("Error submitting enquiry", error);
             setErrorMessage(error.response.data.error);
         }
     };
 
-    const formStyle = {
-
-        display: 'flex',
-        flexDirection: 'column',
-        maxWidth: '500px',
-        margin: '0 auto',
-        padding: '20px',
-        boxSizing: 'border-box'
-    };
-
-    const labelStyle = {
-        marginBottom: '10px'
-    };
-
-    const inputStyle = {
-        padding: '10px',
-        marginBottom: '20px',
-        border: '1px solid #ddd',
-        borderRadius: '4px'
-    };
-
-    const buttonStyle = {
-        padding: '10px 20px',
-        border: 'none',
-        borderRadius: '4px',
-        backgroundColor: '#007bff',
-        color: 'white',
-        cursor: 'pointer'
-    };
-
     return (
-        <form onSubmit={handleSubmit} style={formStyle}>
-            <label style={labelStyle}>
-                First Name:
-                <input 
-                    type="text" 
-                    value={firstName} 
-                    onChange={e => setFirstName(e.target.value)} 
-                    style={inputStyle} 
+        <Container maxWidth="sm">
+            <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
+                <TextField
+                    margin="normal"
+                    required
+                    fullWidth
+                    id="firstName"
+                    label="First Name"
+                    name="firstName"
+                    autoComplete="fname"
+                    autoFocus
+                    value={firstName}
+                    onChange={e => setFirstName(e.target.value)}
                 />
-            </label>
-            <label style={labelStyle}>
-                Last Name:
-                <input 
-                    type="text" 
-                    value={lastName} 
-                    onChange={e => setLastName(e.target.value)} 
-                    style={inputStyle} 
+                <TextField
+                    margin="normal"
+                    required
+                    fullWidth
+                    id="lastName"
+                    label="Last Name"
+                    name="lastName"
+                    autoComplete="lname"
+                    value={lastName}
+                    onChange={e => setLastName(e.target.value)}
                 />
-            </label>
-            <label style={labelStyle}>
-                Email:
-                <input 
-                    type="email" 
-                    value={email} 
-                    onChange={e => setEmail(e.target.value)} 
-                    style={inputStyle} 
+                <TextField
+                    margin="normal"
+                    required
+                    fullWidth
+                    id="email"
+                    label="Email Address"
+                    name="email"
+                    autoComplete="email"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
                 />
-            </label>
-            <label style={labelStyle}>
-                Phone Number:
-                <input 
-                    type="tel" 
-                    value={phoneNumber} 
-                    onChange={e => setPhoneNumber(e.target.value)} 
-                    style={inputStyle} 
+                <TextField
+                    margin="normal"
+                    required
+                    fullWidth
+                    id="phoneNumber"
+                    label="Phone Number"
+                    name="phoneNumber"
+                    autoComplete="tel"
+                    value={phoneNumber}
+                    onChange={e => setPhoneNumber(e.target.value)}
                 />
-            </label>
-            <label style={labelStyle}>
-                Message:
-                <textarea 
-                    value={message} 
-                    onChange={e => setMessage(e.target.value)} 
-                    style={{ ...inputStyle, height: '100px' }} 
+                <TextField
+                    margin="normal"
+                    required
+                    fullWidth
+                    id="message"
+                    label="Message"
+                    name="message"
+                    multiline
+                    rows={4}
+                    value={message}
+                    onChange={e => setMessage(e.target.value)}
                 />
-            </label>
-
-            {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
-
-            <input type="submit" value="Submit" style={buttonStyle} />
-        </form>
+                {errorMessage && <Typography color="error">{errorMessage}</Typography>}
+                <Button
+                    type="submit"
+                    fullWidth
+                    variant="contained"
+                    sx={{ mt: 3, mb: 2 }}
+                >
+                    Submit
+                </Button>
+            </Box>
+        </Container>
     );
 }

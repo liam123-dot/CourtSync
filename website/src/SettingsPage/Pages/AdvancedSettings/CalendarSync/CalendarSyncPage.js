@@ -1,14 +1,25 @@
 import React, {useState} from 'react';
-import { Box, IconButton, Link, Snackbar, Typography, Dialog } from '@mui/material';
+import { useQuery } from 'react-query';
+import axios from 'axios';
+import { Box, IconButton, Link, Snackbar, Typography, Dialog, CircularProgress } from '@mui/material';
 import { DialogTitle, DialogContent } from '@mui/material';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faInfo } from '@fortawesome/free-solid-svg-icons';
 
-export default function CalendarSyncPage ({coachSlug}) {
-
+export default function CalendarSyncPage () {
     const [snackbarOpen, setSnackbarOpen] = useState(false);
-
     const [isInfoOpen, setIsInfoOpen] = useState(false);
+
+    const fetchCoachSlug = async () => {
+        const response = await axios.get(`${process.env.REACT_APP_API_URL}/user/me/slug`, {
+            headers: {
+                Authorization: localStorage.getItem("AccessToken"),
+            },
+        });
+        return response.data.slug; // Assuming the slug is directly returned in the response
+    };
+
+    const { data: coachSlug, isLoading: slugLoading } = useQuery('coachSlug', fetchCoachSlug);
 
     const handleLinkClick = async () => {
         try {
@@ -45,9 +56,13 @@ export default function CalendarSyncPage ({coachSlug}) {
                 </Typography>
                 <Typography>
                     Link: 
-                    <Link onClick={handleLinkClick} color="primary" sx={{ cursor: 'pointer' }}>
-                        Copy Link
-                    </Link>
+                    {
+                        slugLoading ?
+                        <CircularProgress size={20} sx={{ ml: 1 }} /> :
+                        <Link onClick={handleLinkClick} color="primary" sx={{ cursor: 'pointer' }}>
+                            Copy Link
+                        </Link>
+                    }
                 </Typography>
             </Box>
             
