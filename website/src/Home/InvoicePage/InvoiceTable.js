@@ -80,7 +80,7 @@ function InvoiceRow(props) {
   const [isMarkingPaid, setIsMarkingPaid] = useState(false); // New state for loading indicator
   const [isDeleting, setIsDeleting] = useState(false); // New state for loading indicator
 
-  const {fetchInvoiceData, view, statusView} = useContext(InvoiceDataContext);
+  const { view, statusView, queryClient } = useContext(InvoiceDataContext);
 
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
@@ -123,7 +123,7 @@ function InvoiceRow(props) {
             });
           }
       showPopup('Invoice marked as paid');
-      fetchInvoiceData(view, statusView);
+      queryClient.invalidateQueries('invoices');
 
     } catch (error) {
       console.error('Error marking invoice as paid:', error);

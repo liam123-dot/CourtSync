@@ -13,6 +13,7 @@ import ConfirmationPopup from '../Notifications/ConfirmComponent';
 import AddIcon from '@mui/icons-material/Add';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CreatePlayer from './CreatePlayer';
+import { useQuery } from 'react-query';
 
 const modalStyle = {
     position: 'absolute',
@@ -137,11 +138,24 @@ function ContactCard({ contact, fetchData }) {
     );
 }
 
+const fetchData = async () => {
+    const response = await fetch(`${process.env.REACT_APP_API_URL}/contacts`, {
+        headers: {
+            Authorization: `${localStorage.getItem("AccessToken")}`,
+        },
+    });
+    if (!response.ok) {
+        throw new Error('Network response was not ok');
+    }
+    return response.json().then(data => data.contacts);
+};
+
+
 export default function PlayerPage() {
-    const [contactData, setContactData] = useState([]);
+    const { data: contactData = [], error, isLoading, isError } = useQuery('contacts', fetchData);
+    
     const [showConfirmationPopup, setShowConfirmationPopup] = useState(false);
     const [openModal, setOpenModal] = useState(false);
-    const [contactsLoading, setContactsLoading] = useState(true);
     const [showDescription, setShowDescription] = useState(false);
 
     const [selectedContact, setSelectedContact] = useState(null);
@@ -153,22 +167,6 @@ export default function PlayerPage() {
     const filteredContacts = selectedContact ? contactData.filter(contact => contact.contact_id === selectedContact) : contactData;
     // const filteredPlayers = selectedPlayer ? /* filter logic based on player selection */ : /* all players data */;
 
-    const fetchData = async (rerender=true) => {
-        if (rerender) {
-            setContactsLoading(true);
-        }
-        try {
-            const response = await axios.get(`${process.env.REACT_APP_API_URL}/contacts`, {
-                headers: {
-                    Authorization: `${localStorage.getItem("AccessToken")}`,
-                },
-            });
-            setContactData(response.data.contacts);
-        } catch (error) {
-            console.error(error);
-        }
-        setContactsLoading(false);
-    };
 
     useEffect(() => {
         fetchData();
@@ -213,7 +211,7 @@ export default function PlayerPage() {
         setSelectedContact('');
     };
 
-    if (contactsLoading) {
+    if (isLoading) {
         return <CircularProgress />;
     }
 

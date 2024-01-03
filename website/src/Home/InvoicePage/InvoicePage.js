@@ -7,57 +7,54 @@ import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Button from '@mui/material/Button';
 import InvoiceTable from './InvoiceTable';
-import { Backdrop, CircularProgress, useMediaQuery, useTheme } from '@mui/material';
+import { CircularProgress, useMediaQuery, useTheme } from '@mui/material';
+import { useQuery, useQueryClient } from 'react-query';
 
 export const InvoiceDataContext = createContext(null);
 
-export default function InvoicePage() {
 
+export default function InvoicePage() {
+    
     const location = useLocation(); // Use useLocation to get the current URL
     const navigate = useNavigate(); // Use useNavigate to navigate to a new URL
     const queryParams = new URLSearchParams(location.search);
     const initialTab = queryParams.get('tab') || 'upcoming'; // Get 'tab' parameter or default to 'upcoming'
-
+    
     const [view, setView] = useState('daily');
     const [statusView, setStatusView] = useState(initialTab); // ['completed', 'pending']
-    const [data, setData] = useState([]);
-
+    
     const [isInitialLoad, setIsInitialLoad] = useState(true);
     const [isInvoicesLoading, setIsInvoicesLoading] = useState(false);
-
+    
     const [invoicesInitialised, setInvoicesInitialised] = useState(false);
-
+    
     const [playerSelected, setPlayerSelected] = useState(null);
     
     const theme = useTheme();
     const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));    
-
+    
+    const queryClient = useQueryClient();
+    
     // Fetch invoice data
-    const fetchInvoiceData = async (view, statusView, contactEmail = null, limit = 50, offset = 0) => {
-        setIsInvoicesLoading(true);
-        setData([]);
-        try {
-            let url = `${process.env.REACT_APP_API_URL}/invoices?status=${statusView}`;
+    const fetchInvoiceData = async ({ queryKey }) => {
+        const [_key, { view, statusView, contactEmail, limit, offset }] = queryKey;
+        let url = `${process.env.REACT_APP_API_URL}/invoices?status=${statusView}`;
 
-            if (contactEmail) {
-                url += `&contact_email=${contactEmail}`;
-            }
-
-            url += `&limit=${limit}&offset=${offset}`;
-
-            const response = await axios.get(url, {
-                headers: {
-                    Authorization: localStorage.getItem('AccessToken')
-                }
-            });
-
-            setData(response.data.invoices);
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setIsInvoicesLoading(false);
+        if (contactEmail) {
+            url += `&contact_email=${contactEmail}`;
         }
+
+        url += `&limit=${limit}&offset=${offset}`;
+
+        return axios.get(url, {
+            headers: {
+                Authorization: localStorage.getItem('AccessToken')
+            }
+        }).then(response => response.data.invoices);
     };
+
+    const { data, isLoading, isError } = useQuery(['invoices', { view, statusView, playerSelected }], fetchInvoiceData);
+
 
     // Fetch coach invoice status
     const getCoachInvoiceStatus = async () => {
@@ -82,16 +79,11 @@ export default function InvoicePage() {
     useEffect(() => {
         const start = async () => {
             await getCoachInvoiceStatus();
-            await fetchInvoiceData(view, statusView, playerSelected);
         };
 
         start();
     }, []);
 
-    // Fetch data when dependencies change
-    useEffect(() => {
-        fetchInvoiceData(view, statusView, playerSelected);
-    }, [view, statusView, playerSelected]);
 
     // Handle tab change
     const handleTabChange = (event, newValue) => {
@@ -116,10 +108,10 @@ export default function InvoicePage() {
                                 <Tab value="upcoming" label="Upcoming" />
                             </Tabs>
                         </Box>
-                    {isInvoicesLoading ? (
+                    {isLoading ? (
                         <CircularProgress/>
                     ):(
-                        <InvoiceDataContext.Provider value={{ fetchInvoiceData, view, statusView }}>                    
+                        <InvoiceDataContext.Provider value={{ view, statusView, queryClient }}>                    
                             <InvoiceTable data={data} tab={statusView}/>
                         </InvoiceDataContext.Provider>
                     )}                    

@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from 'react-query';
 import FullCalendar from '@fullcalendar/react';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import dayGridPlugin from '@fullcalendar/daygrid';
+import { Box } from '@mui/system';
 import momentTimezonePlugin from '@fullcalendar/moment-timezone';
 import LessonDetailsModal2 from './LessonDetailsModal2';
 import CoachEventDetailsModal from '../Calendar/CoachEventDetailsModal';
@@ -169,9 +170,9 @@ export default function CoachHomeScreen2() {
 
     return (
         <>
-            <Backdrop sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }} open={isLoading}>
-                <CircularProgress color="inherit" />
-            </Backdrop>
+            <Box position="fixed" bottom={20} right={20} zIndex="tooltip" bgcolor="white" p={1}>
+                {isLoading && <CircularProgress size={60} />}
+            </Box>
             <FullCalendar
                 height={'100%'}
                 plugins={[dayGridPlugin, timeGridPlugin, momentTimezonePlugin]}
