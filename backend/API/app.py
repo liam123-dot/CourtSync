@@ -43,13 +43,33 @@ celery = make_celery(app)
 @celery.task
 def upload_log(message_body, request_id):
     try:
+        log_file_path = f"logs/{request_id}.log"
+        if os.path.isfile(log_file_path):
+            s3_client.upload_file(log_file_path, "logging-data-test", log_file_path)
+            os.remove(log_file_path)
+        s3_client.put_object(Bucket="logging-data-test", Key=f"requests/{request_id}.json", Body=json.dumps(message_body))
+        
+        method = message_body['request']['method']
+        path = message_body['request']['full_path']
+        status_code = message_body['response']['status_code']
+        duration = message_body['duration']
+        
+        authorization = message_body['request']['headers'].get('Authorization', None)
+        request_time = message_body['request']['request_time']
+        
         response = client.send_message(
             QueueUrl=QUEUE_URL,
-            MessageBody=json.dumps(message_body)
+            MessageBody=json.dumps({
+                'method': method,
+                'path': path,
+                'status_code': status_code,
+                'duration': duration,
+                'authorization': authorization,
+                'request_time': request_time,
+                'log_id': request_id            
+            })
         )
-        print(f"Log uploaded successfully: {response}")
-        s3_client.upload_file(f"logs/{request_id}.log", "logging-data-test", f"logs/{request_id}.log")
-        os.remove(f"logs/{request_id}.log")
+            
     except Exception as e:
         print(f"Error uploading log: {e}")
 

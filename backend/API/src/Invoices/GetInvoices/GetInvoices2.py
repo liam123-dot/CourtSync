@@ -20,7 +20,7 @@ def get_invoices(coach_id, frequency="daily", status="pending", contact_email=No
                 Bookings.invoice_sent,
                 Bookings.paid,
                 Bookings.invoice_id,
-                COUNT(Bookings.booking_id) as bookings_count,
+                COUNT(Bookings.booking_id) as bookings_count,g
                 SUM(Bookings.cost) AS total_cost,
                 SUM(Bookings.extra_costs) AS total_extra_costs,
                 Bookings.invoice_cancelled as invoice_cancelled,

@@ -6,7 +6,6 @@ import os
 
 # Initialize AWS clients
 secrets_client = boto3.client('secretsmanager')
-s3_client = boto3.client('s3')
 cognito_client = boto3.client('cognito-idp')
 
 # Fetch database credentials and S3 bucket name from AWS Secrets Manager
@@ -41,19 +40,15 @@ def lambda_handler(event, context):
     connection = get_db_connection()
     
     for record in event['Records']:
-        payload = json.loads(record["body"])
-        request = payload['request']
-        response = payload['response']
+        payload = json.loads(record["body"])                
         
-        if 'headers' in request.keys():
-            if 'User-Agent' in request['headers'].keys():
-                if request['headers']['User-Agent'] == 'ELB-HealthChecker/2.0':
-                    return {'statusCode': 200}
-        
-        method = request['method']
-        path = request['full_path'].split('?')[0]
-        status_code = response['status_code']
+        method = payload['method']
+        path = payload['path']
+        status_code = payload['status_code']
         duration = payload['duration']
+        authorization = payload['authorization']
+        requst_time = payload['request_time']
+        log_id = payload['log_id']
     
         if method == 'OPTIONS':
             return {'statusCode': 200}
@@ -61,52 +56,28 @@ def lambda_handler(event, context):
         with connection.cursor() as cursor:
             # Insert log entry into the database
                         
-            try:
-                payload['request']['data'] = json.loads(payload['request']['data'])            
-            except json.decoder.JSONDecodeError:
-                payload['request']['data'] = {
-                    'message': payload['request']['data']
-                }
-            try:
-                payload['response']['data'] = json.loads(payload['response']['data'])
-            except json.decoder.JSONDecodeError:
-                payload['response']['data'] = {
-                    'message': payload['response']['data']
-                }
-            
-            if 'Authorization' in payload['request']['headers']:
-                token = payload['request']['headers']['Authorization']
-                
-                user = get_user(cursor, token)
-                                ##
-                payload['request']['Requester'] = user                                                
-                
-            else:
-                payload['request']['Requester'] = {
+            if authorization is None:
+                requester = {
                     'type': 'Anonymous',
                     'id': 'Anonymous'
                 }
-                #
-            requester = payload['request']['Requester']
+            else:
+                requester = get_user(cursor, authorization)
             log_id = payload['log_id']
             
             if requester['type'] == 'Coach':
                                     
                 sql = "INSERT INTO Logs(method, endpoint, status_code, duration, type, coach_id, request_time, log_id) VALUES (%s, %s, %s, %s, 'Coach', %s, %s, %s)"
-                cursor.execute(sql, (method, path, status_code, duration, requester['id'], request['request_time'], log_id))
+                cursor.execute(sql, (method, path, status_code, duration, requester['id'], requst_time, log_id))
                 inserted_id = cursor.lastrowid  # Get the ID of the inserted row
                 connection.commit()
                 
             else:
                 
                 sql = "INSERT INTO Logs(method, endpoint, status_code, duration, type, request_time, log_id) VALUES (%s, %s, %s, %s, 'Anonymous', %s, %s)"
-                cursor.execute(sql, (method, path, status_code, duration, request['request_time'], log_id))
+                cursor.execute(sql, (method, path, status_code, duration, requst_time, log_id))
                 inserted_id = cursor.lastrowid
-            
-            # Upload the request and response to S3
-            s3_key = f'requests/{inserted_id}.json'
-            s3_client.put_object(Bucket=S3_BUCKET, Key=s3_key, Body=json.dumps(payload))
-            
+                                    
         connection.commit()
         connection.close()
     

@@ -1,12 +1,11 @@
 from flask import current_app
-from src.Database.DatabaseConnection import DatabaseConnection
-import logging
 
-logging.basicConfig(level=logging.DEBUG)
+from src.Database.DatabaseConnection import DatabaseConnection
+from src.Logs.WriteLog import write_log
 
 def execute_query(sql, args=None, is_get_query=True, retry=False):
     
-    logging.debug(f"Executing query: {sql}, {args}")
+    write_log(f"Executing query: {sql}, {args}")
     try:
         with current_app.app_context():
             db = current_app.config['db_connection'].connection
@@ -30,11 +29,11 @@ def execute_query(sql, args=None, is_get_query=True, retry=False):
                 else:
                     db.commit()
                     results = None        
-            logging.debug(f"Results: {results}")
+            write_log(f"Results: {results}")
             return results
     except Exception as e:
-        logging.debug("Error executing query")
-        logging.debug(e)
+        write_log("Error executing query")
+        write_log(f"Error: {e}")
         db_connection = DatabaseConnection()
         current_app.config['db_connection'] = db_connection
         if not retry:
