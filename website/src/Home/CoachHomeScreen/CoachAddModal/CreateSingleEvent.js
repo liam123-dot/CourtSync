@@ -1,19 +1,64 @@
 import React, { useState } from 'react';
 import { Box, Button, Typography, TextField } from '@mui/material';
 
+import { convertTimeStringToEpoch, convertTimeToEpoch } from './TimeFunctions';
+
 import TimeSelect from '../ChooseTimeComponent'
 import ChooseDateComponent from './ChooseDateComponent';
+
+import { useRefreshTimetable } from '../RefreshTimetableContext';
+
+import axios from 'axios';
 
 export default function CreateSingleEvent({ onClose }) {
     const [startDate, setStartDate] = useState(null);
     const [startTime, setStartTime] = useState('');
+    const [endDate, setEndDate] = useState('');
     const [endTime, setEndTime] = useState('');
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
 
-    const handleSubmit = () => {
-        // Handle the submission logic for the single event
-        onClose();
+    const { refresh } = useRefreshTimetable();
+
+    const handleSubmit = async () => {
+
+        if (!startDate || !startTime || !endTime || !title) return;
+
+        const epochStartTime = convertTimeToEpoch(startDate, convertTimeStringToEpoch(startTime));
+
+        let epochEndTime = null;
+
+        if (endDate) {
+            epochEndTime = convertTimeToEpoch(endDate, convertTimeStringToEpoch(endTime));
+        } else {
+            epochEndTime = convertTimeToEpoch(startDate, convertTimeStringToEpoch(endTime));
+        }
+
+
+        console.log(epochStartTime, epochEndTime)
+        
+        try {
+
+            const response = await axios.post(`${process.env.REACT_APP_API_URL}/coach-event`, {
+
+                start_time: epochStartTime,
+                end_time: epochEndTime,
+                title: title,
+                description: description
+
+            }, {
+                headers: {
+                    Authorization: localStorage.getItem('AccessToken')
+                }
+            });
+
+            refresh(true);
+            onClose();
+
+        } catch (error) {
+            console.log(error);
+        }
+
     };
 
     return (
@@ -21,7 +66,7 @@ export default function CreateSingleEvent({ onClose }) {
             <ChooseDateComponent date={startDate} setDate={setStartDate} label={"Select a Start Date"}/>
             <TimeSelect time={startTime} setTime={setStartTime} label={"Start Time"}/>
             
-            <ChooseDateComponent date={startDate} setDate={setStartDate} label={"Select an End Date"} optional={true}/>
+            <ChooseDateComponent date={endDate} setDate={setEndDate} label={"Select an End Date"} optional={true}/>
             <TimeSelect time={endTime} setTime={setEndTime} label={"End Time"}/>
 
             <TextField
