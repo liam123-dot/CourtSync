@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Button, Typography, Checkbox, FormControl, InputLabel, Select, MenuItem, TextField } from '@mui/material';
+import axios from 'axios';
 
-import InfoComponent from '../../InfoComponent'
 import TimeSelect from '../ChooseTimeComponent'
 import ChooseDateComponent from './ChooseDateComponent';
+
+import { convertTimeStringToEpoch, convertTimeToEpoch } from './TimeFunctions';
+
+import { useRefreshTimetable } from '../RefreshTimetableContext';
 
 export default function ScheduleRepeatingLesson({ onClose }) {
     const [repeatType, setRepeatType] = useState('daily');
@@ -15,22 +19,59 @@ export default function ScheduleRepeatingLesson({ onClose }) {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
 
+    const { refresh } = useRefreshTimetable();
+
     useEffect(() => {
         // API call to get players or other initialization
     }, []);
 
     const generateLessonSummary = () => {
         // Check if startDate is not null
-        const startDateString = startDate ? startDate.toLocaleDateString() : 'No Start Date Selected';
-        const repeatStr = repeatIndefinitely ? 'until cancelled' : 'for a specific duration';
-        const startTimeString = startTime ? `from ${startTime}` : '';
-        const endTimeString = endTime ? `to ${endTime}` : '';
-        return `Repeating ${repeatType.charAt(0).toUpperCase() + repeatType.slice(1)} starting on ${startDateString} ${startTimeString} ${endTimeString} ${repeatStr}.`;
+        try {        
+            const startDateString = startDate ? startDate.toLocaleDateString() : 'No Start Date Selected';
+            const repeatStr = repeatIndefinitely ? 'until cancelled' : 'for a specific duration';
+            const startTimeString = startTime ? `from ${startTime}` : '';
+            const endTimeString = endTime ? `to ${endTime}` : '';
+            return `Repeating ${repeatType.charAt(0).toUpperCase() + repeatType.slice(1)} starting on ${startDateString} ${startTimeString} ${endTimeString} ${repeatStr}.`;
+        } catch (error) {
+            return '';
+        }
     };    
 
-    const handleSubmit = () => {
-        // Handle the submission logic
-        onClose();
+    const handleSubmit = async () => {
+
+        if (!startDate || !startTime || !endTime || !title) return;
+
+        const epochStartTime = convertTimeToEpoch(startDate, convertTimeStringToEpoch(startTime));
+
+        const epochEndTime = convertTimeToEpoch(startDate, convertTimeStringToEpoch(endTime));
+
+        try {
+
+            const response = await axios.post(`${process.env.REACT_APP_API_URL}/coach-event`, {
+
+                start_time: epochStartTime,
+                end_time: epochEndTime,
+                title: title,
+                description: description,
+                repeats: true,
+                repeatIndefinitely: repeatIndefinitely,
+                repeatFrequency: repeatType,
+                repeatUntil: repeatUntil
+
+            }, {
+                headers: {
+                    Authorization: localStorage.getItem('AccessToken')
+                }
+            });
+
+            refresh(true);
+            onClose();
+
+        } catch (error) {
+            console.log(error);
+        }
+
     };
 
     return (

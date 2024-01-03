@@ -213,7 +213,7 @@ def get_repeating_bookings(coach_id, initial_from_time, initial_to_time):
 
 
 def calculate_expected_count(from_time, to_time, cron_job):
-    # Split cron_job into its components    
+    write_log(f"Calculating expected count for cron job: {cron_job} between {from_time} and {to_time}")
 
     # Convert epoch seconds to datetime objects
     start_date = datetime.fromtimestamp(from_time)

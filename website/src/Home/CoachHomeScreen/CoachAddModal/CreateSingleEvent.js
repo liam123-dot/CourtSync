@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Button, Typography, TextField } from '@mui/material';
 
 import { convertTimeStringToEpoch, convertTimeToEpoch } from './TimeFunctions';
@@ -17,6 +17,8 @@ export default function CreateSingleEvent({ onClose }) {
     const [endTime, setEndTime] = useState('');
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
+
+    const [endTimeMinTime, setEndTimeMinTime] = useState("00:00");
 
     const { refresh } = useRefreshTimetable();
 
@@ -61,13 +63,23 @@ export default function CreateSingleEvent({ onClose }) {
 
     };
 
+    useEffect(() => {
+
+        if (endDate) {
+            setEndTimeMinTime("00:00");
+        } else {
+            setEndTimeMinTime(startTime);
+        }
+
+    }, [startDate, startTime, endDate]);
+
     return (
         <Box>
             <ChooseDateComponent date={startDate} setDate={setStartDate} label={"Select a Start Date"}/>
             <TimeSelect time={startTime} setTime={setStartTime} label={"Start Time"}/>
             
             <ChooseDateComponent date={endDate} setDate={setEndDate} label={"Select an End Date"} optional={true}/>
-            <TimeSelect time={endTime} setTime={setEndTime} label={"End Time"}/>
+            <TimeSelect time={endTime} setTime={setEndTime} label={"End Time"} minTime={endTimeMinTime}/>
 
             <TextField
                 fullWidth

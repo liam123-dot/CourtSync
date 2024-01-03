@@ -87,7 +87,14 @@ export default function CoachEventDetailsModal({ isOpen, onClose, coachEvent }) 
                     <>
                         <Typography variant="body1">Repeat Frequency: {coachEvent.repeat_frequency}</Typography>
                         <Typography variant="body1">
-                            Repeat Until: {new Date(coachEvent.repeat_until * 1000).toLocaleDateString('en-GB')}
+                            {
+                                coachEvent.repeat_until === null ? (
+                                    "Repeat Indefinitely"
+                                ) : (
+                                    `Repeat Until: ${new Date(coachEvent.repeat_until * 1000).toLocaleDateString('en-GB')}`
+                                )
+                                                                
+                            }
                         </Typography>
                     </>
                 )}

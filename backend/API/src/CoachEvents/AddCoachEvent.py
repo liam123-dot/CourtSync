@@ -4,10 +4,10 @@ import time
 from src.Bookings.AddBooking.InsertBooking import hash_booking
 from src.Timetable.CheckOverlaps import check_overlaps_repeats
 from src.Database.ExecuteQuery import execute_query
+from src.Logs.WriteLog import write_log
 from src.Repeats.CreateRepeatCoachEvent import create_repeating_coach_event
 from src.Timetable.CheckOverlaps import check_overlaps
 from src.Users.GetSelf.GetSelf import get_coach
-
 
 AddCoachEventBlueprint = Blueprint('AddCoachEventBlueprint', __name__)
 
@@ -28,16 +28,19 @@ def add_coach_event_blueprint():
     start_time = data.get('start_time')
     end_time = data.get('end_time')
     title = data.get('title')
-    description = data.get('description')
+    description = data.get('description')    
     
     repeats = data.get('repeats')
-    
     if repeats:
-        try:
-            repeats_until = data['repeats_until']
-            repeats_frequency = data['repeats_frequency']
-        except KeyError as e:
-            return jsonify(message=f"Missing key: {e}"), 400
+        repeat_indefinitely = data.get('repeatIndefinitely', True) == 'true'
+        repeats_frequency = data['repeatFrequency']
+        if not repeat_indefinitely:                
+            repeats_until = data.get('repeatUntil', None)
+        else:
+            repeats_until = None
+    else:
+        repeats_until = None
+        repeats_frequency = None
     
     if not start_time or not end_time or not title:
         return jsonify(message='Missing required data'), 400
@@ -45,27 +48,38 @@ def add_coach_event_blueprint():
     if start_time > end_time:
         return jsonify(message='Start time must be before end time'), 400
     
-    overlaps, bookings, events = check_overlaps(coach['coach_id'], start_time, end_time)
+    # overlaps, bookings, events = check_overlaps(coach['coach_id'], start_time, end_time)
     
-    if overlaps:
-        return jsonify(message='Event overlaps with existing booking or event'), 400
+    # if overlaps:
+    #     return jsonify(message='Event overlaps with existing booking or event'), 400
         
     if repeats:
-        overlaps, bookings, events = check_overlaps_repeats(coach['coach_id'], start_time, end_time, repeats_until, repeats_frequency)
-        if overlaps:
-            return jsonify(message='Event overlaps with existing booking or event in the future'), 400
+        write_log('repeats')
         create_repeating_coach_event(
-            [coach['coach_id'], start_time, (end_time - start_time)/60, title, description], 
+            [coach, start_time, end_time, title, description], 
             start_time, 
             end_time, 
             repeats_until, 
-            repeats_frequency
+            repeats_frequency,
+            coach
         )
     else:
-        sql = "INSERT INTO CoachEvents (coach_id, start_time, duration, title, description, status) VALUES (%s, %s, %s, %s, %s, 'confirmed')"
-        
-        params = (coach['coach_id'], start_time, (end_time - start_time)/60, title, description)
-        
-        execute_query(sql, params, is_get_query=False)
+        insert_coach_event(coach, start_time, end_time, title, description)
     
     return jsonify(message='Event added successfully'), 200
+
+
+def insert_coach_event(coach, start_time, end_time, title, description, coach_id=None):
+    
+    hash = hash_booking(start_time, end_time, time.time())
+    
+    sql = "INSERT INTO CoachEvents (coach_id, start_time, duration, title, description, status, hash) VALUES (%s, %s, %s, %s, %s, 'confirmed', %s)"
+    
+    if coach_id is None:
+        params = (coach['coach_id'], start_time, (end_time - start_time)/60, title, description, hash)
+    else:
+        params = (coach_id, start_time, (end_time - start_time)/60, title, description, hash)
+    
+    execute_query(sql, params, is_get_query=False)
+    
+    return hash 
