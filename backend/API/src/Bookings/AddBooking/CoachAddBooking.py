@@ -48,7 +48,7 @@ def coach_add_booking():
             repeat_indefinitely = data.get('repeatIndefinitely', True) == 'true'
             repeats_frequency = data['repeatFrequency']
             if not repeat_indefinitely:                
-                repeats_until = data.get('repeatsUntil', None)
+                repeats_until = data.get('repeatUntil', None)
             else:
                 repeats_until = None
         else:

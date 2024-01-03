@@ -8,7 +8,6 @@ import { convertTimeStringToEpoch, convertTimeToEpoch } from './TimeFunctions';
 import InfoComponent from '../../InfoComponent'
 import TimeSelect from '../ChooseTimeComponent'
 import ChooseDateComponent from './ChooseDateComponent';
-// import ChooseTimeComponent from './ChooseTimeComponent';
 import AutocompleteBox from './AutocompleteBox';
 
 export default function ChooseTimeSelectPlayer({
