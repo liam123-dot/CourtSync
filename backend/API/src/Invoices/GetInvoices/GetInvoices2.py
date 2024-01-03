@@ -7,7 +7,7 @@ from src.Users.GetSelf.GetSelf import get_coach
 
 GetInvoices2Blueprint = Blueprint("GetInvoices2", __name__)
 
-def get_invoices(coach_id, frequency="daily", status="pending", contact_email=None, limit=50, offset=0):
+def get_invoices(coach_id, status="pending", contact_email=None, limit=50, offset=0):
     if not coach_id:
         raise Exception("Coach ID is required")
 
@@ -20,7 +20,7 @@ def get_invoices(coach_id, frequency="daily", status="pending", contact_email=No
                 Bookings.invoice_sent,
                 Bookings.paid,
                 Bookings.invoice_id,
-                COUNT(Bookings.booking_id) as bookings_count,g
+                COUNT(Bookings.booking_id) as bookings_count,
                 SUM(Bookings.cost) AS total_cost,
                 SUM(Bookings.extra_costs) AS total_extra_costs,
                 Bookings.invoice_cancelled as invoice_cancelled,
@@ -104,7 +104,6 @@ def get_invoices_endpoint():
     coach_id = coach["coach_id"]
 
     # Extract query parameters
-    frequency = request.args.get('frequency', 'daily')
     status = request.args.get('status', 'pending')
     contact_email = request.args.get('contact_email')
     limit = request.args.get('limit', 50, type=int)
@@ -113,7 +112,7 @@ def get_invoices_endpoint():
     date_conversion = get_dates()
 
     try:
-        invoices = get_invoices(coach_id, frequency, status, contact_email, limit, offset)
+        invoices = get_invoices(coach_id, status, contact_email, limit, offset)
         
         if status == 'upcoming':
             for i in range(0, len(invoices)):        

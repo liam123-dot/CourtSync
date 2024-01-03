@@ -3,8 +3,12 @@ from datetime import datetime, timedelta
 
 import calendar
 import json
+import time
 import copy
 
+from src.Bookings.AddBooking.CalculateLessonCost import calculate_lesson_cost
+from src.Bookings.AddBooking.InsertBooking import insert_booking
+from src.Bookings.GetBooking import get_booking_by_hash
 from src.Database.ExecuteQuery import execute_query
 from src.Logs.WriteLog import write_log
 from src.Users.GetSelf.GetSelf import get_coach
@@ -56,43 +60,42 @@ def get_bookings(coach_id,
         args += (status,)
                 
     sql = f"""
-    SELECT 
-        Bookings.*,
-        Contacts.name AS contact_name,
-        Contacts.email AS contact_email,
-        Contacts.phone_number AS contact_phone_number,
-        Players.name AS player_name,
-        GROUP_CONCAT(PricingRules.rule_id) AS pricing_rule_ids,
-        RepeatRules.repeat_frequency,
-        RepeatRules.repeat_until
-    FROM 
-        Bookings
-    INNER JOIN 
-        Contacts ON Bookings.contact_id = Contacts.contact_id
-    INNER JOIN 
-        Players ON Bookings.player_id = Players.player_id
-    LEFT JOIN 
-        BookingsPricingJoinTable ON Bookings.booking_id = BookingsPricingJoinTable.booking_id
-    LEFT JOIN 
-        PricingRules ON BookingsPricingJoinTable.rule_id = PricingRules.rule_id
-    LEFT JOIN 
-        RepeatRules ON Bookings.repeat_id = RepeatRules.repeat_id
-    WHERE 
-        Bookings.coach_id = %s
-        {time_period}
-        {invoice_sent_query}
-        {invoice_paid_query}
-        {contact_id_query}
-        {player_id_query}
-        {status_query}
-    GROUP BY 
-        Bookings.booking_id
+        SELECT 
+            Bookings.*,
+            Contacts.name AS contact_name,
+            Contacts.email AS contact_email,
+            Contacts.phone_number AS contact_phone_number,
+            Players.name AS player_name,
+            GROUP_CONCAT(PricingRules.rule_id) AS pricing_rule_ids,
+            RepeatRules.repeat_frequency,
+            RepeatRules.repeat_until
+        FROM 
+            Bookings
+        INNER JOIN 
+            Contacts ON Bookings.contact_id = Contacts.contact_id
+        INNER JOIN 
+            Players ON Bookings.player_id = Players.player_id
+        LEFT JOIN 
+            BookingsPricingJoinTable ON Bookings.booking_id = BookingsPricingJoinTable.booking_id
+        LEFT JOIN 
+            PricingRules ON BookingsPricingJoinTable.rule_id = PricingRules.rule_id
+        LEFT JOIN 
+            RepeatRules ON Bookings.repeat_id = RepeatRules.repeat_id
+        WHERE 
+            Bookings.coach_id = %s
+            AND (Bookings.repeat_id IS NULL)
+            {time_period}
+            {invoice_sent_query}
+            {invoice_paid_query}
+            {contact_id_query}
+            {player_id_query}
+            {status_query}
+        GROUP BY 
+            Bookings.booking_id
     """
     
     bookings = execute_query(sql, args, is_get_query=True)
-    
-    write_log(f"From time: {from_time}, to time: {to_time}")
-        
+            
     if from_time is not None and to_time is not None:
         repeating_bookings = get_repeating_bookings(coach_id, from_time, to_time)
         bookings.extend(repeating_bookings)
@@ -152,14 +155,14 @@ def get_repeating_bookings(coach_id, initial_from_time, initial_to_time):
         INNER JOIN Players ON Bookings.player_id=Players.player_id
         WHERE RepeatRules.coach_id=%s
         AND RepeatRules.is_active=1
-    """
+        AND NOT (RepeatRules.start_time > %s OR (RepeatRules.repeat_until IS NOT NULL AND RepeatRules.repeat_until < Bookings.start_time ))
+    """        
 
-    results = execute_query(sql, (coach_id, ))
+    results = execute_query(sql, (coach_id, initial_to_time), is_get_query=True)
     
     collect_by_cron = {}
     
-    for result in results:
-        write_log(f"Calculating expected count for cron: {result['cron']}")
+    for result in results:        
         from_time = initial_from_time
         to_time = initial_to_time
         
@@ -175,26 +178,23 @@ def get_repeating_bookings(coach_id, initial_from_time, initial_to_time):
                 'expected_count': calculate_expected_count(from_time, to_time, result['cron']),
                 'template': result,
                 'from_time': from_time,
-                'to_time': to_time
-            }
-            print(f"Expected count: {collect_by_cron[result['cron']]['expected_count']}")
+                'to_time': to_time,
+                'repeat_until': result['repeat_until']
+            }            
         else:
             from_time = collect_by_cron[result['cron']]['from_time']
             to_time = collect_by_cron[result['cron']]['to_time']
         
         if result['start_time'] >= from_time and result['start_time'] <= to_time:            
-            collect_by_cron[result['cron']]['lessons'].append(result)
+            collect_by_cron[result['cron']]['lessons'].append(result)    
             
-    write_log(f"collected by cron: {collect_by_cron.keys()}")
+    write_log(f"Calculate results for cron rules: {json.dumps(collect_by_cron, indent=4)}")
             
     for cron in collect_by_cron.keys():
         
         cron_data = collect_by_cron[cron]
         expected_count = cron_data['expected_count']
-        actual_count = len(cron_data['lessons'])        
-        
-        write_log(cron)
-        write_log(f"expected_count: {expected_count}, actual_count: {actual_count}")
+        actual_count = len(cron_data['lessons'])
         
         if expected_count != actual_count:
             cron_data['lessons'] = fill_in_blanks(cron, cron_data, cron_data['from_time'], cron_data['to_time'])
@@ -204,17 +204,16 @@ def get_repeating_bookings(coach_id, initial_from_time, initial_to_time):
     # iterate through all the cron jobs and remove the lessons with a 
     # booking id that isn't -1
     
-    for cron in collect_by_cron.keys():
+    for cron in collect_by_cron.keys():        
         for lesson in collect_by_cron[cron]['lessons']:
-            if lesson['booking_id'] == -1:
-                to_be_added.append(lesson)
+            
+            to_be_added.append(lesson)
         
     return to_be_added
 
 
 def calculate_expected_count(from_time, to_time, cron_job):
-    # Split cron_job into its components
-    write_log(f"calculate_expected_count: {from_time}, {to_time}, {cron_job}")
+    # Split cron_job into its components    
 
     # Convert epoch seconds to datetime objects
     start_date = datetime.fromtimestamp(from_time)
@@ -279,38 +278,53 @@ def is_cron_match(date, minute, hour, dom, month, dow):
 
     
 def fill_in_blanks(cron, cron_data, from_time, to_time):
-    
-    write_log(json.dumps(cron_data, indent=4))
-    
+        
     cron_execution_times = get_cron_execution_times(from_time, to_time, cron)
     cron_dict = {int(time.timestamp()): None for time in cron_execution_times}
 
     for lesson in cron_data['lessons']:
         if lesson['start_time'] in cron_dict.keys():
             cron_dict[lesson['start_time']] = lesson
-            
-    write_log(f"cron_dict: {cron_dict}")
-        
+                    
+    write_log(f"cron_dict: {json.dumps(cron_dict, indent=4)}")
+    current_time = time.time()
+       
     for key in cron_dict.keys():
         if cron_dict[key] is None:
-            cron_dict[key] = copy.deepcopy(cron_data['template'])
-            cron_dict[key]['booking_id'] = -1            
-            cron_dict[key]['start_time'] = key
-            cron_dict[key]['status'] = 'confirmed'
-            cron_dict[key]['paid'] = False
-            cron_dict[key]['message_from_couch'] = None
-            cron_dict[key]['message_from_player'] = None
-            cron_dict[key]['hash'] = -1
-            cron_dict[key]['invoice_sent'] = False
-            cron_dict[key]['time_invoice_sent'] = None
-            cron_dict[key]['invoice_id'] = None
-            cron_dict[key]['paid_from'] = None
-            cron_dict[key]['invoice_cancelled'] = False
-            cron_dict[key]['send_date'] = None
-            cron_dict[key]['based_of'] = cron_data['template']['booking_id']            
-        
-    write_log(f"cron_dict: {cron_dict}")
-        
+            # if key > current_time:
+            #     cron_dict[key] = copy.deepcopy(cron_data['template'])
+            #     cron_dict[key]['booking_id'] = -1            
+            #     cron_dict[key]['start_time'] = key
+            #     cron_dict[key]['status'] = 'confirmed'
+            #     cron_dict[key]['paid'] = False
+            #     cron_dict[key]['message_from_couch'] = None
+            #     cron_dict[key]['message_from_player'] = None
+            #     cron_dict[key]['hash'] = -1
+            #     cron_dict[key]['invoice_sent'] = False
+            #     cron_dict[key]['time_invoice_sent'] = None
+            #     cron_dict[key]['invoice_id'] = None
+            #     cron_dict[key]['paid_from'] = None
+            #     cron_dict[key]['invoice_cancelled'] = False
+            #     cron_dict[key]['send_date'] = None
+            #     cron_dict[key]['based_of'] = cron_data['template']['booking_id']
+            # else:
+            write_log("Need to create a new booking based of template")
+            lesson_cost, rules = calculate_lesson_cost(key, cron_data['template']['duration'], cron_data['template']['coach_id'])
+            booking_hash = insert_booking(
+                cron_data['template']['player_id'],
+                cron_data['template']['contact_id'],
+                key,
+                lesson_cost,
+                rules,
+                cron_data['template']['duration'],
+                cron_data['template']['coach_id'],
+                int(time.time()),
+                repeat_id=cron_data['template']['repeat_id'],
+                coach_id=cron_data['template']['coach_id']
+            )
+            cron_dict[key] = get_booking_by_hash(booking_hash)
+            cron_dict[key]['just_added'] = True
+                
     return list(cron_dict.values())
 
 def get_cron_execution_times(start_epoch, end_epoch, cron_expression):

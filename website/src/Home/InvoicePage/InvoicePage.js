@@ -37,7 +37,7 @@ export default function InvoicePage() {
         setIsInvoicesLoading(true);
         setData([]);
         try {
-            let url = `${process.env.REACT_APP_API_URL}/invoices?frequency=${view}&status=${statusView}`;
+            let url = `${process.env.REACT_APP_API_URL}/invoices?status=${statusView}`;
 
             if (contactEmail) {
                 url += `&contact_email=${contactEmail}`;

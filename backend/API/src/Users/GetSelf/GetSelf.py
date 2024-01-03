@@ -54,6 +54,12 @@ def get_coach_from_slug(slug):
     results = get_attributes(coach_id)
     
     return results
+
+
+def get_coach_from_id(coach_id):
+    results = get_attributes(coach_id)
+    
+    return results
     
 
 def get_attributes(coach_id):

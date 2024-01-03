@@ -1,7 +1,10 @@
 import hashlib
+import json
 
-from src.Database.ExecuteQuery import execute_query
 from src.Bookings.GetBooking import get_booking_by_hash
+from src.Database.ExecuteQuery import execute_query
+from src.Logs.WriteLog import write_log
+from src.Users.GetSelf.GetSelf import get_coach_from_id
 
 def hash_booking(contact_id, start_time, booking_time):
     # Create a new sha256 hash object
@@ -15,9 +18,27 @@ def hash_booking(contact_id, start_time, booking_time):
 
     return hashed_value
   
-def insert_booking(player_id, contact_id, start_time, cost, rules, duration, coach, booking_time, repeat_id=None):
+def insert_booking(player_id, contact_id, start_time, cost, rules, duration, coach, booking_time, repeat_id=None, coach_id=None):
     
     hashed_value = hash_booking(contact_id, start_time, booking_time)
+    
+    if coach_id is not None:
+        coach = get_coach_from_id(coach_id)
+    
+    write_log(f"Inserting booking with hash {hashed_value}")
+    write_log(f"""Inserting booking with data: {json.dumps({
+        
+        'player_id': player_id,
+        'contact_id': contact_id,
+        'start_time': start_time,
+        'cost': cost,
+        'rules': rules,
+        'duration': duration,
+        'coach': coach,
+        'booking_time': booking_time,
+        'repeat_id': repeat_id
+        
+        }, indent=4)}""")
     
     coach_id = coach['coach_id']
     

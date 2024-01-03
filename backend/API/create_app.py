@@ -49,6 +49,8 @@ from src.Invoices.GetInvoices.GetInvoices2 import GetInvoices2Blueprint
 from src.Invoices.Private.InvoicePaidWebhook import InvoicePaidWebhookBlueprint
 from src.Invoices.MarkInvoiceAsPaid import MarkInvoiceAsPaidBlueprint
 
+from src.Repeats.CancelRepeatingLesson import CancelRepeatingLessonBlueprint
+
 from src.Timetable.CheckOverlaps import CheckOverlapsBlueprint
 from src.Timetable.CalendarIntegrations.CreateICS import CreateICSCalendarBlueprint
 from src.Timetable.EditFeatures import EditFeaturesBlueprint
@@ -119,6 +121,8 @@ def create_app():
     app.register_blueprint(GetInvoices2Blueprint)
     app.register_blueprint(InvoicePaidWebhookBlueprint)
     app.register_blueprint(MarkInvoiceAsPaidBlueprint)
+    
+    app.register_blueprint(CancelRepeatingLessonBlueprint)
     
     app.register_blueprint(CheckOverlapsBlueprint)
     app.register_blueprint(CreateICSCalendarBlueprint)

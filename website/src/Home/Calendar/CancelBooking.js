@@ -22,7 +22,7 @@ export default function CancelBooking({ booking, close, onCancelProcess, setOnCa
 
     const cancelLesson = async () => {
         setIsLoading(true);
-        try {
+        try {            
             const response = await axios.post(
                 `${process.env.REACT_APP_API_URL}/timetable/booking/${booking.booking_id}/cancel`,
                 { message_to_player: cancellationNote },
@@ -43,10 +43,15 @@ export default function CancelBooking({ booking, close, onCancelProcess, setOnCa
 
         try  {
             const response = await axios.post(
-                `${process.env.REACT_APP_API_URL}/timetable/repeats/${booking.repeat_id}/cancel`,
+                `${process.env.REACT_APP_API_URL}/timetable/repeats/${booking.booking_id}/cancel`,
                 { message_to_player: cancellationNote },
                 { headers: { 'Authorization': localStorage.getItem('AccessToken') } }
             )
+            console.log(response);
+            setOnCancelProcess(false);
+            showPopup('Booking cancelled successfully');
+            refresh(true);
+            close();
         } catch (error) {
             console.log(error);
         }

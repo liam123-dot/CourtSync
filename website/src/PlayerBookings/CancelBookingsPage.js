@@ -3,7 +3,6 @@ import { useParams } from "react-router-dom";
 import axios from 'axios';
 import { usePopup } from '../Notifications/PopupContext';
 
-// Material-UI components
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 import TextField from '@mui/material/TextField';
