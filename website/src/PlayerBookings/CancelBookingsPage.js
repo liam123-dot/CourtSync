@@ -1,9 +1,15 @@
-import React, {useEffect, useState} from "react";
+import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import axios from 'axios';
-import {usePopup} from '../Notifications/PopupContext'
+import { usePopup } from '../Notifications/PopupContext';
 
-import {Spinner} from "../Spinner";
+// Material-UI components
+import Container from '@mui/material/Container';
+import Typography from '@mui/material/Typography';
+import TextField from '@mui/material/TextField';
+import Button from '@mui/material/Button';
+import CircularProgress from '@mui/material/CircularProgress';
+import Alert from '@mui/material/Alert';
 
 function epochToDateTime(epochSeconds) {
     // Create a new Date object with the epoch multiplied by 1000
@@ -91,36 +97,40 @@ export default function CancelBookingPage () {
 
     }
 
-    return isLoading ? (
-        <div>
-            loading
-        </div>
-    ): invalidHash ? (
-        <div>
-            Invalid Hash
-        </div>
-    ) : showMessage ? (
-        <div>
-            {showMessage}
-        </div>
-    ): (
-        <div>
-
-            <h2>
-                Booking Details
-            </h2>
-            
-            <p><b>Player Name:</b> {bookingData.player_name}</p>    
-            <p><b>Start Time:</b> {epochToDateTime(bookingData.start_time)}</p>
-            <p><b>Duration:</b> {bookingData.duration} minutes</p>
-            <p><b>Cost:</b> £{(bookingData.cost / 100).toFixed(2)}</p>
-            <p>Please write a note to your coach explaining reason for cancelling:</p>
-            <input value={cancellationNote} onChange={(e) => {setCancellationNote(e.target.value)}}/>
-            <button onClick={confirmCancel}>
-                {cancellationLoading ? <Spinner/>: 'Confirm Cancellation'}
-                </button>
-
-        </div>
-    )
+    return (
+        <Container maxWidth="sm">
+            {isLoading ? (
+                <CircularProgress />
+            ) : invalidHash ? (
+                <Alert severity="error">Invalid Hash</Alert>
+            ) : showMessage ? (
+                <Alert severity="info">{showMessage}</Alert>
+            ) : (
+                <div>
+                    <Typography variant="h5">Booking Details</Typography>
+                    <Typography><b>Player Name:</b> {bookingData.player_name}</Typography>
+                    <Typography><b>Start Time:</b> {epochToDateTime(bookingData.start_time)}</Typography>
+                    <Typography><b>Duration:</b> {bookingData.duration} minutes</Typography>
+                    <Typography><b>Cost:</b> £{(bookingData.cost / 100).toFixed(2)}</Typography>
+                    <Typography>Please write a note to your coach explaining reason for cancelling:</Typography>
+                    <TextField
+                        fullWidth
+                        variant="outlined"
+                        margin="normal"
+                        value={cancellationNote}
+                        onChange={(e) => setCancellationNote(e.target.value)}
+                    />
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={confirmCancel}
+                        disabled={cancellationLoading}
+                    >
+                        {cancellationLoading ? <CircularProgress size={24} /> : 'Confirm Cancellation'}
+                    </Button>
+                </div>
+            )}
+        </Container>
+    );
 
 }
