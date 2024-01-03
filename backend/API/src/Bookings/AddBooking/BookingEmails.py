@@ -168,3 +168,6 @@ def send_player_booked_by_coach_email(player_email, start_time, duration, cost, 
         bodyText=f"Your lesson with {coach_name} has been booked for {date_str} at {time_str} for {duration} minutes.",
         bodyHTML=bodyHTML
     )
+
+def send_player_repeat_lesson (start_time):
+    pass

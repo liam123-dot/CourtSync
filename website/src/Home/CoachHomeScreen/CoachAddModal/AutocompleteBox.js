@@ -1,6 +1,6 @@
 import { Autocomplete, TextField } from "@mui/material";
 
-export default function AutocompleteBox({ options, value, setValue}) {
+export default function AutocompleteBox({ options, value, setValue, label}) {
 
     return (
         <Autocomplete

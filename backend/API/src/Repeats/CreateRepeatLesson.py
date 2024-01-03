@@ -4,8 +4,9 @@ logging.basicConfig(level=logging.DEBUG)
 
 from datetime import datetime, timedelta
 
-from src.Bookings.AddBooking.InsertBooking import insert_booking
+from src.Bookings.AddBooking.BookingEmails import send_player_repeat_lesson
 from src.Bookings.AddBooking.CalculateLessonCost import calculate_lesson_cost
+from src.Bookings.AddBooking.InsertBooking import insert_booking
 
 from src.Repeats.CreateRepeatRule import create_repeat_rule, get_repeat_rule_by_hash
 
@@ -38,6 +39,8 @@ def create_repeating_lesson(
         booking_time,
         repeat_id=repeat_rule['repeat_id']
     )
-        
+    
+    # send_player_repeat_lesson(start_time, duration, player_id)
+    
     logging.debug('repeat_rule made')
         

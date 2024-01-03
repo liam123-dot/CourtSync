@@ -10,7 +10,7 @@ import { convertTimeStringToEpoch, calculateStartAndEndTime } from './TimeFuncti
 import { useRefreshTimetable } from '../RefreshTimetableContext';
 import ChooseTimeSelectPlayer from './ChooseTimeSelectPlayer';
 
-export default function CreateSingleLesson({onClose}) {
+export default function CreateSingleLesson({onClose, durations}) {
 
     const [date, setDate] = useState(null);
     const [startTime, setStartTime] = useState('');
@@ -70,6 +70,8 @@ export default function CreateSingleLesson({onClose}) {
     }, [startTime, endTime, date])
 
     useEffect(() => {
+
+        console.log("useEffect", date, startTime, endTime, selectedPlayer, errorMessage)
 
         if (date && startTime && endTime && selectedPlayer && !errorMessage) {
             setIsSubmitDisabled(false);
@@ -153,6 +155,7 @@ export default function CreateSingleLesson({onClose}) {
                         setOverridePricingRules={setOverridePricingRules}
                         players={players}
                         setPlayers={setPlayers}
+                        durations={durations}
                     />
                 </Box>
 

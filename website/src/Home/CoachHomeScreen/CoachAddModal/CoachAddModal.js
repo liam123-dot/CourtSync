@@ -11,12 +11,29 @@ import CreateRepeatingLesson from './CreateRepeatingLesson';
 import CreateSingleEvent from './CreateSingleEvent';
 import CreateRepeatingEvent from './CreateRepeatingEvent';
 
+import axios from 'axios';
+import { useQuery } from 'react-query';
+
 export default function CoachAddModal({ open, handleClose }) {
     const [tabValue, setTabValue] = React.useState(0);
   
     const handleTabChange = (event, newValue) => {
       setTabValue(newValue);
     };
+
+    const getDurations = async ({queryKey}) => {
+
+      return axios.get(
+          `${process.env.REACT_APP_API_URL}/features/durations`, {
+              headers: {
+                  Authorization: localStorage.getItem('AccessToken')
+              }
+          }
+      ).then(response => response.data.durations);
+
+  }
+
+  const { data: durations, isLoading, isError } = useQuery(['durations'], getDurations);
   
     return (
         <Modal open={open} onClose={handleClose}>
@@ -52,8 +69,8 @@ export default function CoachAddModal({ open, handleClose }) {
               <Tab label="Repeating Event" />
             </Tabs>
             <Box sx={{ p: 2, width: '100%' }}>
-              {tabValue === 0 && <CreateSingleLesson onClose={handleClose} />}
-              {tabValue === 1 && <CreateRepeatingLesson onClose={handleClose} />}
+              {tabValue === 0 && <CreateSingleLesson onClose={handleClose} durations={durations}/>}
+              {tabValue === 1 && <CreateRepeatingLesson onClose={handleClose} durations={durations}/>}
               {tabValue === 2 && <CreateSingleEvent />}
               {tabValue === 3 && <CreateRepeatingEvent />}
             </Box>

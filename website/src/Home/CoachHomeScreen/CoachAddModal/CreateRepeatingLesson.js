@@ -10,7 +10,7 @@ import { calculateStartAndEndTime } from './TimeFunctions';
 import { useRefreshTimetable } from '../RefreshTimetableContext';
 import { usePopup } from '../../../Notifications/PopupContext';
 
-export default function CreateRepeatingLesson({onClose}) {
+export default function CreateRepeatingLesson({onClose, durations}) {
 
     const [startDate, setStartDate] = useState(null);
     const [startTime, setStartTime] = useState('');
@@ -158,6 +158,7 @@ export default function CreateRepeatingLesson({onClose}) {
                 setOverridePricingRules={setOverridePricingRules}
                 price={price}
                 setPrice={setPrice}
+                durations={durations}
             />
 
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
