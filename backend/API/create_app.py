@@ -31,6 +31,7 @@ from src.Bookings.AddBooking.CheckDays import CheckDaysBlueprint
 
 from src.CoachEvents.AddCoachEvent import AddCoachEventBlueprint
 from src.CoachEvents.CancelCoachEvent import CancelCoachEventBlueprint
+from src.CoachEvents.GetCoachEvents import GetCoachEventBlueprint
 
 from src.Contacts.GetContact import GetContactBlueprint
 from src.Contacts.AddContact import CreateContactBlueprint
@@ -104,6 +105,7 @@ def create_app():
     
     app.register_blueprint(AddCoachEventBlueprint)
     app.register_blueprint(CancelCoachEventBlueprint)
+    app.register_blueprint(GetCoachEventBlueprint)
     
     app.register_blueprint(GetContactBlueprint)
     app.register_blueprint(CreatePlayerBlueprint)
