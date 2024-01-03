@@ -39,6 +39,17 @@ def get_contact(contact_email, coach_id):
     
     return contact
 
+def get_contact_player(contact_id, player_id):
+    sql = "SELECT * FROM Players WHERE contact_id=%s AND player_id=%s"
+    player = execute_query(sql, (contact_id, player_id), is_get_query=True)[0]
+    
+    sql = "SELECT * FROM Contacts WHERE contact_id=%s"
+    contact = execute_query(sql, (contact_id, ), is_get_query=True)[0]
+    
+    contact['player'] = player
+    
+    return contact
+
 def get_contact_by_id(contact_id):
     sql = "SELECT * FROM Contacts WHERE contact_id=%s"
     

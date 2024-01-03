@@ -40,7 +40,7 @@ def create_repeating_lesson(
         repeat_id=repeat_rule['repeat_id']
     )
     
-    # send_player_repeat_lesson(start_time, duration, player_id)
+    send_player_repeat_lesson(repeat_rule['cron'], player_id, contact_id, start_time, duration, repeat_hash, coach, repeat_until=repeat_until)
     
     logging.debug('repeat_rule made')
         
