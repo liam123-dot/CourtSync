@@ -97,7 +97,7 @@ def get_bookings(coach_id,
     bookings = execute_query(sql, args, is_get_query=True)
             
     if from_time is not None and to_time is not None:
-        repeating_bookings = get_repeating_bookings(coach_id, from_time, to_time)
+        repeating_bookings = get_repeating_bookings(coach_id, from_time, to_time, status=status)
         bookings.extend(repeating_bookings)
 
     return bookings
@@ -133,7 +133,7 @@ def get_bookings_endpoint():
     return jsonify(bookings), 200
 
 
-def get_repeating_bookings(coach_id, initial_from_time, initial_to_time):
+def get_repeating_bookings(coach_id, initial_from_time, initial_to_time, status=None):
     
     initial_from_time = int(initial_from_time)
     initial_to_time = int(initial_to_time)
@@ -206,6 +206,10 @@ def get_repeating_bookings(coach_id, initial_from_time, initial_to_time):
     
     for cron in collect_by_cron.keys():        
         for lesson in collect_by_cron[cron]['lessons']:
+            
+            if status is not None:
+                if lesson['status'] != status:
+                    continue
             
             to_be_added.append(lesson)
         
