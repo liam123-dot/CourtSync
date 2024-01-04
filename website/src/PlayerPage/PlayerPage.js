@@ -174,6 +174,9 @@ export default function PlayerPage() {
 
     const getAllPlayers = () => {
         return contactData.reduce((acc, contact) => {
+            if (!contact.players) {
+                return acc;
+            }
             const players = contact.players.map(player => ({
                 name: player.name,
                 contactId: contact.contact_id
