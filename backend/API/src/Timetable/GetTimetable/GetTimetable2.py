@@ -98,6 +98,18 @@ def get_timetable_endpoint():
     
     from_time = request.args.get('fromTime')
     to_time = request.args.get('toTime')
+    
+    # check from and to time are valid epoch times
+    
+    if not from_time or not to_time:
+        return jsonify({'error': 'Missing required data'}), 400
+    
+    try:
+        from_time = int(from_time)
+        to_time = int(to_time)
+    except ValueError:
+        return jsonify({'error': 'Invalid from or to time'}), 400
+    
     show_cancelled = request.args.get('showCancelled', False) == 'true'
 
     bookings = get_bookings(coach['coach_id'], from_time=from_time, to_time=to_time, status=None if show_cancelled else 'confirmed')
